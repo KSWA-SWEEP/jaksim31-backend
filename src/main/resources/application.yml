@@ -1,0 +1,47 @@
+## Database DataSource
+spring:
+  data:
+    mongodb:
+      host: 210.109.61.124
+      port: 27017
+      authentication-database: admin
+      database: jaksim31-dev
+      username: sweep
+      password: sweep
+
+  main:
+    allow-bean-definition-overriding: true
+
+## Swagger
+springdoc:
+  swagger-ui:
+    path:
+    groups-order:
+    operations-sorter:
+    disable-swagger-default-url: true
+    display-request-duration: true
+
+  api-docs:
+    path: /api-docs
+
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+## actuator
+management:
+  endpoints:
+    web:
+      base-path: /management
+
+jwt:
+  header: Authorization
+  secret: anNoLXNwcmluZ2Jvb3QtYW5kLWp3dC10dXRvcmlhbC10aGlzLWlzLWZvci1nZW5lcmF0aW5nLWp3dC1zZWNyZXRrZXktYmFzZTY0Cg==
+  access-token-expire-time: 1800000
+  refresh-token-expire-time: 6048000
+
+test:
+  token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJmb3JtZHVvQGdhY2hvbi5hYy5rciIsImF1dGgiOiJST0xFX1VTRVIiLCJpYXQiOjE2Njk2OTkyMDcsImV4cCI6MTY2OTcwMTAwN30.1iBvhR6Usm6abwWGyAnUyplTxmQ_VXubGvHceIkyOWaKxHkAq_qMyR9gVWoPgrO1XYS9ptP6jvwCDNS2SbhYEQ
+
+# ??? ?? 4???
+## Redis
+#spring.redis.host=redis

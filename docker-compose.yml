@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sweep
+      MONGO_INITDB_ROOT_PASSWORD: sweep
+
+  spring:
+    container_name: jaksim31-backend
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
