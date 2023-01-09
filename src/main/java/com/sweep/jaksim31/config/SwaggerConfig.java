@@ -26,6 +26,7 @@ public class SwaggerConfig {
                 .builder()
                 .group("Non Security Open Api")
                 .pathsToMatch("/v0/**")
+                .addOpenApiCustomiser(buildSecurityOpenApi())
                 .build();
     }
 

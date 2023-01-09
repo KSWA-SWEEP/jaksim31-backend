@@ -3,6 +3,7 @@ package com.sweep.jaksim31.entity.members;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sweep.jaksim31.dto.member.MemberUpdateDTO;
 import com.sweep.jaksim31.entity.auth.Authority;
+import com.sweep.jaksim31.entity.auth.MemberAuth;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -16,6 +17,8 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.sweep.jaksim31.entity.auth.MemberAuth.ROLE_USER;
 
 @Getter
 @NoArgsConstructor
@@ -46,7 +49,8 @@ public class Members {
         this.delYn = delYn;
         this.register_date = register_date;
         this.update_date = update_date;
-        this.authorities = authorities;
+        this.addAuthority(new Authority(username, MemberAuth.of("ROLE_USER")));
+        System.out.println();
     }
 
     public void addAuthority(Authority authority) {
@@ -63,8 +67,15 @@ public class Members {
                 .collect(Collectors.joining(","));
     }
 
-    public void updateMember(MemberUpdateDTO dto, PasswordEncoder passwordEncoder) {
-        if(dto.getPassword() != null) this.password = passwordEncoder.encode(dto.getPassword());
+    public void updateMember(MemberUpdateDTO dto, PasswordEncoder passwordEncoder) throws Exception {
+
+        if(dto.getOldPassword() != null) {
+            // 비밀번호가 같지 않다면
+            if (!passwordEncoder.matches(dto.getOldPassword(), this.password)){
+                throw new Exception("비밀 번호가 불일치 합니다.");
+            }
+            this.password = passwordEncoder.encode(dto.getNewPassword());
+        }
         if(dto.getUsername() != null) this.username = dto.getUsername();
         this.update_date = Instant.now();
     }

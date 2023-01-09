@@ -41,7 +41,3 @@ jwt:
 
 test:
   token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJmb3JtZHVvQGdhY2hvbi5hYy5rciIsImF1dGgiOiJST0xFX1VTRVIiLCJpYXQiOjE2Njk2OTkyMDcsImV4cCI6MTY2OTcwMTAwN30.1iBvhR6Usm6abwWGyAnUyplTxmQ_VXubGvHceIkyOWaKxHkAq_qMyR9gVWoPgrO1XYS9ptP6jvwCDNS2SbhYEQ
-
-# ??? ?? 4???
-## Redis
-#spring.redis.host=redis
