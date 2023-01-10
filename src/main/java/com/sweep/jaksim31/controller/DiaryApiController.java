@@ -21,6 +21,7 @@ import java.util.Map;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-09                김주현             최초 생성
+ * 2023-01-10                김주현            개별 일기 조회 추가
  */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -71,11 +72,17 @@ public class DiaryApiController {
         return diaryService.remove(diaryId);
     }
 
-    // 사용자 일기 조회
+    // 개별 일기 조회
+    @GetMapping(value="{userId}/{diaryId}")
+    public Diary findDiary(@PathVariable String userId, @PathVariable String diaryId){
+        return diaryService.findDiary(diaryId);
+    }
+
+    // 사용자 일기 검색
     @GetMapping(value = "{userId}")
     public List<Diary> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
         System.out.println(userId + "'s diaries");
-        // 조건이 없으면 전체 조회
+        // 조건이 없으면 사용자 일기 전체 조회
         if(params.isEmpty()){
             return diaryService.findUserDiaries(userId);
         }else
