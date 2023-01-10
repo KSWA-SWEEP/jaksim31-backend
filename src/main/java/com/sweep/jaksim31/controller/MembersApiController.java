@@ -88,7 +88,7 @@ public class MembersApiController {
         return memberServiceImpl.updateMemberInfo(userId, dto);
     }
 
-    @Operation(summary = "유저 삭제 요청", description = "유저 정보가 생성됩니다.")
+    @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/{userId}")
     public ResponseEntity<String> remove(@PathVariable("userId") String userId, @RequestBody MemberRemoveDTO dto) {
         return memberServiceImpl.remove(userId, dto);
