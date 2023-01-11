@@ -3,15 +3,19 @@ package com.sweep.jaksim31.service.impl;
 import com.sweep.jaksim31.dto.diary.DiaryDTO;
 import com.sweep.jaksim31.entity.diary.Diary;
 import com.sweep.jaksim31.entity.diary.DiaryRepository;
+import com.sweep.jaksim31.entity.members.MemberRepository;
 import com.sweep.jaksim31.service.DiaryService;
+import com.sweep.jaksim31.util.exceptionhandler.BizException;
+import com.sweep.jaksim31.util.exceptionhandler.DiaryExceptionType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -24,17 +28,19 @@ import java.util.Map;
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
- * 2023-01-09                김주현             최초 생성
+ * 2023-01-09           김주현             최초 생성
+ * 2023-01-11           김주현             ErrorHandling 추가
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
 * */
 @Slf4j
 @Service
-@Component
+@Validated
+@RequiredArgsConstructor
 public class DiaryServiceImpl implements DiaryService {
-    @Autowired
-    DiaryRepository diaryRepository;
+    private final DiaryRepository diaryRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     // 전체 일기 조회
@@ -51,6 +57,16 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     // 일기 저장
     public Diary saveDiary(DiaryDTO diaryDto){
+        // 사용자를 찾을 수 없을 때
+        if(diaryDto.getUser_id() == null || diaryDto.getUser_id().equals("") || !memberRepository.findById(diaryDto.getUser_id()).isPresent())
+            throw new BizException(DiaryExceptionType.NOT_FOUND_USER);
+        // 해당 날짜에 이미 등록 된 다이어리가 있을 때
+        if(diaryRepository.findDiaryByUserIdAndDate(new ObjectId(diaryDto.getUser_id()), diaryDto.getDate().atTime(9,0)).isPresent())
+            throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
+        // 날짜가 유효하지 않을 때(미래)
+        if(diaryDto.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
+            throw new BizException(DiaryExceptionType.WRONG_DATE);
+        }
         Diary diary = diaryDto.toEntity();
         return diaryRepository.save(diary);
     }
@@ -58,9 +74,16 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     // 일기 수정
     public Diary updateDiary(String diary_id, DiaryDTO diaryDTO) {
-        Diary temp = new Diary(diary_id, diaryDTO);
-        diaryRepository.save(temp);
-        return temp;
+        // 사용자를 찾을 수 없을 때
+        if(diaryDTO.getUser_id() == null || diaryDTO.getUser_id().equals("") || !memberRepository.findById(diaryDTO.getUser_id()).isPresent())
+            throw new BizException(DiaryExceptionType.NOT_FOUND_USER);
+        // 날짜가 유효하지 않을 때(미래)
+        if(diaryDTO.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
+            throw new BizException(DiaryExceptionType.WRONG_DATE);
+        }
+        Diary updatedDiary = new Diary(diary_id, diaryDTO);
+        diaryRepository.save(updatedDiary);
+        return updatedDiary;
     }
 
     @Override
