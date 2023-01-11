@@ -54,7 +54,6 @@ public class AuthServiceImpl implements AuthService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
 
-
     @Override
     @Transactional
     public MemberRespDTO signup(MemberReqDTO memberRequestDto) {

@@ -8,12 +8,14 @@ import com.sweep.jaksim31.dto.member.MemberUpdateDTO;
 import com.sweep.jaksim31.dto.token.TokenDTO;
 import com.sweep.jaksim31.dto.token.TokenReqDTO;
 import com.sweep.jaksim31.entity.members.Members;
+import com.sweep.jaksim31.service.AuthService;
 import com.sweep.jaksim31.service.impl.AuthServiceImpl;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +32,7 @@ import java.util.Optional;
 @RequestMapping("/v0/auth")
 @RequiredArgsConstructor
 public class AuthApisController {
+
 
     private final AuthServiceImpl authServiceImpl;
     @Value("${jwt.refresh-token-expire-time}")
@@ -78,7 +81,7 @@ public class AuthApisController {
 //    @PostMapping("/login/kakao")
 //    public ResponseEntity<?> createAuthenticationTokenByKakao(@RequestBody SocialLoginDto socialLoginDto) throws Exception {
 //        //api 인증을 통해 얻어온 code값 받아오기
-//        String username = authService.kakaoLogin(socialLoginDto.getToken());
+//        String username = AuthService.kakaoLogin(socialLoginDto.getToken());
 //        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 //
 //        final String token = jwtTokenUtil.generateToken(userDetails);

@@ -9,6 +9,7 @@ import com.sweep.jaksim31.dto.token.TokenDTO;
 import com.sweep.jaksim31.dto.token.TokenReqDTO;
 import com.sweep.jaksim31.entity.members.Members;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
