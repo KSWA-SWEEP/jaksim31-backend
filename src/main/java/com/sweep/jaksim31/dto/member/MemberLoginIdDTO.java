@@ -1,15 +1,12 @@
 package com.sweep.jaksim31.dto.member;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * packageName :  com.sweep.jaksim31.dto.member
- * fileName : MemberRemoveDTO
+ * fileName : MemberRespDTO
  * author :  방근호
  * date : 2023-01-09
- * description : 회원 탈퇴를 위한 DTO
+ * description : 사용자 로그인 ID(Email)로 가입 여부 조회를 위한 DTO
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
@@ -18,9 +15,6 @@ import lombok.NoArgsConstructor;
  */
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class MemberRemoveDTO {
-    private String id;
-    private String password;
+public class MemberLoginIdDTO{
+    private String loginId;
 }

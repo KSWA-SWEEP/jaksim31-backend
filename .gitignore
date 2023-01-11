@@ -36,3 +36,7 @@ build/
 /logs
 applicaion.yml
 src/main/resources/application.yml
+
+### log files ###
+was-logs
+.logs

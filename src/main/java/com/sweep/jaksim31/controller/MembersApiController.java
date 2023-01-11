@@ -18,6 +18,18 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * packageName :  com.sweep.jaksim31.controller
+ * fileName : MembersApiController
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 인증 관련 API Controller
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현             사용자 정보 조회(by LoginId) API 추가
+ */
 
 @Slf4j
 @RestController
@@ -53,7 +65,7 @@ public class MembersApiController {
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
     @PostMapping("")
     public ResponseEntity<?> isMember(
-            @RequestBody MemberEmailDto memberRequestDto) {
+            @RequestBody MemberLoginIdDTO memberRequestDto) {
         return memberServiceImpl.isMember(memberRequestDto);
     }
 
@@ -72,13 +84,20 @@ public class MembersApiController {
         return memberServiceImpl.updatePw(userId, memberUpdateDTO);
     }
 
+//    @Hidden
+    @Operation(summary = "LoginID로 사용자 정보 조회", description = "Login ID로 자신의 정보를 요청합니다.")
+    @GetMapping("")
+    public ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(@RequestParam("loginId") String loginId) {
+        return memberServiceImpl.getMyInfoByLoginId(loginId);
+    }
+
     // ================================================== //
     // ================================================== //
     // ================================================== //
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/{userId}")
-    public ResponseEntity<MemberRespDTO> getMyInfo(@PathVariable("userId") String userId) {
+    public ResponseEntity<MemberInfoDTO> getMyInfo(@PathVariable("userId") String userId) {
         return memberServiceImpl.getMyInfo(userId);
     }
 

@@ -10,27 +10,27 @@ import java.util.List;
 
 /**
  * packageName :  com.sweep.jaksim31.dto.member
- * fileName : MemberRespDTO
- * author :  방근호
- * date : 2023-01-09
- * description : 회원 가입 후 확인을 위해 가입 된 사용자 정보 전송을 위한 DTO
+ * fileName : MemberInfoDTO
+ * author :  김주현
+ * date : 2023-01-11
+ * description : 사용자 정보 조회를 위한 DTO
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
- * 2023-01-09           방근호             최초 생성
- * 2023-01-11           김주현             field 수정
+ * 2023-01-11           김주현             최초 생성
  */
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class MemberRespDTO {
-
+public class MemberInfoDTO {
     private String id;
     private String loginId;
     private String username;
+    private String profilePhoto;
+    private List<Diary> recentDiaries;
 
-    public static MemberRespDTO of(Members members) {
-        return new MemberRespDTO(members.getId().toString(), members.getLoginId(), members.getUsername());
+    public static MemberInfoDTO of(Members members) {
+        return new MemberInfoDTO(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfilePhoto(), members.getRecentDiaries());
     }
 }

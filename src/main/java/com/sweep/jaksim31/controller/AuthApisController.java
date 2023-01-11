@@ -1,7 +1,7 @@
 package com.sweep.jaksim31.controller;
 
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
-import com.sweep.jaksim31.dto.member.MemberEmailDto;
+import com.sweep.jaksim31.dto.member.MemberLoginIdDTO;
 import com.sweep.jaksim31.dto.member.MemberReqDTO;
 import com.sweep.jaksim31.dto.member.MemberRespDTO;
 import com.sweep.jaksim31.dto.member.MemberUpdateDTO;
@@ -18,11 +18,17 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * AuthController 설명 : auth controller
- * @author jowonjun
- * @version 1.0.0
- * 작성일 : 2022/02/14
- **/
+ * packageName :  com.sweep.jaksim31.controller
+ * fileName : MemberRespDTO
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 인증 관련 API Controller
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ */
+
 @Slf4j
 @RestController
 @RequestMapping("/v0/auth")

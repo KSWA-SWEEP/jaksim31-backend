@@ -109,11 +109,21 @@ public class TokenProvider {
      * @param refreshToken
      * @return TOEKN DTO를 생성한다.
      */
-    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime) {
+//    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime) {
+//        return TokenDTO.builder()
+//                .accessToken(accessToken)
+//                .refreshToken(refreshToken)
+//                .expTime(expTime)
+//                .loginId("")
+//                .grantType(BEARER_TYPE)
+//                .build();
+//    }
+    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime, String loginId) {
         return TokenDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expTime(expTime)
+                .loginId(loginId)
                 .grantType(BEARER_TYPE)
                 .build();
     }

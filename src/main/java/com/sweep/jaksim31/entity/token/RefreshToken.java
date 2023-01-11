@@ -7,6 +7,18 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+/**
+ * packageName :  com.sweep.jaksim31.entity.token
+ * fileName : RefreshToken
+ * author :  방근호
+ * date : 2023-01-09
+ * description : Refresh token Entity
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현             field 수정
+ */
 
 
 @Getter
@@ -16,7 +28,8 @@ public class RefreshToken {
 
     @Id
     private String tokenId;
-    private String email;
+    @Field("email")
+    private String loginId;
     private String value;
 
     public void updateValue(String token) {
@@ -24,8 +37,8 @@ public class RefreshToken {
     }
 
     @Builder
-    public RefreshToken(String email, String value) {
-        this.email = email;
+    public RefreshToken(String loginId, String value) {
+        this.loginId = loginId;
         this.value = value;
     }
 }
