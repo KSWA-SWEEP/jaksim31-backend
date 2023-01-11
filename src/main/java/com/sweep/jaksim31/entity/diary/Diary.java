@@ -1,9 +1,7 @@
 package com.sweep.jaksim31.entity.diary;
 
 import com.sweep.jaksim31.dto.diary.DiaryDTO;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -28,6 +26,7 @@ import static java.time.LocalDate.now;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Document(collection="diary")
 public class Diary {
     @Id
@@ -56,15 +55,6 @@ public class Diary {
         this.emotion = emotion;
         this.keywords = keywords;
         this.thumbnail = thumbnail;
-    }
-
-    public Diary(){
-        this.userId = new ObjectId();
-        this.content = "";
-        this.date = LocalDate.now().atTime(9,0);
-        this.emotion = "";
-        this.keywords = new String[3];
-        this.thumbnail = "";
     }
 
     public Diary(String diaryId, DiaryDTO diaryDto){

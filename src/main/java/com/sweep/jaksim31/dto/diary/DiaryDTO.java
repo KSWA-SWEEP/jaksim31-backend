@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 /**
@@ -16,16 +18,23 @@ import java.time.LocalDate;
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
- * 2023-01-09                김주현             최초 생성
+ * 2023-01-09           김주현             최초 생성
+ * 2023-01-11           김주현       Spring Validation 추가
  */
 
 @Data
 public class DiaryDTO {
+    @NotBlank(message = "사용자를 찾을 수 없습니다.")
     String user_id;
+    @NotBlank(message = "내용을 입력해주세요.")
     String content;
+    @NotNull(message = "날짜를 입력해주세요.")
     LocalDate date;
+    @NotBlank(message = "감정 분석 결과가 없습니다.")
     String emotion;
+    @NotNull(message = "키워드가 없습니다.")
     String[] keywords;
+    @NotBlank(message = "썸네일이 없습니다.")
     String thumbnail;
 
     @Builder
