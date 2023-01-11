@@ -40,6 +40,7 @@ public class MemberReqDTO {
                 .register_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .delYn('N')
+                .isSocial(false)
                 .recentDiaries(new ArrayList<>())
                 .profilePhoto(profilePhoto)
                 .build();

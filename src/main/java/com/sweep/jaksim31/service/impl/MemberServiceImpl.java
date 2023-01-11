@@ -76,6 +76,8 @@ public class MemberServiceImpl implements MemberService {
         }
 
         Members members = memberRequestDto.toMember(passwordEncoder);
+        if(members.getPassword() == null)
+            members.setIsSocial(true);
         log.debug("member = {}", members);
 
         return ResponseEntity.ok(MemberRespDTO.of(memberRepository.save(members)));
