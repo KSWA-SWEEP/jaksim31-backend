@@ -34,6 +34,7 @@ import static com.sweep.jaksim31.entity.auth.MemberAuth.ROLE_USER;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
+ * 2023-01-12           김주현             profilePhoto -> profileImage
  */
 
 @Getter
@@ -50,8 +51,9 @@ public class Members {
     private String username;
 
     private Boolean isSocial; // 소셜 로그인 사용자 여부
-    private String profilePhoto;
+    private String profileImage;
     private List<Diary> recentDiaries;
+    private int diaryTotal; // 총 일기 수
     private char delYn;
     @CreatedDate
     private Instant registerDate;
@@ -63,7 +65,7 @@ public class Members {
 
     @Builder
     public Members(String username, String loginId, String password, Boolean isSocial, char delYn, List<Diary> recentDiaries,
-                   String profilePhoto, Set<Authority> authorities, Instant register_date, Instant update_date) {
+                   String profileImage, int diaryTotal, Set<Authority> authorities, Instant register_date, Instant update_date) {
         this.username = username;
         this.loginId = loginId;
         this.password = password;
@@ -71,8 +73,9 @@ public class Members {
         this.registerDate = register_date;
         this.updateDate = update_date;
         this.isSocial = isSocial;
+        this.diaryTotal = diaryTotal;
         this.recentDiaries = recentDiaries;
-        this.profilePhoto = profilePhoto;
+        this.profileImage = profileImage;
         this.addAuthority(new Authority(username, MemberAuth.of("ROLE_USER")));
         System.out.println();
     }
@@ -101,7 +104,7 @@ public class Members {
             this.password = passwordEncoder.encode(dto.getNewPassword());
         }
         if(dto.getUsername() != null) this.username = dto.getUsername();
-        if(dto.getProfilePhoto() != null) this.profilePhoto = dto.getProfilePhoto();
+        if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
         this.updateDate = Instant.now();
     }
 

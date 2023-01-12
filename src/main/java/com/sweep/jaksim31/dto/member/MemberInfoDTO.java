@@ -18,6 +18,7 @@ import java.util.List;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-11           김주현             최초 생성
+ * 2023-01-12           김주현             profilePhoto -> profileImage
  */
 
 @Data
@@ -27,10 +28,11 @@ public class MemberInfoDTO {
     private String id;
     private String loginId;
     private String username;
-    private String profilePhoto;
+    private String profileImage;
     private List<Diary> recentDiaries;
+    private int diaryTotal;
 
     public static MemberInfoDTO of(Members members) {
-        return new MemberInfoDTO(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfilePhoto(), members.getRecentDiaries());
+        return new MemberInfoDTO(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
     }
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
+ * 2023-01-12           김주현             profilePhoto -> profileImage / diaryTotal 추가
  */
 
 @Data
@@ -30,7 +31,7 @@ public class MemberReqDTO {
     private String loginId;
     private String password;
     private String username;
-    private String profilePhoto;
+    private String profileImage;
 
     public Members toMember(PasswordEncoder passwordEncoder) {
         return Members.builder()
@@ -41,8 +42,9 @@ public class MemberReqDTO {
                 .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .delYn('N')
                 .isSocial(false)
+                .diaryTotal(0)
                 .recentDiaries(new ArrayList<>())
-                .profilePhoto(profilePhoto)
+                .profileImage(profileImage)
                 .build();
     }
 

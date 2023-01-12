@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
+ * 2023-01-12           김주현             profilePhoto -> profileImage
  */
 
 @Data
@@ -24,7 +25,7 @@ public class MemberUpdateDTO {
     private String oldPassword;
     private String newPassword;
     private String username;
-    private String profilePhoto;
+    private String profileImage;
 //    private List<String> authorities;
 
 }
