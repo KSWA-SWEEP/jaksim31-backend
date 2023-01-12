@@ -19,13 +19,14 @@ import java.util.List;
  * -----------------------------------------------------------
  * 2023-01-11           김주현             최초 생성
  * 2023-01-12           김주현             profilePhoto -> profileImage
+ *                      김주현             id -> userId
  */
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class MemberInfoDTO {
-    private String id;
+    private String userId;
     private String loginId;
     private String username;
     private String profileImage;
