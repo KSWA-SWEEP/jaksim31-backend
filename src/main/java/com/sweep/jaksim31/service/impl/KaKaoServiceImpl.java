@@ -46,7 +46,6 @@ public class KaKaoServiceImpl implements KakaoService {
 
     private final AuthenticationManager authenticationManager;
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
@@ -77,11 +76,15 @@ public class KaKaoServiceImpl implements KakaoService {
     public ResponseEntity<TokenDTO> kakaologin(KaKaoInfoDTO loginReqDTO, HttpServletResponse response) {
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken =
                 new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),"");
+        System.out.println(customLoginIdPasswordAuthToken);
+        System.out.println("Step 1 Complete.");
 
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
+        System.out.println("Step 2 Complete");
         String loginId = authenticate.getName();
         Members members = customUserDetailsService.getMember(loginId);
 
+        //System.out.println("Step 2 Complete");
         String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
@@ -190,6 +193,7 @@ public class KaKaoServiceImpl implements KakaoService {
 //            JSONObject object = (JSONObject) jsonParser.parse(test);
 //            System.out.println(object.toString());
 
+            // Kakao UserInfo 를 담은 Result를 DTO 형식으로 변환 후 Return
             JSONParser jsonParser = new JSONParser();
             Object obj = jsonParser.parse(result);
             JSONObject jsonObj = (JSONObject) obj;
@@ -205,6 +209,7 @@ public class KaKaoServiceImpl implements KakaoService {
                     .build();
 
             return kakaoInfoDTO;
+
         } catch (Exception e) {
             e.printStackTrace();
         }
