@@ -1,15 +1,10 @@
 package com.sweep.jaksim31.controller;
 
 import com.sweep.jaksim31.dto.login.KaKaoInfoDTO;
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
 import com.sweep.jaksim31.entity.members.MemberRepository;
 import com.sweep.jaksim31.service.impl.KaKaoServiceImpl;
-import com.sweep.jaksim31.service.impl.MemberServiceImpl;
-import com.sweep.jaksim31.util.exceptionhandler.BizException;
-import com.sweep.jaksim31.util.exceptionhandler.MemberExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,16 +26,15 @@ public class KakaoController {
         String kakaoApiAccessToken = kakaoApi.getAccessToken(code);
         // 받은 토큰으로 유저 정보 얻기
         KaKaoInfoDTO userInfo = kakaoApi.getUserInfo(kakaoApiAccessToken);
-
+        // HTTP 세션에 AccessToken, User Name 저장
         if(userInfo.getLoginId() != null) {
-            session.setAttribute("userId", userInfo.getUserName());
+            session.setAttribute("userName", userInfo.getUsername());
             session.setAttribute("accessToken", kakaoApiAccessToken);
         }
 
         // 회원가입이 되어있는지 조회하고 없으면 회원가입 있으면 로그인.
         if (memberRepository.existsByLoginId(userInfo.getLoginId())) {
             kakaoApi.kakaologin(userInfo, response);
-            System.out.println("Existing ID");
         }
         else {
             kakaoApi.kakaosignup(userInfo);
@@ -49,8 +43,7 @@ public class KakaoController {
         // Redirect를 위한 Redirectview 생성과 넘겨줄 파라미터 키-값 추가, 파라미터 값들 노출 여부 설정
         RedirectView redirectView = new RedirectView();
         redirectView.setExposeModelAttributes(false);
-        redirectView.addStaticAttribute("userId", userInfo.getLoginId());
-        //redirectView.addStaticAttribute("nickname", userInfo.get("nickname"));
+        redirectView.addStaticAttribute("nickname", userInfo.getUsername());
         redirectView.setUrl("http://localhost:3000/home/landing");
 
 

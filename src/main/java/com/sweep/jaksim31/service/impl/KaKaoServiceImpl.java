@@ -49,6 +49,7 @@ public class KaKaoServiceImpl implements KakaoService {
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
+    private final PasswordEncoder passwordEncoder;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
 
@@ -63,7 +64,7 @@ public class KaKaoServiceImpl implements KakaoService {
             throw new BizException(MemberExceptionType.DUPLICATE_USER);
         }
 
-        Members members = memberRequestDto.toMember();
+        Members members = memberRequestDto.toMember(passwordEncoder);
         if(members.getPassword() == null)
             members.setIsSocial(true);
         log.debug("member = {}", members);
@@ -75,7 +76,7 @@ public class KaKaoServiceImpl implements KakaoService {
     @Transactional
     public ResponseEntity<TokenDTO> kakaologin(KaKaoInfoDTO loginReqDTO, HttpServletResponse response) {
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken =
-                new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),"");
+                new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getLoginId());
         System.out.println(customLoginIdPasswordAuthToken);
         System.out.println("Step 1 Complete.");
 
@@ -204,7 +205,7 @@ public class KaKaoServiceImpl implements KakaoService {
 
             KaKaoInfoDTO kakaoInfoDTO = new KaKaoInfoDTO().builder()
                     .loginId(jsonObj.get("id").toString())
-                    .userName(properties.get("nickname").toString())
+                    .username(properties.get("nickname").toString())
                     .profileImage(properties.get("profile_image").toString())
                     .build();
 

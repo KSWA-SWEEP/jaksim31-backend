@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,13 +17,14 @@ import java.time.temporal.ChronoUnit;
 public class KaKaoInfoDTO {
 
     private String loginId;
-    private String userName;
+    private String username;
     private String profileImage;
 
-    public Members toMember() {
+    public Members toMember(PasswordEncoder passwordEncoder) {
         return Members.builder()
                 .loginId(loginId)
-                .username(userName)
+                .username(username)
+                .password(passwordEncoder.encode(loginId))
                 .profileImage(profileImage)
                 .register_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
