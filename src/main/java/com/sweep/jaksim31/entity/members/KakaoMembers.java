@@ -1,7 +1,6 @@
 package com.sweep.jaksim31.entity.members;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sweep.jaksim31.dto.member.MemberUpdateDTO;
 import com.sweep.jaksim31.entity.auth.Authority;
 import lombok.*;
@@ -9,7 +8,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
@@ -24,7 +22,7 @@ import java.util.stream.Collectors;
 public class KakaoMembers {
 
     @Id
-    private String user_id;
+    private String login_id;
 
     private String username;
     private String email;
@@ -39,9 +37,9 @@ public class KakaoMembers {
 
 
     @Builder
-    public KakaoMembers(String user_id, String username, String email, String profile_image, char delYn,
-                   Set<Authority> authorities, Instant register_date, Instant update_date) {
-        this.user_id = user_id;
+    public KakaoMembers(String login_id, String username, String email, String profile_image, char delYn,
+                        Set<Authority> authorities, Instant register_date, Instant update_date) {
+        this.login_id = login_id;
         this.email = email;
         this.username = username;
         this.profile_image = profile_image;
@@ -66,7 +64,7 @@ public class KakaoMembers {
     }
 
     public void updateMember(MemberUpdateDTO dto, PasswordEncoder passwordEncoder) {
-        if(dto.getUsername() != null) this.user_id = dto.getUsername();
+        if(dto.getUsername() != null) this.login_id = dto.getUsername();
         this.update_date = Instant.now();
     }
 

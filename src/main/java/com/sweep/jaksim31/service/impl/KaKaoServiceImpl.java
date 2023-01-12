@@ -1,14 +1,11 @@
 package com.sweep.jaksim31.service.impl;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sweep.jaksim31.auth.CustomEmailPasswordAuthToken;
+import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.dto.login.KaKaoInfoDTO;
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
-import com.sweep.jaksim31.dto.member.MemberReqDTO;
 import com.sweep.jaksim31.dto.member.MemberRespDTO;
 import com.sweep.jaksim31.dto.token.TokenDTO;
 import com.sweep.jaksim31.entity.members.MemberRepository;
@@ -21,7 +18,10 @@ import com.sweep.jaksim31.util.exceptionhandler.BizException;
 import com.sweep.jaksim31.util.exceptionhandler.MemberExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,7 +37,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TimeZone;
 
 @Slf4j
@@ -60,27 +59,31 @@ public class KaKaoServiceImpl implements KakaoService {
 
     @Override
     @Transactional
-    public MemberRespDTO kakaosignup(MemberReqDTO memberRequestDto) {
-        if (memberRepository.existsByEmail(memberRequestDto.getEmail())) {
+    public ResponseEntity<MemberRespDTO> kakaosignup(KaKaoInfoDTO memberRequestDto) {
+        if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
             throw new BizException(MemberExceptionType.DUPLICATE_USER);
         }
 
-        Members members = memberRequestDto.toMember(passwordEncoder);
+        Members members = memberRequestDto.toMember();
+        if(members.getPassword() == null)
+            members.setIsSocial(true);
         log.debug("member = {}", members);
-        return MemberRespDTO.of(memberRepository.save(members));
+
+        return ResponseEntity.ok(MemberRespDTO.of(memberRepository.save(members)));
     }
 
     @Override
     @Transactional
-    public TokenDTO kakaologin(LoginReqDTO loginReqDTO, HttpServletResponse response) {
-        CustomEmailPasswordAuthToken customEmailPasswordAuthToken = new CustomEmailPasswordAuthToken(loginReqDTO.getEmail(),loginReqDTO.getPassword());
+    public ResponseEntity<TokenDTO> kakaologin(KaKaoInfoDTO loginReqDTO, HttpServletResponse response) {
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken =
+                new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),"");
 
-        Authentication authenticate = authenticationManager.authenticate(customEmailPasswordAuthToken);
-        String email = authenticate.getName();
-        Members members = customUserDetailsService.getMember(email);
+        Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
+        String loginId = authenticate.getName();
+        Members members = customUserDetailsService.getMember(loginId);
 
-        String accessToken = tokenProvider.createAccessToken(email, members.getAuthorities());
-        String refreshToken = tokenProvider.createRefreshToken(email, members.getAuthorities());
+        String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
+        String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
 
         int cookieMaxAge = (int) rtkLive / 60;
@@ -97,20 +100,17 @@ public class KaKaoServiceImpl implements KakaoService {
         String expTime = sdf.format(newExpTime);
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-//        System.out.println("redis " + redisService.getValues(email));
-
-        System.out.println(accessToken);
-        System.out.println(refreshToken);
+//        System.out.println("redis " + redisService.getValues(loginId));
 
         //db에 token 저장
         refreshTokenRepository.save(
                 RefreshToken.builder()
-                        .email(email)
+                        .loginId(loginId)
                         .value(refreshToken)
                         .build()
         );
 
-        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
+        return ResponseEntity.ok(tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId));
 
     }
 
@@ -174,7 +174,7 @@ public class KaKaoServiceImpl implements KakaoService {
             System.out.println("responseCode =" + responseCode);
 
             BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
+            System.out.println(br);
             String line = "";
             String result = "";
 
@@ -183,26 +183,32 @@ public class KaKaoServiceImpl implements KakaoService {
             }
             System.out.println("response body ="+result);
 
-            JsonParser parser = new JsonParser();
-            JsonElement element =  parser.parse(result);
+//            ObjectMapper mapper = new ObjectMapper();
+//            JSONParser jsonParser = new JSONParser();
+//            String test = mapper.writeValueAsString(result);
+//
+//            JSONObject object = (JSONObject) jsonParser.parse(test);
+//            System.out.println(object.toString());
 
-            JsonObject properties = element.getAsJsonObject().get("properties").getAsJsonObject();
-            JsonObject kakaoAccount = element.getAsJsonObject().get("kakao_account").getAsJsonObject();
+            JSONParser jsonParser = new JSONParser();
+            Object obj = jsonParser.parse(result);
+            JSONObject jsonObj = (JSONObject) obj;
+            JSONObject properties = (JSONObject) jsonObj.get("properties");
+            System.out.println(jsonObj.get("id"));
+            System.out.println(properties.get("nickname"));
+            System.out.println(properties.get("profile_image"));
 
-            String nickname = properties.getAsJsonObject().get("nickname").getAsString();
-            String profile_image = properties.getAsJsonObject().get("profile_image").getAsString();
-            String email = kakaoAccount.getAsJsonObject().get("email").getAsString();
-            String user_id = element.getAsJsonObject().get("id").getAsString();
+            KaKaoInfoDTO kakaoInfoDTO = new KaKaoInfoDTO().builder()
+                    .loginId(jsonObj.get("id").toString())
+                    .userName(properties.get("nickname").toString())
+                    .profileImage(properties.get("profile_image").toString())
+                    .build();
 
-            //userInfo.put("profile_image", profile_image);
-            //userInfo.put("email", email);
-            //userInfo.put("nickname", nickname);
-            //userInfo.put("user_id", user_id);
-
+            return kakaoInfoDTO;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return userInfo;
+        return null;
     }
 
 
