@@ -30,21 +30,13 @@ import static java.time.LocalDate.now;
 @Document(collection="diary")
 public class Diary {
     @Id
-    @Field("_id")
     private ObjectId id;
-    @Field("user_id")
     private ObjectId userId;
-    @Field("content")
     private String content;
-    @Field("date")
     private LocalDateTime date;
-    @Field("modify_date")
     private LocalDateTime modifyDate;
-    @Field("emotion")
     private String emotion;
-    @Field("keywords")
     private String[] keywords;
-    @Field("thumbnail")
     private String thumbnail;
     @Builder
     public Diary(ObjectId userId, String content, LocalDate date, String emotion, String[] keywords, String thumbnail){

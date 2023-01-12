@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.service.impl;
 
 import com.sweep.jaksim31.dto.diary.DiaryDTO;
+import com.sweep.jaksim31.dto.diary.DiaryInfoDTO;
 import com.sweep.jaksim31.entity.diary.Diary;
 import com.sweep.jaksim31.entity.diary.DiaryRepository;
 import com.sweep.jaksim31.entity.members.MemberRepository;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * packageName :  com.sweep.jaksim31.service.impl
@@ -30,6 +32,7 @@ import java.util.Map;
  * -----------------------------------------------------------
  * 2023-01-09           김주현             최초 생성
  * 2023-01-11           김주현             ErrorHandling 추가
+ * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -50,8 +53,10 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 사용자 id 전체 일기 조회
-    public List<Diary> findUserDiaries(String user_id){
-        return diaryRepository.findAllByUserId(new ObjectId(user_id));
+    public List<DiaryInfoDTO> findUserDiaries(String user_id){
+        return diaryRepository.findAllByUserId(new ObjectId(user_id)).stream()
+                .map(m -> new DiaryInfoDTO().of(m))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -89,22 +94,22 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     // 일기 삭제
     public String remove(String diary_id) {
-        Diary diary = diaryRepository.findById(diary_id).orElseThrow(() -> new IllegalArgumentException(String.format("[service] Diary id \"%s\" not exist!!", diary_id)));
+        Diary diary = diaryRepository.findById(diary_id).orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         diaryRepository.delete(diary);
         return diary.getId().toString();
     }
 
     @Override
     // 일기 조회
-    public Diary findDiary(String diary_id) {
-        return diaryRepository.findById(new ObjectId(diary_id)).orElseThrow(() -> new IllegalArgumentException(String.format("[service] Diary id \"%s\" not exist!!", diary_id)));
+    public DiaryInfoDTO findDiary(String diary_id) {
+        return new DiaryInfoDTO().of(diaryRepository.findById(new ObjectId(diary_id)).orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY)));
     }
 
     @Override
     // 일기 검색
-    public List<Diary> findDiaries(String userId, Map<String, Object> params){
+    public List<DiaryInfoDTO> findDiaries(String userId, Map<String, Object> params){
         // Repository 방식
-        List<Diary> diaries;
+        List<DiaryInfoDTO> diaries;
         LocalDateTime start_date;
         LocalDateTime end_date;
         // 시간 조건 설정
@@ -118,9 +123,13 @@ public class DiaryServiceImpl implements DiaryService {
             end_date = LocalDate.now().atTime(9,0);
         // 조건으로 조회
         if(params.keySet().contains("emotion"))
-            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetween(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date);
+            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetween(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
+                    .map(m -> new DiaryInfoDTO().of(m))
+                    .collect(Collectors.toList());
         else
-            diaries = diaryRepository.findDiariesByUserIdAndDateBetween(new ObjectId(userId), start_date, end_date);
+            diaries = diaryRepository.findDiariesByUserIdAndDateBetween(new ObjectId(userId), start_date, end_date).stream()
+                    .map(m -> new DiaryInfoDTO().of(m))
+                    .collect(Collectors.toList());
         System.out.println("Diaries : " + diaries);
 
         return diaries;

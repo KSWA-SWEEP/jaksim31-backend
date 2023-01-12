@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.controller;
 
 import com.sweep.jaksim31.dto.diary.DiaryDTO;
+import com.sweep.jaksim31.dto.diary.DiaryInfoDTO;
 import com.sweep.jaksim31.entity.diary.Diary;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,7 @@ import java.util.Map;
  * 2023-01-09           김주현             최초 생성
  * 2023-01-10           김주현             개별 일기 조회 추가
  * 2023-01-11           김주현             Tag 추가 및 일기 존재 여부 확인 api 추가
+ * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -82,14 +84,14 @@ public class DiaryApiController {
     // 개별 일기 조회
     @Operation(summary = "개별 일기 조회", description = "일기ID로 하나의 일기를 조회합니다.")
     @GetMapping(value="{userId}/{diaryId}")
-    public Diary findDiary(@PathVariable String userId, @PathVariable String diaryId){
+    public DiaryInfoDTO findDiary(@PathVariable String userId, @PathVariable String diaryId){
         return diaryService.findDiary(diaryId);
     }
 
     // 사용자 일기 검색
     @Operation(summary = "사용자 일기 겁색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public List<Diary> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
+    public List<DiaryInfoDTO> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
         System.out.println(userId + "'s diaries");
         // 조건이 없으면 사용자 일기 전체 조회
         if(params.isEmpty()){

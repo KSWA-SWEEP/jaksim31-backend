@@ -19,6 +19,7 @@ import java.util.List;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
+ * 2023-01-12           김주현             id -> userId
  */
 
 @Data
@@ -26,7 +27,7 @@ import java.util.List;
 @NoArgsConstructor
 public class MemberRespDTO {
 
-    private String id;
+    private String userId;
     private String loginId;
     private String username;
 
