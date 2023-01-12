@@ -28,7 +28,6 @@ public class RefreshToken {
 
     @Id
     private String tokenId;
-    @Field("email")
     private String loginId;
     private String value;
 

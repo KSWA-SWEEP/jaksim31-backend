@@ -28,6 +28,19 @@ import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * packageName :  com.sweep.jaksim31.auth
+ * fileName : TokenProvider
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 사용자 Token 생성 및 인증을 위한 Provider
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현             Email -> LoginId
+ */
+
 @Slf4j
 @Getter
 @Component
@@ -51,9 +64,9 @@ public class TokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    protected String createToken(String email, Set<Authority> auth, long tokenValid) {
+    protected String createToken(String loginId, Set<Authority> auth, long tokenValid) {
         // ex) sub : abc@abc.com
-        Claims claims = Jwts.claims().setSubject(email);
+        Claims claims = Jwts.claims().setSubject(loginId);
 
         // ex)  auth : ROLE_USER,ROLE_ADMIN
         claims.put(AUTHORITIES_KEY,
@@ -75,30 +88,30 @@ public class TokenProvider {
 
     /**
      *
-     * @param email
+     * @param loginId
      * @param auth
      * @return 엑세스 토큰 생성
      */
-    public String createAccessToken(String email,Set<Authority> auth) {
-        return this.createToken(email,auth,ACCESS_TOKEN_EXPIRE_TIME);
+    public String createAccessToken(String loginId,Set<Authority> auth) {
+        return this.createToken(loginId,auth,ACCESS_TOKEN_EXPIRE_TIME);
     }
 
     /**
      *
-     * @param email
+     * @param loginId
      * @param auth
      * @return 리프레시 토큰 생성
      */
-    public String createRefreshToken(String email,Set<Authority> auth) {
-        return this.createToken(email,auth,REFRESH_TOKEN_EXPIRE_TIME);
+    public String createRefreshToken(String loginId,Set<Authority> auth) {
+        return this.createToken(loginId,auth,REFRESH_TOKEN_EXPIRE_TIME);
     }
 
     /**
      *
      * @param token
-     * @return 토큰 값을 파싱하여 클레임에 담긴 이메일 값을 가져온다.
+     * @return 토큰 값을 파싱하여 클레임에 담긴 LoginId 값을 가져온다.
      */
-    public String getMemberEmailByToken(String token) {
+    public String getMemberLoginIdByToken(String token) {
         // 토큰의 claim 의 sub 키에 이메일 값이 들어있다.
         return this.parseClaims(token).getSubject();
     }
@@ -138,7 +151,7 @@ public class TokenProvider {
         }
 
         log.debug("claims.getAuth = {}",claims.get(AUTHORITIES_KEY));
-        log.debug("claims.getEmail = {}",claims.getSubject());
+        log.debug("claims.getLoginId = {}",claims.getSubject());
 
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities =
@@ -153,7 +166,7 @@ public class TokenProvider {
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);
 
-        return new CustomEmailPasswordAuthToken(principal, "", authorities);
+        return new CustomLoginIdPasswordAuthToken(principal, "", authorities);
     }
 
     public int validateToken(String token) {

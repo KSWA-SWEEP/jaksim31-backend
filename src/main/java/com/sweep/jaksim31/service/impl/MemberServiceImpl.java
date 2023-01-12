@@ -1,6 +1,6 @@
 package com.sweep.jaksim31.service.impl;
 
-import com.sweep.jaksim31.auth.CustomEmailPasswordAuthToken;
+import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
@@ -85,9 +85,9 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public ResponseEntity<TokenDTO> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
-        CustomEmailPasswordAuthToken customEmailPasswordAuthToken = new CustomEmailPasswordAuthToken(loginReqDTO.getEmail(),loginReqDTO.getPassword());
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getPassword());
 
-        Authentication authenticate = authenticationManager.authenticate(customEmailPasswordAuthToken);
+        Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
         String loginId = authenticate.getName();
         Members members = customUserDetailsService.getMember(loginId);
 
@@ -109,7 +109,7 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-//        System.out.println("redis " + redisService.getValues(email));
+//        System.out.println("redis " + redisService.getValues(loginId));
 
         //db에 token 저장
         refreshTokenRepository.save(
@@ -147,7 +147,7 @@ public class MemberServiceImpl implements MemberService {
         log.debug("Authentication = {}", authentication);
 
 
-        // DB에서 Member Email 를 기반으로 Refresh Token 값 가져옴
+        // DB에서 Member LoginId 를 기반으로 Refresh Token 값 가져옴
         RefreshToken refreshToken = refreshTokenRepository.findByLoginId(authentication.getName())
                 .orElseThrow(() -> new BizException(MemberExceptionType.LOGOUT_MEMBER)); // 로그 아웃된 사용자
 
@@ -163,7 +163,7 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
 
         // 5. 새로운 토큰 생성
-        String loginId = tokenProvider.getMemberEmailByToken(originRefreshToken);
+        String loginId = tokenProvider.getMemberLoginIdByToken(originRefreshToken);
         Members members = customUserDetailsService.getMember(loginId);
 
         String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());

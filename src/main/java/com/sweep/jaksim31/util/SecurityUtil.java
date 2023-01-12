@@ -13,7 +13,7 @@ public class SecurityUtil {
     /**
      * @return SecurityContext에 저장되어 있는 유저 아이디를 반환함
      */
-    public static String getCurrentMemberEmail() {
+    public static String getCurrentMemberLoginId() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if(authentication == null || authentication.getName() == null) {

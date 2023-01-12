@@ -6,7 +6,7 @@ import lombok.Data;
  * fileName : MemberRespDTO
  * author :  방근호
  * date : 2023-01-09
- * description : 사용자 로그인 ID(Email)로 가입 여부 조회를 위한 DTO
+ * description : 사용자 로그인 ID(LoginId)로 가입 여부 조회를 위한 DTO
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
