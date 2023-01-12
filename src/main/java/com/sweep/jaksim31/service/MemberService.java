@@ -15,9 +15,10 @@ public interface MemberService {
     ResponseEntity<TokenDTO> login(LoginReqDTO loginReqDTO, HttpServletResponse response);
     ResponseEntity<?> reissue(TokenReqDTO tokenReqDTO, HttpServletResponse response);
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response);
-    ResponseEntity<?> isMember(MemberEmailDto memberRequestDto);
+    ResponseEntity<?> isMember(MemberLoginIdDTO memberRequestDto);
     ResponseEntity<?> updatePw(String userId, MemberUpdateDTO memberUpdateDTO);
-    ResponseEntity<MemberRespDTO> getMyInfo(String userId);
+    ResponseEntity<MemberInfoDTO> getMyInfo(String userId);
+    ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(String loginId);
     ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateDTO memberUpdateDTO);
     ResponseEntity<Boolean> isMyPassword(String userId, MemberIsMyPwDTO dto);
     ResponseEntity<String> remove(String userId, MemberRemoveDTO dto);

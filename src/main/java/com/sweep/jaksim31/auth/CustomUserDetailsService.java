@@ -16,6 +16,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+/**
+ * packageName :  com.sweep.jaksim31.auth
+ * fileName : CustomUserDetailsService
+ * author :  방근호
+ * date : 2023-01-09
+ * description : Customizing User Detail Service
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현             email -> loginId
+ */
 
 @Service
 @RequiredArgsConstructor
@@ -25,16 +37,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String email) throws BizException {
-        log.debug("CustomUserDetailsService -> email = {}",email);
-        return memberRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String loginId) throws BizException {
+        log.debug("CustomUserDetailsService -> loginId = {}",loginId);
+        return memberRepository.findMembersByLoginId(loginId)
                 .map(this::createUserDetails)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
 
     @Transactional(readOnly = true)
-    public Members getMember(String email) throws BizException {
-        return memberRepository.findByEmail(email)
+    public Members getMember(String loginId) throws BizException {
+        return memberRepository.findMembersByLoginId(loginId)
                 .orElseThrow(()->new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
 
@@ -51,7 +63,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         authList.forEach(o-> log.debug("authList -> {}",o.getAuthority()));
 
         return new User(
-                members.getEmail(),
+                members.getLoginId(),
                 members.getPassword(),
                 authList
         );

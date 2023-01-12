@@ -1,6 +1,6 @@
 package com.sweep.jaksim31.service.impl;
 
-import com.sweep.jaksim31.auth.CustomEmailPasswordAuthToken;
+import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
@@ -19,6 +19,7 @@ import com.sweep.jaksim31.util.exceptionhandler.JwtExceptionType;
 import com.sweep.jaksim31.util.exceptionhandler.MemberExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,11 +37,19 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-
 /**
- * MemberService 설명 : 멤버 등록 및 조회
- * @version 1.0.0
- **/
+ * packageName :  com.sweep.jaksim31.service.impl
+ * fileName : MemberServiceImpl
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 사용자 등록 및 조회를 위한 Services
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현          Members 수정으로 인한 Service 세부 수정
+ */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -62,11 +71,13 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public ResponseEntity<MemberRespDTO> signup(MemberReqDTO memberRequestDto) {
-        if (memberRepository.existsByEmail(memberRequestDto.getEmail())) {
+        if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
             throw new BizException(MemberExceptionType.DUPLICATE_USER);
         }
 
         Members members = memberRequestDto.toMember(passwordEncoder);
+        if(members.getPassword() == null)
+            members.setIsSocial(true);
         log.debug("member = {}", members);
 
         return ResponseEntity.ok(MemberRespDTO.of(memberRepository.save(members)));
@@ -74,14 +85,14 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public ResponseEntity<TokenDTO> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
-        CustomEmailPasswordAuthToken customEmailPasswordAuthToken = new CustomEmailPasswordAuthToken(loginReqDTO.getEmail(),loginReqDTO.getPassword());
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getPassword());
 
-        Authentication authenticate = authenticationManager.authenticate(customEmailPasswordAuthToken);
-        String email = authenticate.getName();
-        Members members = customUserDetailsService.getMember(email);
+        Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
+        String loginId = authenticate.getName();
+        Members members = customUserDetailsService.getMember(loginId);
 
-        String accessToken = tokenProvider.createAccessToken(email, members.getAuthorities());
-        String refreshToken = tokenProvider.createRefreshToken(email, members.getAuthorities());
+        String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
+        String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
 
         int cookieMaxAge = (int) rtkLive / 60;
@@ -98,17 +109,17 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-//        System.out.println("redis " + redisService.getValues(email));
+//        System.out.println("redis " + redisService.getValues(loginId));
 
         //db에 token 저장
         refreshTokenRepository.save(
                 RefreshToken.builder()
-                        .email(email)
+                        .loginId(loginId)
                         .value(refreshToken)
                         .build()
         );
 
-        return ResponseEntity.ok(tokenProvider.createTokenDTO(accessToken,refreshToken, expTime));
+        return ResponseEntity.ok(tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId));
 
     }
     @Override
@@ -130,14 +141,14 @@ public class MemberServiceImpl implements MemberService {
             throw new BizException(JwtExceptionType.REFRESH_TOKEN_EXPIRED); // 유효기간 끝난 토큰
         }
 
-        // 2. Access Token 에서 Member Email 가져오기
+        // 2. Access Token 에서 Member LoginId 가져오기
         Authentication authentication = tokenProvider.getAuthentication(originRefreshToken);
 //        Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         log.debug("Authentication = {}", authentication);
 
 
-        // DB에서 Member Email 를 기반으로 Refresh Token 값 가져옴
-        RefreshToken refreshToken = refreshTokenRepository.findByEmail(authentication.getName())
+        // DB에서 Member LoginId 를 기반으로 Refresh Token 값 가져옴
+        RefreshToken refreshToken = refreshTokenRepository.findByLoginId(authentication.getName())
                 .orElseThrow(() -> new BizException(MemberExceptionType.LOGOUT_MEMBER)); // 로그 아웃된 사용자
 
         // Refresh Token 일치하는지 검사
@@ -152,12 +163,12 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
 
         // 5. 새로운 토큰 생성
-        String email = tokenProvider.getMemberEmailByToken(originRefreshToken);
-        Members members = customUserDetailsService.getMember(email);
+        String loginId = tokenProvider.getMemberLoginIdByToken(originRefreshToken);
+        Members members = customUserDetailsService.getMember(loginId);
 
-        String newAccessToken = tokenProvider.createAccessToken(email, members.getAuthorities());
-        String newRefreshToken = tokenProvider.createRefreshToken(email, members.getAuthorities());
-        TokenDTO tokenDto = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime);
+        String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
+        String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
+        TokenDTO tokenDto = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime, loginId);
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
@@ -196,11 +207,11 @@ public class MemberServiceImpl implements MemberService {
         CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
 
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
-        String email = authentication.getName();
+        String loginId = authentication.getName();
 
         try{
-            if(refreshTokenRepository.findByEmail(email).isPresent()){
-                refreshTokenRepository.deleteByEmail(email);
+            if(refreshTokenRepository.findByLoginId(loginId).isPresent()){
+                refreshTokenRepository.deleteByLoginId(loginId);
             }
             return ResponseEntity.ok("로그아웃 되었습니다.");
         } catch (NullPointerException e){
@@ -209,20 +220,22 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<?> isMember(MemberEmailDto memberRequestDto) {
-        if (memberRepository.existsByEmail(memberRequestDto.getEmail())) {
-            return ResponseEntity.ok(memberRequestDto.getEmail() + " 해당 이메일은 가입하였습니다.");
+    public ResponseEntity<?> isMember(MemberLoginIdDTO memberRequestDto) {
+        if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
+            return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
         }else
             return ResponseEntity.notFound().build();
     }
     @Override
     @Transactional
-    public ResponseEntity<?> updatePw(String userId, MemberUpdateDTO dto) {
+    public ResponseEntity<?> updatePw(String id, MemberUpdateDTO dto) {
         Members members = memberRepository
-                .findByEmail(userId)
+                .findById(new ObjectId(id))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         try {
             members.updateMember(dto, passwordEncoder);
+            // 업데이트 한 정보 저장
+            memberRepository.save(members);
             return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("비밀번호가 일치하지 않습니다.");
@@ -235,25 +248,34 @@ public class MemberServiceImpl implements MemberService {
      */
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<MemberRespDTO> getMyInfo(String userId) {
-        return ResponseEntity.ok().body(memberRepository.findByEmail(userId)
-                .map(MemberRespDTO::of)
+    public ResponseEntity<MemberInfoDTO> getMyInfo(String userId) {
+        return ResponseEntity.ok().body(memberRepository.findById(new ObjectId(userId))
+                .map(MemberInfoDTO::of)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+    }
+
+    @Override
+    public ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(String loginId) {
+        return ResponseEntity.ok().body(memberRepository.findMembersByLoginId(loginId)
+                .map(MemberInfoDTO::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }
 
 
     /**
-     * @param userId DirtyChecking 을 통한 멤버 업데이트 ( Email은 업데이트 할 수 없다.)
+     * @param userId DirtyChecking 을 통한 멤버 업데이트 ( Login ID는 업데이트 할 수 없다.)
      * @param dto
      */
     @Override
     @Transactional
     public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateDTO dto) {
         Members members = memberRepository
-                .findByEmail(userId)
+                .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         try {
             members.updateMember(dto, passwordEncoder);
+            // 업데이트 한 정보 저장
+            memberRepository.save(members);
             return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("비밀번호가 일치하지 않습니다.");
@@ -264,7 +286,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<Boolean> isMyPassword(String userId, MemberIsMyPwDTO dto){
         Members members = memberRepository
-                .findByEmail(userId)
+                .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         if (passwordEncoder.matches(dto.getPassword(), members.getPassword())) return ResponseEntity.ok(true);
@@ -275,7 +297,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<String> remove(String userId, MemberRemoveDTO dto) {
         Members entity = memberRepository
-                .findByEmail(dto.getEmail())
+                .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         entity.remove('Y');

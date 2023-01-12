@@ -12,10 +12,23 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * packageName :  com.sweep.jaksim31.auth
+ * fileName : CustomLoginIdPasswordAuthProvider
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 사용자 인증을 위한 Provider
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-12           김주현       클래스 명 변경(CustomEmailPasswordAuthProvider -> CustomLoginIdPasswordAuthProvider)
+ */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class CustomEmailPasswordAuthProvider implements AuthenticationProvider {
+public class CustomLoginIdPasswordAuthProvider implements AuthenticationProvider {
 
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
@@ -23,7 +36,7 @@ public class CustomEmailPasswordAuthProvider implements AuthenticationProvider {
 
 
     protected void additionalAuthenticationChecks(UserDetails userDetails,
-                                                  CustomEmailPasswordAuthToken authentication) throws BizException {
+                                                  CustomLoginIdPasswordAuthToken authentication) throws BizException {
 
         log.debug("additionalAuthenticationChecks authentication = {}",authentication);
 
@@ -49,7 +62,7 @@ public class CustomEmailPasswordAuthProvider implements AuthenticationProvider {
         }
 
         Object principalToReturn = user;
-        CustomEmailPasswordAuthToken result = new CustomEmailPasswordAuthToken(principalToReturn
+        CustomLoginIdPasswordAuthToken result = new CustomLoginIdPasswordAuthToken(principalToReturn
                 ,authentication.getCredentials()
                 ,this.authoritiesMapper.mapAuthorities(user.getAuthorities()));
         additionalAuthenticationChecks(user,result);
@@ -79,6 +92,6 @@ public class CustomEmailPasswordAuthProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return authentication.equals(CustomEmailPasswordAuthToken.class);
+        return authentication.equals(CustomLoginIdPasswordAuthToken.class);
     }
 }
