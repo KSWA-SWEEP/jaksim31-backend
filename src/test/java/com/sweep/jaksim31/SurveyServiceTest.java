@@ -2,10 +2,9 @@ package com.sweep.jaksim31;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.sweep.jaksim31.entity.surveys.Surveys;
+import com.sweep.jaksim31.domain.surveys.Surveys;
 import com.sweep.jaksim31.service.surveys.SurveyService;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
