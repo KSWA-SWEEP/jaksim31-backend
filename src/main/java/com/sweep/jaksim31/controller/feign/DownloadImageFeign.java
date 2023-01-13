@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
-@FeignClient(name = "downloadImage", url= "")
+@FeignClient(name = "downloadImage", url= "ANY-VALUE")
 public interface DownloadImageFeign {
     @GetMapping(value = "{url}", produces = MediaType.IMAGE_JPEG_VALUE)
     @ResponseBody

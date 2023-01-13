@@ -26,7 +26,7 @@ import java.time.LocalDate;
 @Data
 public class DiarySaveRequest {
     @NotBlank(message = "사용자를 찾을 수 없습니다.")
-    String user_id;
+    String userId;
     @NotBlank(message = "내용을 입력해주세요.")
     String content;
     @NotNull(message = "날짜를 입력해주세요.")
@@ -39,8 +39,8 @@ public class DiarySaveRequest {
     String thumbnail;
 
     @Builder
-    public DiarySaveRequest(String user_id, String content, LocalDate date, String emotion, String[] keywords, String thumbnail){
-        this.user_id = user_id;
+    public DiarySaveRequest(String userId, String content, LocalDate date, String emotion, String[] keywords, String thumbnail){
+        this.userId = userId;
         this.content = content;
         this.date = date;
         this.emotion = emotion;
@@ -50,7 +50,7 @@ public class DiarySaveRequest {
 
     public Diary toEntity() {
         return Diary.builder()
-                .userId(new ObjectId(user_id))
+                .userId(new ObjectId(userId))
                 .content(content)
                 .date(date)
                 .emotion(emotion)

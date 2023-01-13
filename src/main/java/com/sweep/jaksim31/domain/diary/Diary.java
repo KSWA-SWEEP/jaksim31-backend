@@ -50,7 +50,7 @@ public class Diary {
 
     public Diary(String diaryId, DiarySaveRequest diarySaveRequest){
         this.id = new ObjectId(diaryId);
-        this.userId = new ObjectId(diarySaveRequest.getUser_id());
+        this.userId = new ObjectId(diarySaveRequest.getUserId());
         this.content = diarySaveRequest.getContent();
         this.date = diarySaveRequest.getDate().atTime(9,0);
         this.modifyDate = LocalDate.now().atTime(9,0);

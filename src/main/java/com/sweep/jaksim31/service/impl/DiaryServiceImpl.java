@@ -83,8 +83,8 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 사용자 id 전체 일기 조회
-    public List<DiaryInfoResponse> findUserDiaries(String user_id){
-        return diaryRepository.findAllByUserId(new ObjectId(user_id)).stream()
+    public List<DiaryInfoResponse> findUserDiaries(String userId){
+        return diaryRepository.findAllByUserId(new ObjectId(userId)).stream()
                 .map(m -> new DiaryInfoResponse().of(m))
                 .collect(Collectors.toList());
     }
@@ -93,10 +93,10 @@ public class DiaryServiceImpl implements DiaryService {
     // 일기 저장
     public Diary saveDiary(DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
-        if(diarySaveRequest.getUser_id() == null || diarySaveRequest.getUser_id().equals("") || !memberRepository.findById(diarySaveRequest.getUser_id()).isPresent())
+        if(diarySaveRequest.getUserId() == null || diarySaveRequest.getUserId().equals("") || !memberRepository.findById(diarySaveRequest.getUserId()).isPresent())
             throw new BizException(DiaryExceptionType.NOT_FOUND_USER);
         // 해당 날짜에 이미 등록 된 다이어리가 있을 때
-        if(diaryRepository.findDiaryByUserIdAndDate(new ObjectId(diarySaveRequest.getUser_id()), diarySaveRequest.getDate().atTime(9,0)).isPresent())
+        if(diaryRepository.findDiaryByUserIdAndDate(new ObjectId(diarySaveRequest.getUserId()), diarySaveRequest.getDate().atTime(9,0)).isPresent())
             throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
         // 날짜가 유효하지 않을 때(미래)
         if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
@@ -112,7 +112,7 @@ public class DiaryServiceImpl implements DiaryService {
     // 일기 수정
     public Diary updateDiary(String diary_id, DiarySaveRequest diarySaveRequest) {
         // 사용자를 찾을 수 없을 때
-        if(diarySaveRequest.getUser_id() == null || diarySaveRequest.getUser_id().equals("") || !memberRepository.findById(diarySaveRequest.getUser_id()).isPresent())
+        if(diarySaveRequest.getUserId() == null || diarySaveRequest.getUserId().equals("") || !memberRepository.findById(diarySaveRequest.getUserId()).isPresent())
             throw new BizException(DiaryExceptionType.NOT_FOUND_USER);
         // 날짜가 유효하지 않을 때(미래)
         if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
