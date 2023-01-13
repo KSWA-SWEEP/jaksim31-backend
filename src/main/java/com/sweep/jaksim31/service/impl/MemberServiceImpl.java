@@ -3,24 +3,29 @@ package com.sweep.jaksim31.service.impl;
 import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
+import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
+import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
+import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenDTO;
-import com.sweep.jaksim31.dto.token.TokenReqDTO;
-import com.sweep.jaksim31.entity.token.RefreshToken;
-import com.sweep.jaksim31.entity.token.RefreshTokenRepository;
+import com.sweep.jaksim31.dto.token.TokenResponse;
+import com.sweep.jaksim31.dto.token.TokenRequest;
+import com.sweep.jaksim31.domain.token.RefreshToken;
+import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
+import com.sweep.jaksim31.exception.type.ObjectStorageExceptionType;
 import com.sweep.jaksim31.service.MemberService;
-import com.sweep.jaksim31.util.CookieUtil;
-import com.sweep.jaksim31.util.HeaderUtil;
-import com.sweep.jaksim31.entity.members.Members;
-import com.sweep.jaksim31.entity.members.MemberRepository;
-import com.sweep.jaksim31.util.exceptionhandler.BizException;
-import com.sweep.jaksim31.util.exceptionhandler.JwtExceptionType;
-import com.sweep.jaksim31.util.exceptionhandler.MemberExceptionType;
+import com.sweep.jaksim31.utils.CookieUtil;
+import com.sweep.jaksim31.utils.HeaderUtil;
+import com.sweep.jaksim31.domain.members.Members;
+import com.sweep.jaksim31.domain.members.MemberRepository;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.JwtExceptionType;
+import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -48,6 +54,7 @@ import java.util.TimeZone;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현          Members 수정으로 인한 Service 세부 수정
+ * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
  */
 
 @Slf4j
@@ -56,11 +63,12 @@ import java.util.TimeZone;
 public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-
     private final TokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
+    private final MakeObjectDirectoryFeign makeObjectDirectoryFeign;
+    private final ApiTokenRefreshFeign apiTokenRefreshFeign;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
 
@@ -70,7 +78,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public ResponseEntity<MemberRespDTO> signup(MemberReqDTO memberRequestDto) {
+    public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
         if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
             throw new BizException(MemberExceptionType.DUPLICATE_USER);
         }
@@ -80,11 +88,11 @@ public class MemberServiceImpl implements MemberService {
             members.setIsSocial(true);
         log.debug("member = {}", members);
 
-        return ResponseEntity.ok(MemberRespDTO.of(memberRepository.save(members)));
+        return ResponseEntity.ok(MemberSaveResponse.of(memberRepository.save(members)));
     }
     @Override
     @Transactional
-    public ResponseEntity<TokenDTO> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
+    public ResponseEntity<TokenResponse> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getPassword());
 
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
@@ -124,11 +132,11 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<?> reissue(TokenReqDTO tokenReqDTO,
-                            HttpServletResponse response) {
+    public ResponseEntity<?> reissue(TokenRequest tokenRequest,
+                                     HttpServletResponse response) {
 
 
-        String originRefreshToken = tokenReqDTO.getRefreshToken();
+        String originRefreshToken = tokenRequest.getRefreshToken();
 
         // refreshToken 검증
         int refreshTokenFlag = tokenProvider.validateToken(originRefreshToken);
@@ -168,7 +176,7 @@ public class MemberServiceImpl implements MemberService {
 
         String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
-        TokenDTO tokenDto = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime, loginId);
+        TokenResponse tokenResponse = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime, loginId);
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
@@ -187,7 +195,7 @@ public class MemberServiceImpl implements MemberService {
 
         // 토큰 발급
 //        return ApiResponse.success("token", newAccessToken);
-        return ResponseEntity.ok(tokenDto);
+        return ResponseEntity.ok(tokenResponse);
     }
     @Override
     @Transactional
@@ -220,7 +228,7 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<?> isMember(MemberLoginIdDTO memberRequestDto) {
+    public ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto) {
         if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
             return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
         }else
@@ -228,7 +236,7 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<?> updatePw(String id, MemberUpdateDTO dto) {
+    public ResponseEntity<?> updatePw(String id, MemberUpdateRequest dto) {
         Members members = memberRepository
                 .findById(new ObjectId(id))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -248,16 +256,16 @@ public class MemberServiceImpl implements MemberService {
      */
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<MemberInfoDTO> getMyInfo(String userId) {
+    public ResponseEntity<MemberInfoResponse> getMyInfo(String userId) {
         return ResponseEntity.ok().body(memberRepository.findById(new ObjectId(userId))
-                .map(MemberInfoDTO::of)
+                .map(MemberInfoResponse::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }
 
     @Override
-    public ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(String loginId) {
+    public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
         return ResponseEntity.ok().body(memberRepository.findMembersByLoginId(loginId)
-                .map(MemberInfoDTO::of)
+                .map(MemberInfoResponse::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }
 
@@ -268,7 +276,7 @@ public class MemberServiceImpl implements MemberService {
      */
     @Override
     @Transactional
-    public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateDTO dto) {
+    public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest dto) {
         Members members = memberRepository
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -284,7 +292,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public ResponseEntity<Boolean> isMyPassword(String userId, MemberIsMyPwDTO dto){
+    public ResponseEntity<Boolean> isMyPassword(String userId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -295,7 +303,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public ResponseEntity<String> remove(String userId, MemberRemoveDTO dto) {
+    public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) {
         Members entity = memberRepository
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -304,5 +312,29 @@ public class MemberServiceImpl implements MemberService {
         memberRepository.save(entity);
         return ResponseEntity.ok("정상적으로 회원탈퇴 작업이 처리되었습니다.");
     }
+
+//    public ResponseEntity<?> makeObjectDirectory(String userId) throws BizException{
+//        try {
+//            ResponseEntity<Void> result = makeObjectDirectoryFeign.makeDir(userId);
+//            if (!result.getStatusCode().equals(HttpStatus.CREATED)) {
+//                throw new BizException(ObjectStorageExceptionType.NOT_CREATE_DIRECTORY);
+//            }
+//            return result;
+//        } catch (Exception e) {
+//            // 인증 API 토큰 발급 후 추출
+//            ResponseEntity<String> tokenResponse = apiTokenRefreshFeign.refreshApiToken();
+//            HttpHeaders responseHeaders = tokenResponse.getHeaders();
+//            // 오브젝트 스토리지에 연결 요청 시 새로 받은 인증 API 토큰 적용R
+//            MakeObjectDirectoryFeignConfig.authToken = Objects.requireNonNull(responseHeaders.get("x-subject-token")).get(0).toString();
+//
+//            // 재생성 요청
+//            ResponseEntity<Void> result = makeObjectDirectoryFeign.makeDir(userId);
+//
+//            if (!result.getStatusCode().equals(HttpStatus.CREATED)) {
+//                throw new BizException(ObjectStorageExceptionType.NOT_CREATE_DIRECTORY);
+//            }
+//            return result;
+//        }
+//    }
 
 }

@@ -1,9 +1,9 @@
 package com.sweep.jaksim31.auth;
 
-import com.sweep.jaksim31.dto.token.TokenDTO;
-import com.sweep.jaksim31.entity.auth.Authority;
-import com.sweep.jaksim31.util.exceptionhandler.AuthorityExceptionType;
-import com.sweep.jaksim31.util.exceptionhandler.BizException;
+import com.sweep.jaksim31.dto.token.TokenResponse;
+import com.sweep.jaksim31.domain.auth.Authority;
+import com.sweep.jaksim31.exception.type.AuthorityExceptionType;
+import com.sweep.jaksim31.exception.BizException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.*;
@@ -131,8 +131,8 @@ public class TokenProvider {
 //                .grantType(BEARER_TYPE)
 //                .build();
 //    }
-    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime, String loginId) {
-        return TokenDTO.builder()
+    public TokenResponse createTokenDTO(String accessToken, String refreshToken, String expTime, String loginId) {
+        return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expTime(expTime)

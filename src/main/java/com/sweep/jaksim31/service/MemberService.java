@@ -2,24 +2,23 @@ package com.sweep.jaksim31.service;
 
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenDTO;
-import com.sweep.jaksim31.dto.token.TokenReqDTO;
-import org.springframework.http.HttpStatus;
+import com.sweep.jaksim31.dto.token.TokenResponse;
+import com.sweep.jaksim31.dto.token.TokenRequest;
 import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public interface MemberService {
-    ResponseEntity<MemberRespDTO> signup(MemberReqDTO memberRequestDto);
-    ResponseEntity<TokenDTO> login(LoginReqDTO loginReqDTO, HttpServletResponse response);
-    ResponseEntity<?> reissue(TokenReqDTO tokenReqDTO, HttpServletResponse response);
+    ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto);
+    ResponseEntity<TokenResponse> login(LoginReqDTO loginReqDTO, HttpServletResponse response);
+    ResponseEntity<?> reissue(TokenRequest tokenRequest, HttpServletResponse response);
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response);
-    ResponseEntity<?> isMember(MemberLoginIdDTO memberRequestDto);
-    ResponseEntity<?> updatePw(String userId, MemberUpdateDTO memberUpdateDTO);
-    ResponseEntity<MemberInfoDTO> getMyInfo(String userId);
-    ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(String loginId);
-    ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateDTO memberUpdateDTO);
-    ResponseEntity<Boolean> isMyPassword(String userId, MemberIsMyPwDTO dto);
-    ResponseEntity<String> remove(String userId, MemberRemoveDTO dto);
+    ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto);
+    ResponseEntity<?> updatePw(String userId, MemberUpdateRequest memberUpdateRequest);
+    ResponseEntity<MemberInfoResponse> getMyInfo(String userId);
+    ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId);
+    ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest);
+    ResponseEntity<Boolean> isMyPassword(String userId, MemberCheckPasswordRequest dto);
+    ResponseEntity<String> remove(String userId, MemberRemoveRequest dto);
 }

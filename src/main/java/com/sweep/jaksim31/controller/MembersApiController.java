@@ -2,16 +2,14 @@ package com.sweep.jaksim31.controller;
 
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenDTO;
-import com.sweep.jaksim31.dto.token.TokenReqDTO;
+import com.sweep.jaksim31.dto.token.TokenResponse;
+import com.sweep.jaksim31.dto.token.TokenRequest;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,14 +47,14 @@ public class MembersApiController {
 
     @Operation(summary = "회원가입", description = "")
     @PostMapping("/register")
-    public ResponseEntity<MemberRespDTO> signup(@RequestBody MemberReqDTO memberRequestDto) {
+    public ResponseEntity<MemberSaveResponse> signup(@RequestBody MemberSaveRequest memberRequestDto) {
         log.debug("memberRequestDto = {}",memberRequestDto);
         return memberServiceImpl.signup(memberRequestDto);
     }
 
     @Operation(summary = "로그인", description = "유저 정보를 통해 로그인합니다.")
     @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(
+    public ResponseEntity<TokenResponse> login(
             @RequestBody LoginReqDTO loginReqDTO,
             HttpServletResponse response) {
         return memberServiceImpl.login(loginReqDTO, response);
@@ -65,29 +63,29 @@ public class MembersApiController {
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
     @PostMapping("")
     public ResponseEntity<?> isMember(
-            @RequestBody MemberLoginIdDTO memberRequestDto) {
+            @RequestBody MemberCheckLoginIdRequest memberRequestDto) {
         return memberServiceImpl.isMember(memberRequestDto);
     }
 
     @Operation(summary = "토큰 재발급", description = "리프레쉬 토큰으로 토큰을 재발급 합니다.")
     @PostMapping("/{userId}/reissue")
-    public ResponseEntity<?> reissue(@PathVariable("userId") String userId, @RequestBody TokenReqDTO tokenReqDTO,
+    public ResponseEntity<?> reissue(@PathVariable("userId") String userId, @RequestBody TokenRequest tokenRequest,
                             HttpServletResponse response
     ) {
-        return memberServiceImpl.reissue(tokenReqDTO, response);
+        return memberServiceImpl.reissue(tokenRequest, response);
     }
 
 //    @Hidden
     @Operation(summary = "비밀번호 변경", description = "비밀번호 재설정을 요청합니다.")
     @PutMapping("/{userId}/password")
-    public ResponseEntity<?> changePw(@PathVariable("userId") String userId, @RequestBody MemberUpdateDTO memberUpdateDTO) {
-        return memberServiceImpl.updatePw(userId, memberUpdateDTO);
+    public ResponseEntity<?> changePw(@PathVariable("userId") String userId, @RequestBody MemberUpdateRequest memberUpdateRequest) {
+        return memberServiceImpl.updatePw(userId, memberUpdateRequest);
     }
 
 //    @Hidden
     @Operation(summary = "LoginID로 사용자 정보 조회", description = "Login ID로 자신의 정보를 요청합니다.")
     @GetMapping("")
-    public ResponseEntity<MemberInfoDTO> getMyInfoByLoginId(@RequestParam("loginId") String loginId) {
+    public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(@RequestParam("loginId") String loginId) {
         return memberServiceImpl.getMyInfoByLoginId(loginId);
     }
 
@@ -97,25 +95,25 @@ public class MembersApiController {
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/{userId}")
-    public ResponseEntity<MemberInfoDTO> getMyInfo(@PathVariable("userId") String userId) {
+    public ResponseEntity<MemberInfoResponse> getMyInfo(@PathVariable("userId") String userId) {
         return memberServiceImpl.getMyInfo(userId);
     }
 
     @Operation(summary = "유저 정보 업데이트 요청", description = "유저 정보 업데이트를 요청합니다.")
     @PatchMapping("/{userId}")
-    public ResponseEntity<?> updateMember(@PathVariable("userId") String userId, @RequestBody MemberUpdateDTO dto) {
+    public ResponseEntity<?> updateMember(@PathVariable("userId") String userId, @RequestBody MemberUpdateRequest dto) {
         return memberServiceImpl.updateMemberInfo(userId, dto);
     }
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/{userId}")
-    public ResponseEntity<String> remove(@PathVariable("userId") String userId, @RequestBody MemberRemoveDTO dto) {
+    public ResponseEntity<String> remove(@PathVariable("userId") String userId, @RequestBody MemberRemoveRequest dto) {
         return memberServiceImpl.remove(userId, dto);
     }
 
     @Operation(summary = "내 비밀번호 검증(확인)", description = "이메일과 비밀번호 입력 시 비밀번호가 맞는지 확인")
     @PostMapping("/{userId}/password")
-    public ResponseEntity<Boolean> isMyPw(@PathVariable("userId") String userId, @RequestBody MemberIsMyPwDTO dto) {
+    public ResponseEntity<Boolean> isMyPw(@PathVariable("userId") String userId, @RequestBody MemberCheckPasswordRequest dto) {
         return memberServiceImpl.isMyPassword(userId, dto);}
 
     @Operation(summary = "로그아웃", description = "해당 유저의 토큰 정보가 db에서 삭제 됩니다.")

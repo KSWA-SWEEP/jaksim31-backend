@@ -5,6 +5,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * packageName :  com.sweep.jaksim31.config
+ * fileName : AppCofnig
+ * author :  방근호
+ * date : 2023-01-13
+ * description : 기본적인 App에 대한 설정 정보 및 빈을 생성하는 코드
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-13           방근호             최초 생성
+ *
+ */
+
 @Configuration
 public class AppConfig {
     /**
