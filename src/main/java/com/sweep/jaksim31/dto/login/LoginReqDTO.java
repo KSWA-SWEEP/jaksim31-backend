@@ -6,17 +6,23 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
 /**
- * LoginReqDTO 설명 : 로그인시 DTO 이메일,패스워드
- * @author jowonjun
- * @version 1.0.0
- * 작성일 : 2022/01/23
- **/
+ * packageName :  com.sweep.jaksim31.dto.login
+ * fileName : LoginReqDTO
+ * author :  방근호
+ * date : 2023-01-09
+ * description :
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-12           김주현             field 명 수정(email -> loginId)
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginReqDTO {
     @NotBlank
-    private String email;
+    private String loginId;
 
     @NotBlank
     private String password;

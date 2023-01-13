@@ -14,6 +14,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * packageName :  com.sweep.jaksim31.auth
+ * fileName : JwtFilter
+ * author :  방근호
+ * date : 2023-01-13
+ * description : SecurityConfig에 추가할 Filter OncePerRequestFilter를 상속 받아 모든 요청에 대한 JWT 검증이 이루어짐.
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-13           방근호             최초 생성
+ *
+ */
 
 @Slf4j
 @RequiredArgsConstructor

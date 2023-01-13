@@ -1,7 +1,7 @@
 package com.sweep.jaksim31.config;
 
-import com.sweep.jaksim31.util.exceptionhandler.JwtAccessDeniedHandler;
-import com.sweep.jaksim31.util.exceptionhandler.JwtAuthenticationEntryPoint;
+import com.sweep.jaksim31.auth.JwtAccessDeniedHandler;
+import com.sweep.jaksim31.auth.JwtAuthenticationEntryPoint;
 import com.sweep.jaksim31.auth.JwtFilter;
 import com.sweep.jaksim31.auth.TokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,19 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+/**
+ * packageName :  com.sweep.jaksim31.config
+ * fileName : SecurityConfig
+ * author :  방근호
+ * date : 2023-01-13
+ * description : Spring Security에 대한 설정 jwtfilter를 추가하여 모든 요청에 대해 filter를 거칠 수 있음.
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-13           방근호             최초 생성
+ *
+ */
 
 
 @EnableWebSecurity // 기본적인 웹보안을 사용하겠다는 것
