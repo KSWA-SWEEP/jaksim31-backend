@@ -1,6 +1,6 @@
 package com.sweep.jaksim31.service;
 
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
+import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface MemberService {
     ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto);
-    ResponseEntity<TokenResponse> login(LoginReqDTO loginReqDTO, HttpServletResponse response);
+    ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response);
     ResponseEntity<?> reissue(TokenRequest tokenRequest, HttpServletResponse response);
     ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response);
     ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto);

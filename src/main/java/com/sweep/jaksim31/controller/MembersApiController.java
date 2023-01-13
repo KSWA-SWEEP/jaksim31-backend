@@ -1,6 +1,6 @@
 package com.sweep.jaksim31.controller;
 
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
+import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
@@ -55,9 +55,9 @@ public class MembersApiController {
     @Operation(summary = "로그인", description = "유저 정보를 통해 로그인합니다.")
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(
-            @RequestBody LoginReqDTO loginReqDTO,
+            @RequestBody LoginRequest loginRequest,
             HttpServletResponse response) {
-        return memberServiceImpl.login(loginReqDTO, response);
+        return memberServiceImpl.login(loginRequest, response);
     }
 
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
