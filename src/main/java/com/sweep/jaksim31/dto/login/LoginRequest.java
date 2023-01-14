@@ -16,11 +16,12 @@ import javax.validation.constraints.NotBlank;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-12           김주현             field 명 수정(email -> loginId)
+ * 2023-01-13            장건              Class 명 수정 (LoginReqDTO -> LoginRequest)
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginReqDTO {
+public class LoginRequest {
     @NotBlank
     private String loginId;
 

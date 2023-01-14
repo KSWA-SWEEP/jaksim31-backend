@@ -5,14 +5,12 @@ import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
 import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
-import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
+import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
-import com.sweep.jaksim31.exception.type.ObjectStorageExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.HeaderUtil;
@@ -25,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,7 +37,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -92,8 +88,8 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<TokenResponse> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
-        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getPassword());
+    public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) {
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
 
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
         String loginId = authenticate.getName();
