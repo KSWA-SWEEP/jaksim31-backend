@@ -1,13 +1,9 @@
 package com.sweep.jaksim31.dto.login;
-import com.sweep.jaksim31.domain.members.Members;
+import com.sweep.jaksim31.dto.member.MemberSaveRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 /**
  * packageName :  com.sweep.jaksim31.dto/login
@@ -21,29 +17,42 @@ import java.time.temporal.ChronoUnit;
  * 2023-01-12            장건                                     최초 생성
  * 2023-01-13            장건                              Kakao Members 삭제
  * 2023-01-13            장건                Class 명 수정 (KaKaoInfoDTO -> KakaoLoginRequest)
+ * 2023-01-15           방근호                필드 수정, 기존 로그인 요청을 확장(상속)
  */
-
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class KakaoLoginRequest {
+public class KakaoLoginRequest extends LoginRequest {
 
-    private String loginId;
     private String username;
     private String profileImage;
 
-    public Members toMember(PasswordEncoder passwordEncoder) {
-        return Members.builder()
-                .loginId(loginId)
+    @Override
+    public MemberSaveRequest toMemberSaveRequest() {
+        System.out.println();
+        return MemberSaveRequest.builder()
+                .loginId(super.getLoginId())
                 .username(username)
-                .password(passwordEncoder.encode(loginId))
+                .password(super.getLoginId())
                 .profileImage(profileImage)
-                .register_date(Instant.now().plus(9, ChronoUnit.HOURS))
-                .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
-                .delYn('N')
                 .build();
     }
 
+    public KakaoLoginRequest(String loginId, String username, String profileImage){
+        super(loginId, loginId);
+        this.username = username;
+        this.profileImage = profileImage;
+    }
 
+    @Override
+    public String getPassword() {
+        return super.getPassword();
+    }
+
+    @Override
+    public String getLoginId() {
+        return super.getLoginId();
+    }
 }
+
+

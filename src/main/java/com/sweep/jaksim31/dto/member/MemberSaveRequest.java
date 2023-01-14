@@ -2,6 +2,7 @@ package com.sweep.jaksim31.dto.member;
 
 import com.sweep.jaksim31.domain.members.Members;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,9 +24,11 @@ import java.util.ArrayList;
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             profilePhoto -> profileImage / diaryTotal 추가
  * 2023-01-12           방근호             클래스 이름 변경
+ * 2023-01-15           방근호             toMember Method 인자 isSocial 추가
  */
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class MemberSaveRequest {
@@ -34,7 +37,7 @@ public class MemberSaveRequest {
     private String username;
     private String profileImage;
 
-    public Members toMember(PasswordEncoder passwordEncoder) {
+    public Members toMember(PasswordEncoder passwordEncoder, boolean isSocial) {
         return Members.builder()
                 .loginId(loginId)
                 .username(username)
@@ -42,7 +45,7 @@ public class MemberSaveRequest {
                 .register_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
                 .delYn('N')
-                .isSocial(false)
+                .isSocial(isSocial)
                 .diaryTotal(0)
                 .recentDiaries(new ArrayList<>())
                 .profileImage(profileImage)

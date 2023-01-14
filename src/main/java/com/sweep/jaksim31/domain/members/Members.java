@@ -4,10 +4,7 @@ import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
 import com.sweep.jaksim31.domain.diary.Diary;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -38,6 +35,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 @Document(collection = "member")
 public class Members {
 
