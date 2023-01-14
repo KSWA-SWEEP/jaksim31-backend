@@ -31,6 +31,7 @@ import java.util.Map;
  * 2023-01-11           김주현             Tag 추가 및 일기 존재 여부 확인 api 추가
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-12           방근호             Diary 컨트롤러에 클라우드와 api 통신 및 사진 다운로드 & 업로드
+ * 2023-01-14           김주현             오늘 일기 조회 추가(서비스 확인용_주석 처리)
  */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -59,8 +60,8 @@ public class DiaryApiController {
         // System.out.println("Diary dto = " + diaryDto.toString());
 
         //사용자 current_diaries에 현재 작성한 다이어리 넣기
-//        ObjectId userId = new ObjectId(diaryDto.getUser_id());
-//        Members user = member.findUser(new ObjectId(diaryDto.getUser_id()));
+//        ObjectId userId = new ObjectId(diaryDto.getUserId());
+//        Members user = member.findUser(new ObjectId(diaryDto.getUserId()));
 //        List<Diary> diaries = user.getRecentDiaries();
 //
 //        user.setRecentDiaries(diaries);
@@ -116,5 +117,12 @@ public class DiaryApiController {
     public ResponseEntity<String> saveThumbnail(@RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
         return diaryService.saveThumbnail(diaryThumbnailRequest);
     }
+
+    // Service 확인용 API
+//    @Operation(summary = "오늘 일기 조회", description = "사용자의 오늘 일기를 조회합니다. 작성한 일기가 있을 경우 일기의 id를 반환합니다.")
+//    @GetMapping(value = "{userId}/today")
+//    public String todayDiary(@PathVariable String userId) {
+//        return diaryService.todayDiary(userId);
+//    }
 
 }

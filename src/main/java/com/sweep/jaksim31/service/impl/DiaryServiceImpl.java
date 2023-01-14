@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
  * 2023-01-11           김주현             ErrorHandling 추가
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-13           방근호             일기 분석 및 썸네일 업로드 기능 추가
+ * 2023-01-14           김주현             오늘 일기 조회 기능 추가
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -138,6 +139,14 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
+    // 오늘 일기 조회
+    public String todayDiary(String userId){
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(new ObjectId(userId), today.atTime(9,0)).orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
+        return todayDiary.getId().toString();
+    }
+
+    @Override
     // 일기 검색
     public List<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params){
         // Repository 방식
@@ -168,7 +177,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     public ResponseEntity<String> saveThumbnail(DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
-        String userId = diaryThumbnailRequest.getUser_id();
+        String userId = diaryThumbnailRequest.getUserId();
         String url = diaryThumbnailRequest.getThumbnail();
         byte[] image = downloadImageFeign.getImage(new URI(url)).getBody();
 
