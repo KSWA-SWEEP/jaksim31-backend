@@ -44,7 +44,7 @@ import java.util.TimeZone;
  * fileName : KaKaoServiceImpl
  * author :  장건
  * date : 2023-01-11
- * description : 접근 권한이 없을 경우 403 응답
+ * description : 카카오 로그인을 위한 Services
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
