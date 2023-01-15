@@ -31,10 +31,11 @@ import java.util.Map;
  * 2023-01-11           김주현             Tag 추가 및 일기 존재 여부 확인 api 추가
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-12           방근호             Diary 컨트롤러에 클라우드와 api 통신 및 사진 다운로드 & 업로드
+ * 2023-01-14           김주현             감정 통계 추가
  */
 /* TODO
-    * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
-    * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제
+    * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 + total 업데이트 -> Members Entity 수정 후 진행해야함
+    * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제 및 total 업데이트
 * */
 @Slf4j
 @RestController
@@ -115,6 +116,12 @@ public class DiaryApiController {
     @PostMapping(value = "thumbnail")
     public ResponseEntity<String> saveThumbnail(@RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
         return diaryService.saveThumbnail(diaryThumbnailRequest);
+    }
+
+    @Operation(summary = "감정 통계 API", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
+    @PostMapping(value = "{userId}/emotions")
+    public Map<String, Integer> emotionStatistics(@PathVariable String userId) {
+        return diaryService.emotionStatics(userId);
     }
 
 }

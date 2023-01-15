@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
  * 2023-01-11           김주현             ErrorHandling 추가
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-13           방근호             일기 분석 및 썸네일 업로드 기능 추가
+ * 2023-01-15           김주현             감정 통계 기능 추가 및 사용자 일기 검색에서 검색 날짜 포함해서 검색되도록 수정
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -145,21 +146,21 @@ public class DiaryServiceImpl implements DiaryService {
         LocalDateTime start_date;
         LocalDateTime end_date;
         // 시간 조건 설정
-        if(params.containsKey("startDate"))
-            start_date = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);
-        else
-            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);
-        if(params.containsKey("endDate"))
-            end_date = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);
-        else
-            end_date = LocalDate.now().atTime(9,0);
+        if(params.containsKey("startDate")){
+            start_date = (LocalDate.parse(((String)params.get("startDate")))).minusDays(1).atTime(9,0);}
+        else{
+            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);}
+        if(params.containsKey("endDate")){
+            end_date = (LocalDate.parse(((String)params.get("endDate")))).plusDays(1).atTime(9,0);}
+        else{
+            end_date = LocalDate.now().plusDays(1).atTime(9,0);}
         // 조건으로 조회
         if(params.containsKey("emotion"))
-            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetween(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
+            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
                     .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
         else
-            diaries = diaryRepository.findDiariesByUserIdAndDateBetween(new ObjectId(userId), start_date, end_date).stream()
+            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
                     .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
         System.out.println("Diaries : " + diaries);
@@ -256,4 +257,23 @@ public class DiaryServiceImpl implements DiaryService {
         // 응답 생성
         return new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion);
     }
+
+    // 감정 통계
+    public Map<String, Integer> emotionStatics(String userId){
+        Map<String, Integer> emotions = new HashMap<>();
+        List<Diary> diaries = diaryRepository.findAllByUserId(new ObjectId(userId));
+        for(Diary i : diaries){
+            System.out.println("### Diary : " + i.getDate() + " " + i.getContent());
+            if(!emotions.containsKey(i.getEmotion()))
+                emotions.put(i.getEmotion(), 1);
+            else{
+                int emotion_num = emotions.get(i.getEmotion());
+                emotion_num++;
+                emotions.put(i.getEmotion(), emotion_num);
+            }
+
+        }
+        return emotions;
+    }
+
 }
