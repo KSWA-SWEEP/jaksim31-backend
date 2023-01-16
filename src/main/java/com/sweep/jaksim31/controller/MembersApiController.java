@@ -1,20 +1,23 @@
 package com.sweep.jaksim31.controller;
 
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
+import com.sweep.jaksim31.dto.login.KakaoProfile;
+import com.sweep.jaksim31.dto.login.KakaoLoginRequest;
+import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
+import com.sweep.jaksim31.service.impl.KaKaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URISyntaxException;
 
 /**
  * packageName :  com.sweep.jaksim31.controller
@@ -27,6 +30,12 @@ import javax.servlet.http.HttpServletResponse;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             사용자 정보 조회(by LoginId) API 추가
+ * 2023-01-13           장건              카카오 로그인 추가
+ * 2023-01-15           방근호             카카오 로그인 api 리팩토링 및 로그아웃 추가
+ */
+
+/* TODO
+    카카오 로그아웃 구현 및 테스트! (프론트 연결 시)
  */
 
 @Slf4j
@@ -36,9 +45,10 @@ import javax.servlet.http.HttpServletResponse;
 @RequestMapping("/v0/members")
 public class MembersApiController {
     private final MemberServiceImpl memberServiceImpl;
+    private final KaKaoMemberServiceImpl kaKaoMemberService;
 
-    @Value("${jwt.refresh-token-expire-time}")
-    private long rtkLive;
+
+
 
     @GetMapping("/test")
     public String test(){
@@ -55,9 +65,21 @@ public class MembersApiController {
     @Operation(summary = "로그인", description = "유저 정보를 통해 로그인합니다.")
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(
-            @RequestBody LoginReqDTO loginReqDTO,
+            @RequestBody LoginRequest loginRequest,
             HttpServletResponse response) {
-        return memberServiceImpl.login(loginReqDTO, response);
+        return memberServiceImpl.login(loginRequest, response);
+    }
+
+    @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
+    @GetMapping(value="/kakao-login")
+    public ResponseEntity<?> kakaoLogin(@RequestParam("code") String authorizationCode, HttpServletResponse response) throws Exception {
+        System.out.println(authorizationCode);
+        // 카카오 인증코드로 토큰 얻어서 유저 정보 얻기
+        KakaoProfile userInfo = kaKaoMemberService.getKakaoUserInfo((kaKaoMemberService.getAccessToken(authorizationCode)));
+        // 회원가입이 되어있는지 조회하고 없으면 회원가입 있으면 로그인.
+        KakaoLoginRequest loginRequest = userInfo.toLoginRequest();
+
+        return kaKaoMemberService.login(loginRequest, response);
     }
 
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
@@ -90,8 +112,6 @@ public class MembersApiController {
     }
 
     // ================================================== //
-    // ================================================== //
-    // ================================================== //
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/{userId}")
@@ -121,6 +141,13 @@ public class MembersApiController {
     public ResponseEntity<?> logout(@PathVariable("userId") String userId,
             HttpServletRequest request, HttpServletResponse response) {
         return memberServiceImpl.logout(request, response);
+    }
+
+    // 아직 테스트 X -> 프론트 연결 후 테스트 진행
+    @Operation(summary = "카카오 로그아웃", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
+    @GetMapping(value="/kakao-logout")
+    public ResponseEntity<?> kakaoLogout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+        return kaKaoMemberService.logout(request, response);
     }
 
 }

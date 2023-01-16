@@ -8,7 +8,7 @@ import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
 import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
-import com.sweep.jaksim31.dto.login.LoginReqDTO;
+import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
@@ -46,7 +46,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
-import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -61,6 +60,7 @@ import java.util.TimeZone;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현          Members 수정으로 인한 Service 세부 수정
  * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
+ * 2023-01-15           방근호          MemberSaveRequest 수정으로 인한 toMember 요청 인자 변경
  * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
  */
 
@@ -84,14 +84,13 @@ public class MemberServiceImpl implements MemberService {
 
     private final DiaryRepository diaryRepository;
 
-    @Override
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
         if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
             throw new BizException(MemberExceptionType.DUPLICATE_USER);
         }
 
-        Members members = memberRequestDto.toMember(passwordEncoder);
+        Members members = memberRequestDto.toMember(passwordEncoder, false);
         if(members.getPassword() == null)
             members.setIsSocial(true);
         log.debug("member = {}", members);
@@ -100,8 +99,8 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<TokenResponse> login(LoginReqDTO loginReqDTO, HttpServletResponse response) {
-        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginReqDTO.getLoginId(),loginReqDTO.getPassword());
+    public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) {
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
 
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
         String loginId = authenticate.getName();
@@ -138,7 +137,7 @@ public class MemberServiceImpl implements MemberService {
         return ResponseEntity.ok(tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId));
 
     }
-    @Override
+
     @Transactional
     public ResponseEntity<?> reissue(TokenRequest tokenRequest,
                                      HttpServletResponse response) {
@@ -234,7 +233,7 @@ public class MemberServiceImpl implements MemberService {
             return new ResponseEntity<>("잘못된 접근입니다.", HttpStatus.BAD_REQUEST);
         }
     }
-    @Override
+
     @Transactional
     public ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto) {
         if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
@@ -242,7 +241,7 @@ public class MemberServiceImpl implements MemberService {
         }else
             return ResponseEntity.notFound().build();
     }
-    @Override
+
     @Transactional
     public ResponseEntity<?> updatePw(String id, MemberUpdateRequest dto) {
         Members members = memberRepository
@@ -262,7 +261,7 @@ public class MemberServiceImpl implements MemberService {
     /**
      * @return 요청한 ID의 유저 정보를 반환한다.
      */
-    @Override
+
     @Transactional(readOnly = true)
     public ResponseEntity<MemberInfoResponse> getMyInfo(String userId) {
         return ResponseEntity.ok().body(memberRepository.findById(new ObjectId(userId))
@@ -270,7 +269,7 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }
 
-    @Override
+
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
         // 로그인 id로 사용자 정보 불러오기
         Members member = memberRepository.findMembersByLoginId(loginId).get();
@@ -309,7 +308,7 @@ public class MemberServiceImpl implements MemberService {
      * @param userId DirtyChecking 을 통한 멤버 업데이트 ( Login ID는 업데이트 할 수 없다.)
      * @param dto
      */
-    @Override
+
     @Transactional
     public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest dto) {
         Members members = memberRepository
@@ -325,7 +324,6 @@ public class MemberServiceImpl implements MemberService {
         }
     }
 
-    @Override
     @Transactional
     public ResponseEntity<Boolean> isMyPassword(String userId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
@@ -336,7 +334,6 @@ public class MemberServiceImpl implements MemberService {
         else return ResponseEntity.notFound().build();
     }
 
-    @Override
     @Transactional
     public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) {
         Members entity = memberRepository
@@ -348,28 +345,5 @@ public class MemberServiceImpl implements MemberService {
         return ResponseEntity.ok("정상적으로 회원탈퇴 작업이 처리되었습니다.");
     }
 
-//    public ResponseEntity<?> makeObjectDirectory(String userId) throws BizException{
-//        try {
-//            ResponseEntity<Void> result = makeObjectDirectoryFeign.makeDir(userId);
-//            if (!result.getStatusCode().equals(HttpStatus.CREATED)) {
-//                throw new BizException(ObjectStorageExceptionType.NOT_CREATE_DIRECTORY);
-//            }
-//            return result;
-//        } catch (Exception e) {
-//            // 인증 API 토큰 발급 후 추출
-//            ResponseEntity<String> tokenResponse = apiTokenRefreshFeign.refreshApiToken();
-//            HttpHeaders responseHeaders = tokenResponse.getHeaders();
-//            // 오브젝트 스토리지에 연결 요청 시 새로 받은 인증 API 토큰 적용R
-//            MakeObjectDirectoryFeignConfig.authToken = Objects.requireNonNull(responseHeaders.get("x-subject-token")).get(0).toString();
-//
-//            // 재생성 요청
-//            ResponseEntity<Void> result = makeObjectDirectoryFeign.makeDir(userId);
-//
-//            if (!result.getStatusCode().equals(HttpStatus.CREATED)) {
-//                throw new BizException(ObjectStorageExceptionType.NOT_CREATE_DIRECTORY);
-//            }
-//            return result;
-//        }
-//    }
 
 }
