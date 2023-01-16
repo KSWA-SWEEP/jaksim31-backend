@@ -9,6 +9,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Base64;
 import java.util.Optional;
 
+/**
+ * packageName :  com.sweep.jaksim31.utils
+ * fileName : CookieUtil
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 쿠키 설정 관련 클래스
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ */
+
 public class CookieUtil {
 
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {

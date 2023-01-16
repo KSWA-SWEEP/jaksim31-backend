@@ -1,7 +1,7 @@
 package com.sweep.jaksim31.controller.feign;
 
 import com.sweep.jaksim31.controller.feign.config.KakaoOAuthTokenFeignConfig;
-import com.sweep.jaksim31.domain.auth.KakaoOAuth;
+import com.sweep.jaksim31.dto.login.KakaoOAuth;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

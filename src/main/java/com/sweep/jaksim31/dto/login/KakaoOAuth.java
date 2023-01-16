@@ -1,4 +1,4 @@
-package com.sweep.jaksim31.domain.auth;
+package com.sweep.jaksim31.dto.login;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

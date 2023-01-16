@@ -1,7 +1,6 @@
 package com.sweep.jaksim31.controller;
 
-import com.sweep.jaksim31.domain.auth.KakaoProfile;
-import com.sweep.jaksim31.domain.members.MemberRepository;
+import com.sweep.jaksim31.dto.login.KakaoProfile;
 import com.sweep.jaksim31.dto.login.KakaoLoginRequest;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
@@ -13,15 +12,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
