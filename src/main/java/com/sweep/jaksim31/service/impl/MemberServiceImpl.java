@@ -61,6 +61,7 @@ import java.util.TimeZone;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현          Members 수정으로 인한 Service 세부 수정
  * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
+ * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
  */
 
 @Slf4j
@@ -271,24 +272,35 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
+        // 로그인 id로 사용자 정보 불러오기
         Members member = memberRepository.findMembersByLoginId(loginId).get();
+        // 오늘 날짜로 작성 된 일기가 있는지 확인
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
+        // 작성 된 일기가 있다면 diary_id, 없으면 ""
         String todayDiaryId = "";
         if(todayDiary != null)
             todayDiaryId = todayDiary.getId().toString();
-        long expTime = LocalTime.of(23,59,59).compareTo(LocalTime.now());
-        System.out.println("### exptime : " + expTime);
+        // 만료 시간을 당일 23:59:59로 설정
+        long expTime = LocalTime.of(23,59,59).toSecondOfDay() - LocalTime.now().minusHours(9).toSecondOfDay();
+        // check
+//        System.out.println("### end of day : " + LocalTime.of(23,59,59) + "    " + LocalTime.of(23,59,59).toSecondOfDay());
+//        System.out.println("### now : " + LocalTime.now().toString() + "   " + LocalTime.now().toSecondOfDay());
+//        System.out.println("### exptime : " + expTime);
 
-        ResponseCookie responseCookie = ResponseCookie.from("today", todayDiaryId)
+        // todayDiaryId Cookie 설정
+        ResponseCookie responseCookie = ResponseCookie.from("todayDiaryId", todayDiaryId)
                 .httpOnly(true)
                 .secure(true)
+                .maxAge(expTime)
                 .path("/").build();
 
+        // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
         ResponseEntity response = ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
                         .body(memberRepository.findMembersByLoginId(loginId)
                         .map(MemberInfoResponse::of)
                         .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+
         return response;
     }
 
