@@ -99,9 +99,9 @@ public class MembersApiController {
 
 //    @Hidden
     @Operation(summary = "비밀번호 변경", description = "비밀번호 재설정을 요청합니다.")
-    @PutMapping("/{userId}/password")
-    public ResponseEntity<?> changePw(@PathVariable("userId") String userId, @RequestBody MemberUpdateRequest memberUpdateRequest) {
-        return memberServiceImpl.updatePw(userId, memberUpdateRequest);
+    @PutMapping("/{loginId}/password")
+    public ResponseEntity<?> changePw(@PathVariable("loginId") String loginId, @RequestBody MemberUpdatePasswordRequest dto) {
+        return memberServiceImpl.updatePw(loginId, dto);
     }
 
 //    @Hidden
@@ -132,9 +132,9 @@ public class MembersApiController {
     }
 
     @Operation(summary = "내 비밀번호 검증(확인)", description = "이메일과 비밀번호 입력 시 비밀번호가 맞는지 확인")
-    @PostMapping("/{userId}/password")
-    public ResponseEntity<Boolean> isMyPw(@PathVariable("userId") String userId, @RequestBody MemberCheckPasswordRequest dto) {
-        return memberServiceImpl.isMyPassword(userId, dto);}
+    @PostMapping("/{loginId}/password")
+    public ResponseEntity<Boolean> isMyPw(@PathVariable("loginId") String loginId, @RequestBody MemberCheckPasswordRequest dto) {
+        return memberServiceImpl.isMyPassword(loginId, dto);}
 
     @Operation(summary = "로그아웃", description = "해당 유저의 토큰 정보가 db에서 삭제 됩니다.")
     @PostMapping("/{userId}/logout")
