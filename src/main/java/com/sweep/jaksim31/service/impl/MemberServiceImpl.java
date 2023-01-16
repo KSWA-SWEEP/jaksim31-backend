@@ -6,12 +6,15 @@ import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
 import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
 import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
+import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.dto.login.LoginReqDTO;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
+import com.sweep.jaksim31.exception.type.DiaryExceptionType;
 import com.sweep.jaksim31.exception.type.ObjectStorageExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
@@ -25,8 +28,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -39,6 +42,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -75,6 +81,7 @@ public class MemberServiceImpl implements MemberService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
 
+    private final DiaryRepository diaryRepository;
 
     @Override
     @Transactional
@@ -264,9 +271,25 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
-        return ResponseEntity.ok().body(memberRepository.findMembersByLoginId(loginId)
-                .map(MemberInfoResponse::of)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+        Members member = memberRepository.findMembersByLoginId(loginId).get();
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
+        String todayDiaryId = "";
+        if(todayDiary != null)
+            todayDiaryId = todayDiary.getId().toString();
+        long expTime = LocalTime.of(23,59,59).compareTo(LocalTime.now());
+        System.out.println("### exptime : " + expTime);
+
+        ResponseCookie responseCookie = ResponseCookie.from("today", todayDiaryId)
+                .httpOnly(true)
+                .secure(true)
+                .path("/").build();
+
+        ResponseEntity response = ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
+                        .body(memberRepository.findMembersByLoginId(loginId)
+                        .map(MemberInfoResponse::of)
+                        .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+        return response;
     }
 
 
