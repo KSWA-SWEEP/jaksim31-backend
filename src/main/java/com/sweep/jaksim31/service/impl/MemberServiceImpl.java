@@ -30,8 +30,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -75,15 +73,11 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
-        if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
-            throw new BizException(MemberExceptionType.DUPLICATE_USER);
-        }
+        memberRepository
+                .existsByLoginId(memberRequestDto.getLoginId())
+                .orElseThrow(()-> new BizException(MemberExceptionType.DUPLICATE_USER));
 
         Members members = memberRequestDto.toMember(passwordEncoder, false);
-        if(members.getPassword() == null)
-            members.setIsSocial(true);
-        log.debug("member = {}", members);
-
         return ResponseEntity.ok(MemberSaveResponse.of(memberRepository.save(members)));
     }
     @Override
@@ -97,7 +91,6 @@ public class MemberServiceImpl implements MemberService {
 
         String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
-
 
         int cookieMaxAge = (int) rtkLive / 60;
 
@@ -157,7 +150,7 @@ public class MemberServiceImpl implements MemberService {
 
         // Refresh Token 일치하는지 검사
         if (!refreshToken.getValue().equals(originRefreshToken)) {
-            return new ResponseEntity<>("토큰이 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
+            throw new BizException(JwtExceptionType.BAD_TOKEN);
         }
 
         Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
@@ -177,7 +170,6 @@ public class MemberServiceImpl implements MemberService {
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
 
-
         int cookieMaxAge = (int) rtkLive / 60;
         CookieUtil.addCookie(response, "refresh_token", newRefreshToken, cookieMaxAge);
 
@@ -195,7 +187,6 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response){
 
         String originAccessToken = HeaderUtil.getAccessToken(request);
@@ -213,22 +204,22 @@ public class MemberServiceImpl implements MemberService {
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         String loginId = authentication.getName();
 
-        try{
-            if(refreshTokenRepository.findByLoginId(loginId).isPresent()){
-                refreshTokenRepository.deleteByLoginId(loginId);
-            }
-            return ResponseEntity.ok("로그아웃 되었습니다.");
-        } catch (NullPointerException e){
-            return new ResponseEntity<>("잘못된 접근입니다.", HttpStatus.BAD_REQUEST);
-        }
+        refreshTokenRepository
+                .findByLoginId(loginId)
+                .orElseThrow(()->new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN));
+
+        refreshTokenRepository.deleteByLoginId(loginId);
+
+        return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
     @Transactional
     public ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto) {
-        if (memberRepository.existsByLoginId(memberRequestDto.getLoginId())) {
-            return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
-        }else
-            return ResponseEntity.notFound().build();
+        memberRepository
+                .existsByLoginId(memberRequestDto.getLoginId())
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+
+        return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
     }
 
     @Transactional
@@ -236,19 +227,21 @@ public class MemberServiceImpl implements MemberService {
         Members members = memberRepository
                 .findById(new ObjectId(id))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        try {
-            members.updateMember(dto, passwordEncoder);
-            // 업데이트 한 정보 저장
-            memberRepository.save(members);
-            return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("비밀번호가 일치하지 않습니다.");
-        }
+
+        if(!passwordEncoder.matches(members.getPassword(), dto.getOldPassword()))
+            throw new BizException(MemberExceptionType.WRONG_PASSWORD);
+
+        members.updateMember(dto, passwordEncoder);
+        // 업데이트 한 정보 저장
+        memberRepository.save(members);
+        return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
     }
 
 
     /**
-     * @return 요청한 ID의 유저 정보를 반환한다.
+     *
+     * @param userId 회원 아이디
+     * @return MemberInfoResponse
      */
 
     @Transactional(readOnly = true)
@@ -267,23 +260,20 @@ public class MemberServiceImpl implements MemberService {
 
 
     /**
-     * @param userId DirtyChecking 을 통한 멤버 업데이트 ( Login ID는 업데이트 할 수 없다.)
-     * @param dto
+     * DirtyChecking 을 통한 멤버 업데이트 ( Login ID는 업데이트 할 수 없다.)
+     * @param userId
+     * @param memberUpdateRequest member 수정 요청 dto
      */
 
     @Transactional
-    public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest dto) {
+    public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
         Members members = memberRepository
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        try {
-            members.updateMember(dto, passwordEncoder);
-            // 업데이트 한 정보 저장
-            memberRepository.save(members);
-            return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("비밀번호가 일치하지 않습니다.");
-        }
+
+        members.updateMember(memberUpdateRequest, passwordEncoder);
+        memberRepository.save(members);
+        return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
     }
 
     @Transactional
@@ -292,20 +282,26 @@ public class MemberServiceImpl implements MemberService {
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        if (passwordEncoder.matches(dto.getPassword(), members.getPassword())) return ResponseEntity.ok(true);
-        else return ResponseEntity.notFound().build();
+        if (!passwordEncoder.matches(dto.getPassword(), members.getPassword()))
+            throw new BizException(MemberExceptionType.WRONG_PASSWORD);
+
+        return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
     @Transactional
     public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) {
+        // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
         Members entity = memberRepository
                 .findById(new ObjectId(userId))
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+                .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER));
 
+        // 비밀번호가 불일치 할 경우
+        if (!passwordEncoder.matches(entity.getPassword(), dto.getPassword()))
+            throw new BizException(MemberExceptionType.WRONG_PASSWORD);
+
+        // 멤버 엔티티의 delYn을 Yes로 변경 후 삭제 처리
         entity.remove('Y');
         memberRepository.save(entity);
         return ResponseEntity.ok("정상적으로 회원탈퇴 작업이 처리되었습니다.");
     }
-
-
 }
