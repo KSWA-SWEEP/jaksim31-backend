@@ -10,6 +10,19 @@ import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * packageName :  com.sweep.jaksim31.config
+ * fileName : SwaggerConfig
+ * author :  방근호
+ * date : 2023-01-13
+ * description : OpenAPI(Swagger)에 대한 설정, 토큰이 필요한 path와 필요하지 않은 path를 구분할 수 있음
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-13           방근호             최초 생성
+ *
+ */
+
 @OpenAPIDefinition(
         info = @Info(
                 title = "Jaksim31 API",
@@ -26,6 +39,7 @@ public class SwaggerConfig {
                 .builder()
                 .group("Non Security Open Api")
                 .pathsToMatch("/v0/**")
+                .addOpenApiCustomiser(buildSecurityOpenApi())
                 .build();
     }
 
