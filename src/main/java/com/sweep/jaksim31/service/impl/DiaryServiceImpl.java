@@ -167,13 +167,8 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
 
-    @Override
-    // 오늘 일기 조회
-    public String todayDiary(String userId){
-        LocalDate today = LocalDate.now();
-        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(new ObjectId(userId), today.atTime(9,0)).orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
-        return todayDiary.getId().toString();
-    }
+
+
     
     /**
      * @param userId 유저 아이디
@@ -349,5 +344,14 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 응답 생성
         return ResponseEntity.ok(new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion));
+    }
+
+    // 오늘 일기 조회
+    public ResponseEntity<String> todayDiary(String userId){
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository
+                .findDiaryByUserIdAndDate(new ObjectId(userId), today.atTime(9,0))
+                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
+        return ResponseEntity.ok(todayDiary.getId().toString());
     }
 }

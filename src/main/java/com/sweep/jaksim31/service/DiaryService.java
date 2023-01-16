@@ -46,9 +46,6 @@ public interface DiaryService {
     // 일기 조회
     ResponseEntity<DiaryInfoResponse> findDiary(String diary_id);
 
-    // 오늘 일기 조회
-    String todayDiary(String userId);
-
     // 일기 검색
     ResponseEntity<List<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params);
 
