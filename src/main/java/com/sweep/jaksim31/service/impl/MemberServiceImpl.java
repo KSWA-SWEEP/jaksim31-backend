@@ -5,7 +5,6 @@ import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
 import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
-import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
@@ -14,8 +13,6 @@ import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.ObjectStorageExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.HeaderUtil;
@@ -60,6 +57,7 @@ import java.util.TimeZone;
  * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
  * 2023-01-15           방근호          MemberSaveRequest 수정으로 인한 toMember 요청 인자 변경
  * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
+ * 2023-01-16           김주현          비밀번호 재설정 변경
  */
 
 @Slf4j
@@ -234,15 +232,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<?> updatePw(String id, MemberUpdateRequest dto) {
+    public ResponseEntity<?> updatePw(String loginId, MemberUpdatePasswordRequest dto) {
         Members members = memberRepository
-                .findById(new ObjectId(id))
+                .findMembersByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        if(!passwordEncoder.matches(members.getPassword(), dto.getOldPassword()))
-            throw new BizException(MemberExceptionType.WRONG_PASSWORD);
-
-        members.updateMember(dto, passwordEncoder);
+        members.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         // 업데이트 한 정보 저장
         memberRepository.save(members);
         return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
@@ -315,11 +310,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<Boolean> isMyPassword(String userId, MemberCheckPasswordRequest dto){
+    public ResponseEntity<Boolean> isMyPassword(String loginId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
-                .findById(new ObjectId(userId))
+                .findMembersByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
+        // 비밀번호 검증
         if (!passwordEncoder.matches(dto.getPassword(), members.getPassword()))
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
 

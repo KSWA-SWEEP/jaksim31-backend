@@ -95,16 +95,17 @@ public class Members {
     public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws BizException {
 
         if(dto.getOldPassword() != null) {
-            // 비밀번호가 같지 않다면
-            if (!passwordEncoder.matches(dto.getOldPassword(), this.password)){
+            // 비밀번호가 같지 않다면 예외 처리
+            if (!passwordEncoder.matches(dto.getOldPassword(), this.password))
                 throw new BizException(MemberExceptionType.WRONG_PASSWORD);
-            }
+
             this.password = passwordEncoder.encode(dto.getNewPassword());
         }
         if(dto.getUsername() != null) this.username = dto.getUsername();
         if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
         this.updateDate = Instant.now();
     }
+
 
     public void remove(char delYn){
         this.delYn = delYn;
