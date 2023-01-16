@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @FeignClient(name = "uploadImage", url= "${kakao.upload-storage.url}", configuration = UploadImageFeignConfig.class)
 public interface UploadImageFeign {
     @RequestMapping(method = RequestMethod.PUT,  value = "{path}", headers = {""})
-    ResponseEntity<Void> uploadFile(@PathVariable("path") String path, @RequestBody byte[] imgByte);
+    ResponseEntity<Object> uploadFile(@PathVariable("path") String path, @RequestBody byte[] imgByte);
 
     @RequestMapping(method = RequestMethod.GET, value = "{file}", produces = MediaType.IMAGE_JPEG_VALUE)
     @ResponseBody

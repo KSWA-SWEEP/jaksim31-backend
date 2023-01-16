@@ -4,6 +4,8 @@ import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
 import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
@@ -90,12 +92,12 @@ public class Members {
                 .collect(Collectors.joining(","));
     }
 
-    public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws Exception {
+    public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws BizException {
 
         if(dto.getOldPassword() != null) {
             // 비밀번호가 같지 않다면
             if (!passwordEncoder.matches(dto.getOldPassword(), this.password)){
-                throw new Exception("비밀 번호가 불일치 합니다.");
+                throw new BizException(MemberExceptionType.WRONG_PASSWORD);
             }
             this.password = passwordEncoder.encode(dto.getNewPassword());
         }

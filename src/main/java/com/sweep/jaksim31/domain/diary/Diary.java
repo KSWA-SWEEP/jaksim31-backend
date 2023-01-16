@@ -58,5 +58,6 @@ public class Diary {
         this.keywords = diarySaveRequest.getKeywords();
         this.thumbnail = diarySaveRequest.getThumbnail();
     }
+
 }
 

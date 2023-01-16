@@ -7,6 +7,7 @@ import com.sweep.jaksim31.dto.diary.DiarySaveRequest;
 import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.domain.diary.Diary;
 import org.json.simple.parser.ParseException;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -28,31 +29,28 @@ import java.util.Map;
 
 public interface DiaryService {
     // 일기 전체 조회
-    List<Diary> allDiaries();
+    ResponseEntity<List<Diary>> allDiaries();
 
     // 사용자 일기 전체 조회
-    List<DiaryInfoResponse> findUserDiaries(String userId);
+    ResponseEntity<List<DiaryInfoResponse>> findUserDiaries(String user_id);
 
     // 일기 생성
-    Diary saveDiary(DiarySaveRequest diarySaveRequest);
+    ResponseEntity<Diary> saveDiary(DiarySaveRequest diarySaveRequest);
 
     // 일기 수정
-    Diary updateDiary(String diary_id, DiarySaveRequest diarySaveRequest);
+    ResponseEntity<Diary> updateDiary(String diary_id, DiarySaveRequest diarySaveRequest);
 
     // 일기 삭제
-    String remove(String diary_id);
+    ResponseEntity<String> remove(String diary_id);
 
     // 일기 조회
-    DiaryInfoResponse findDiary(String diary_id);
-
-    // 오늘 일기 조회
-    String todayDiary(String userId);
+    ResponseEntity<DiaryInfoResponse> findDiary(String diary_id);
 
     // 일기 검색
-    List<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params);
+    ResponseEntity<List<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params);
 
     // 일기 분석
-    DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException;
+    ResponseEntity<DiaryAnalysisResponse> analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException;
 
 
 }

@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DiaryThumbnailRequest {
     private String userId;
+    private String diaryId;
     private String thumbnail;
 
 }
