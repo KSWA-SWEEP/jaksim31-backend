@@ -20,9 +20,10 @@ import java.util.Map;
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
- * 2023-01-09                김주현             최초 생성
- * 2023-01-12                김주현       Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
- * 2023-01-12                방근호       analyzeDiary 메소드 추가
+ * 2023-01-09           김주현             최초 생성
+ * 2023-01-12           김주현       Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
+ * 2023-01-12           방근호       analyzeDiary 메소드 추가
+ * 2023-01-14           김주현         todayDiary 메소드 추가
  */
 
 public interface DiaryService {
@@ -30,7 +31,7 @@ public interface DiaryService {
     List<Diary> allDiaries();
 
     // 사용자 일기 전체 조회
-    List<DiaryInfoResponse> findUserDiaries(String user_id);
+    List<DiaryInfoResponse> findUserDiaries(String userId);
 
     // 일기 생성
     Diary saveDiary(DiarySaveRequest diarySaveRequest);
@@ -43,6 +44,9 @@ public interface DiaryService {
 
     // 일기 조회
     DiaryInfoResponse findDiary(String diary_id);
+
+    // 오늘 일기 조회
+    String todayDiary(String userId);
 
     // 일기 검색
     List<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params);
