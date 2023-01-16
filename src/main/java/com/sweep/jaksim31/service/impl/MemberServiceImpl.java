@@ -5,12 +5,17 @@ import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
 import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
+import com.sweep.jaksim31.controller.feign.config.MakeObjectDirectoryFeignConfig;
+import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.dto.token.TokenRequest;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
+import com.sweep.jaksim31.exception.type.DiaryExceptionType;
+import com.sweep.jaksim31.exception.type.ObjectStorageExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.HeaderUtil;
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -34,6 +40,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -50,6 +59,7 @@ import java.util.TimeZone;
  * 2023-01-11           김주현          Members 수정으로 인한 Service 세부 수정
  * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
  * 2023-01-15           방근호          MemberSaveRequest 수정으로 인한 toMember 요청 인자 변경
+ * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
  */
 
 @Slf4j
@@ -70,6 +80,7 @@ public class MemberServiceImpl implements MemberService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
 
+    private final DiaryRepository diaryRepository;
 
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
@@ -253,9 +264,36 @@ public class MemberServiceImpl implements MemberService {
 
 
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
-        return ResponseEntity.ok().body(memberRepository.findMembersByLoginId(loginId)
-                .map(MemberInfoResponse::of)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+        // 로그인 id로 사용자 정보 불러오기
+        Members member = memberRepository.findMembersByLoginId(loginId).get();
+        // 오늘 날짜로 작성 된 일기가 있는지 확인
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
+        // 작성 된 일기가 있다면 diary_id, 없으면 ""
+        String todayDiaryId = "";
+        if(todayDiary != null)
+            todayDiaryId = todayDiary.getId().toString();
+        // 만료 시간을 당일 23:59:59로 설정
+        long expTime = LocalTime.of(23,59,59).toSecondOfDay() - LocalTime.now().minusHours(9).toSecondOfDay();
+        // check
+//        System.out.println("### end of day : " + LocalTime.of(23,59,59) + "    " + LocalTime.of(23,59,59).toSecondOfDay());
+//        System.out.println("### now : " + LocalTime.now().toString() + "   " + LocalTime.now().toSecondOfDay());
+//        System.out.println("### exptime : " + expTime);
+
+        // todayDiaryId Cookie 설정
+        ResponseCookie responseCookie = ResponseCookie.from("todayDiaryId", todayDiaryId)
+                .httpOnly(true)
+                .secure(true)
+                .maxAge(expTime)
+                .path("/").build();
+
+        // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
+        ResponseEntity response = ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
+                        .body(memberRepository.findMembersByLoginId(loginId)
+                        .map(MemberInfoResponse::of)
+                        .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+
+        return response;
     }
 
 
