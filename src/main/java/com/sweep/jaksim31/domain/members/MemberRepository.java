@@ -22,5 +22,5 @@ public interface MemberRepository extends MongoRepository<Members, String> {
     Optional<Members> findById(ObjectId id);
     Optional<Members> findMembersByLoginId(String loginId);
     boolean existsById(ObjectId id);
-    boolean existsByLoginId(String loginId);
+    Optional<Members> existsByLoginId(String loginId);
 }

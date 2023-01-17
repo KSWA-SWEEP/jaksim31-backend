@@ -25,10 +25,10 @@ public interface DiaryRepository extends MongoRepository<Diary, String> {
     List<Diary> findAll();
     Optional<Diary> findById(ObjectId id);
 
-    List<Diary> findAllByUserId(ObjectId user_id);
-    Optional<Diary> findDiaryByUserIdAndDate(ObjectId user_id, LocalDateTime date);
+    List<Diary> findAllByUserId(ObjectId userId);
+    Optional<Diary> findDiaryByUserIdAndDate(ObjectId userId, LocalDateTime date);
 
-    List<Diary> findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(ObjectId user_id, String emotion, LocalDateTime date, LocalDateTime date2);
-    List<Diary> findDiariesByUserIdAndDateBetweenOrderByDate(ObjectId user_id, LocalDateTime date, LocalDateTime date2);
+    List<Diary> findDiariesByUserIdAndEmotionAndDateBetween(ObjectId userId, String emotion, LocalDateTime date, LocalDateTime date2);
+    List<Diary> findDiariesByUserIdAndDateBetween(ObjectId userId, LocalDateTime date, LocalDateTime date2);
 }
 

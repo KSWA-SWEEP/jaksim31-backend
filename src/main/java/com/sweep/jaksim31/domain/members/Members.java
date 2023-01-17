@@ -4,10 +4,9 @@ import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
 import com.sweep.jaksim31.domain.diary.Diary;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -38,6 +37,7 @@ import java.util.stream.Collectors;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 @Document(collection = "member")
 public class Members {
 
@@ -92,19 +92,20 @@ public class Members {
                 .collect(Collectors.joining(","));
     }
 
-    public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws Exception {
+    public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws BizException {
 
         if(dto.getOldPassword() != null) {
-            // 비밀번호가 같지 않다면
-            if (!passwordEncoder.matches(dto.getOldPassword(), this.password)){
-                throw new Exception("비밀 번호가 불일치 합니다.");
-            }
+            // 비밀번호가 같지 않다면 예외 처리
+            if (!passwordEncoder.matches(dto.getOldPassword(), this.password))
+                throw new BizException(MemberExceptionType.WRONG_PASSWORD);
+
             this.password = passwordEncoder.encode(dto.getNewPassword());
         }
         if(dto.getUsername() != null) this.username = dto.getUsername();
         if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
         this.updateDate = Instant.now();
     }
+
 
     public void remove(char delYn){
         this.delYn = delYn;
