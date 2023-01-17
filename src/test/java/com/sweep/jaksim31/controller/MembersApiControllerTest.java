@@ -18,14 +18,22 @@ import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KaKaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
+import com.sweep.jaksim31.utils.RedirectionUtil;
 import io.swagger.v3.core.util.Json;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Nested;
 import org.junit.platform.engine.support.discovery.SelectorResolver;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +41,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.event.annotation.BeforeTestMethod;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.util.MultiValueMap;
@@ -50,6 +59,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = MembersApiController.class)
+@ExtendWith(MockitoExtension.class)
 @WithMockUser // 401 에러 방지
 class MembersApiControllerTest {
 
@@ -71,11 +81,12 @@ class MembersApiControllerTest {
     @MockBean
     private DiaryRepository diaryRepository;
 
+    @MockBean
+    private RedirectionUtil redirectionUtil;
 
-//    @BeforeEach
-//    public void init() {
-//
-//    }
+
+
+
 
     @Test
     @DisplayName("회원가입 컨트롤러")
@@ -434,8 +445,12 @@ class MembersApiControllerTest {
     @Test
     void remove() throws Exception {
 
+        URI redirectUri = new URI("test");
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setLocation(redirectUri);
+
         given(memberService.remove(any(), any()))
-                .willReturn(ResponseEntity.ok("삭제되었습니다."));
+                .willReturn(new ResponseEntity<>("삭제되었습니다.", httpHeaders, HttpStatus.SEE_OTHER));
 
         MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
         String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
@@ -445,7 +460,8 @@ class MembersApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonString))
 
-                .andExpect(status().isOk())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", "test"))
                 .andExpect(content().contentType("text/plain;charset=UTF-8"))
                 .andExpect(content().string("삭제되었습니다."))
                 .andDo(MockMvcResultHandlers.print(System.out));
@@ -457,7 +473,7 @@ class MembersApiControllerTest {
         void invalidRemove2xx() throws Exception{
 
             given(memberService.remove(any(), any()))
-                    .willThrow(new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER));
+                    .willThrow(new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, "test"));
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
@@ -467,8 +483,9 @@ class MembersApiControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
 
-                    .andExpect(status().isOk())
+                    .andExpect(status().is3xxRedirection())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(header().string("Location", "test"))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.DELETE_NOT_FOUND_USER.getMessage())))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.DELETE_NOT_FOUND_USER.getErrorCode())))
                     .andDo(MockMvcResultHandlers.print(System.out));
@@ -650,11 +667,11 @@ class MembersApiControllerTest {
     @DisplayName("카카오 로그아웃 컨트롤러")
     void kakaoLogout() throws Exception {
 
-        //given
         URI redirectUri = new URI("test");
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(redirectUri);
 
+        //given
         given(kaKaoMemberService.logout(any(), any()))
                 .willReturn(new ResponseEntity<>("로그아웃 되었습니다.", httpHeaders,  HttpStatus.SEE_OTHER));
 

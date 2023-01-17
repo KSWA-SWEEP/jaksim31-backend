@@ -125,7 +125,7 @@ public class MembersApiController {
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/{userId}")
-    public ResponseEntity<String> remove(@PathVariable("userId") String userId, @RequestBody MemberRemoveRequest dto) {
+    public ResponseEntity<String> remove(@PathVariable("userId") String userId, @RequestBody MemberRemoveRequest dto) throws URISyntaxException {
         return memberServiceImpl.remove(userId, dto);
     }
 

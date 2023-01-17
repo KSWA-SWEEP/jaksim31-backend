@@ -21,10 +21,12 @@ import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -59,6 +63,7 @@ import java.util.TimeZone;
  * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
  * 2023-01-16           방근호          비밀번호 재설정 변경
  * 2023-01-17           방근호          비밀번호 재설정 메소드 이름 변경
+ * 2023-01-17           방근호          로그인 로직 수정
  */
 
 @Slf4j
@@ -76,6 +81,10 @@ public class MemberServiceImpl implements MemberService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
     private final DiaryRepository diaryRepository;
+    private final RedirectionUtil redirectionUtil;
+
+//    @Value("${home.url}")
+//    private String homeUrl;
 
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
@@ -113,6 +122,10 @@ public class MemberServiceImpl implements MemberService {
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
 //        System.out.println("redis " + redisService.getValues(loginId));
+
+        // db에 있을 경우 지워준다.
+        if(refreshTokenRepository.findByLoginId(loginId).isPresent())
+            refreshTokenRepository.deleteByLoginId(loginId);
 
         //db에 token 저장
         refreshTokenRepository.save(
@@ -318,11 +331,11 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) {
+    public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) throws URISyntaxException {
         // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
         Members entity = memberRepository
                 .findById(new ObjectId(userId))
-                .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER));
+                .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, redirectionUtil.getHomeUrl()));
 
         // 비밀번호가 불일치 할 경우
         if (!passwordEncoder.matches(entity.getPassword(), dto.getPassword()))
@@ -331,6 +344,7 @@ public class MemberServiceImpl implements MemberService {
         // 멤버 엔티티의 delYn을 Yes로 변경 후 삭제 처리
         entity.remove('Y');
         memberRepository.save(entity);
-        return ResponseEntity.ok("정상적으로 회원탈퇴 작업이 처리되었습니다.");
+
+        return new ResponseEntity<>("정상적으로 회원탈퇴 작업이 처리되었습니다.", redirectionUtil.getLocationHeader(), HttpStatus.SEE_OTHER);
     }
 }

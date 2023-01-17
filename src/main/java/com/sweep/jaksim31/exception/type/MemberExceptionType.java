@@ -28,7 +28,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     LOGOUT_MEMBER("LOGOUT_MEMBER","로그아웃된 사용자입니다.",HttpStatus.BAD_REQUEST),
 
     SESSION_EXPIRED("SESSION_EXPIRED","세션이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
-    DELETE_NOT_FOUND_USER("ALREADY_NOT_EXIST_MEMBER", "존재하지 않는 사용자입니다.", HttpStatus.OK);
+    DELETE_NOT_FOUND_USER("ALREADY_NOT_EXIST_MEMBER", "존재하지 않는 사용자입니다.", HttpStatus.SEE_OTHER);
 
 
     private final String errorCode;
