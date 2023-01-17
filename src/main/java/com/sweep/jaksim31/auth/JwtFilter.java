@@ -43,7 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
 //        System.out.println(request.getServletPath());
         if(request.getServletPath().startsWith("/v0") || request.getServletPath().startsWith("/swagger")) {
             filterChain.doFilter(request,response);
-        }else {
+        } else {
             String token = resolveToken(request);
 
             log.debug("token  = {}",token);
