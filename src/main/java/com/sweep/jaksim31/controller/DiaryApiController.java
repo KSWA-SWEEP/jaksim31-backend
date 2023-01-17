@@ -124,7 +124,7 @@ public class DiaryApiController {
     @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
     @GetMapping(value = "{userId}/emotions")
     public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params) {
-        return ResponseEntity.ok().body(diaryService.emotionStatics(userId, params));
+        return diaryService.emotionStatics(userId, params);
     }
 
 

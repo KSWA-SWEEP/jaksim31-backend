@@ -355,8 +355,13 @@ public class DiaryServiceImpl implements DiaryService {
         return ResponseEntity.ok(todayDiary.getId().toString());
     }
 
+    /**
+     * @param userId 유저 아이디
+     * @param params 조회 기간(startDate,endDate)
+     * @return DiaryEmotionStaticsResponse
+     */
     // 감정 통계
-    public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatics(String userId, Map<String, Object> params){
 
         LocalDateTime startDate;
         LocalDateTime endDate;
@@ -391,7 +396,7 @@ public class DiaryServiceImpl implements DiaryService {
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         emotionStatics = aggregation.getMappedResults();
 
-        return new DiaryEmotionStaticsResponse(emotionStatics);
+        return ResponseEntity.ok(new DiaryEmotionStaticsResponse(emotionStatics));
     }
 
 }
