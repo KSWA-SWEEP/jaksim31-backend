@@ -22,6 +22,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -76,6 +79,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final TranslationFeign translationFeign;
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
+    private final MongoTemplate mongoTemplate;
     @Override
     // 전체 일기 조회
     public List<Diary> allDiaries(){
@@ -259,21 +263,42 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     // 감정 통계
-    public Map<String, Integer> emotionStatics(String userId){
-        Map<String, Integer> emotions = new HashMap<>();
-        List<Diary> diaries = diaryRepository.findAllByUserId(new ObjectId(userId));
-        for(Diary i : diaries){
-            System.out.println("### Diary : " + i.getDate() + " " + i.getContent());
-            if(!emotions.containsKey(i.getEmotion()))
-                emotions.put(i.getEmotion(), 1);
-            else{
-                int emotion_num = emotions.get(i.getEmotion());
-                emotion_num++;
-                emotions.put(i.getEmotion(), emotion_num);
-            }
+    public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
 
-        }
-        return emotions;
+        LocalDateTime startDate;
+        LocalDateTime endDate;
+        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
+        if(params.containsKey("startDate")){
+            startDate = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);}
+        else{
+            startDate = LocalDate.of(1990, 1, 1).atTime(9, 0);}
+        if(params.containsKey("endDate")){
+            endDate = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);}
+        else{
+            endDate = LocalDate.now().atTime(9,0);}
+
+        List<DiaryEmotionStatics> emotionStatics = null;
+
+        // Aggregation 설정
+        // filter
+        MatchOperation matchOperation = Aggregation.match(
+                Criteria.where("date").gte(startDate).lte(endDate)
+                        .and("userId").is(new ObjectId(userId))
+        );
+        // group (Group By)
+        GroupOperation groupOperation = Aggregation.group("emotion").count().as("countEmotion");
+        // projection (원하는 필드를 제외하거나 포함)
+        ProjectionOperation projectionOperation = Aggregation.project("emotion", "countEmotion");
+
+        // 모든 조건을 포함하여 쿼리 실행. (Input : Diary.class / Output : DiaryEmotionStatics.class)
+        AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
+                Diary.class,
+                DiaryEmotionStatics.class);
+
+        // 쿼리 실행 결과 중 Output class에 매핑 된 결과
+        emotionStatics = aggregation.getMappedResults();
+
+        return new DiaryEmotionStaticsResponse(emotionStatics);
     }
 
 }

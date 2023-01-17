@@ -94,7 +94,7 @@ public class DiaryApiController {
     }
 
     // 사용자 일기 검색
-    @Operation(summary = "사용자 일기 겁색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
+    @Operation(summary = "사용자 일기 검색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
     public List<DiaryInfoResponse> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
         System.out.println(userId + "'s diaries");
@@ -118,10 +118,10 @@ public class DiaryApiController {
         return diaryService.saveThumbnail(diaryThumbnailRequest);
     }
 
-    @Operation(summary = "감정 통계 API", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
-    @PostMapping(value = "{userId}/emotions")
-    public Map<String, Integer> emotionStatistics(@PathVariable String userId) {
-        return diaryService.emotionStatics(userId);
+    @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
+    @GetMapping(value = "{userId}/emotions")
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params) {
+        return ResponseEntity.ok().body(diaryService.emotionStatics(userId, params));
     }
 
 }
