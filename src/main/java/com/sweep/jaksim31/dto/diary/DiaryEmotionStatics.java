@@ -21,6 +21,6 @@ import org.springframework.data.annotation.Id;
 @AllArgsConstructor
 public class DiaryEmotionStatics {
     @Id
-    private String emotion;
-    private String countEmotion;
+    private String emotion; // 감정
+    private int countEmotion; // 개수
 }
