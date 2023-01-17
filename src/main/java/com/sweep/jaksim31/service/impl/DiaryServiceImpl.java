@@ -208,7 +208,7 @@ public class DiaryServiceImpl implements DiaryService {
             diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
                     .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
-        }
+
         System.out.println("Diaries : " + diaries);
 
         return ResponseEntity.ok(diaries);
