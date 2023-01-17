@@ -33,7 +33,8 @@ import java.util.Map;
  * 2023-01-12           방근호             Diary 컨트롤러에 클라우드와 api 통신 및 사진 다운로드 & 업로드
  * 2023-01-14           김주현             오늘 일기 조회 추가(서비스 확인용_주석 처리)
  * 2023-01-16           방근호             모든 컨트롤러에 ResponseEntity Wrapper class 사용
- */
+ * 2023-01-17           김주현             감정 통계 추가
+*/
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
     * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제
@@ -96,7 +97,7 @@ public class DiaryApiController {
     }
 
     // 사용자 일기 검색
-    @Operation(summary = "사용자 일기 겁색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
+    @Operation(summary = "사용자 일기 검색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
     public ResponseEntity<List<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
         System.out.println(userId + "'s diaries");
@@ -119,12 +120,12 @@ public class DiaryApiController {
     public ResponseEntity<String> saveThumbnail(@RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
         return diaryService.saveThumbnail(diaryThumbnailRequest);
     }
+    
+    @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
+    @GetMapping(value = "{userId}/emotions")
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params) {
+        return diaryService.emotionStatics(userId, params);
+    }
 
-    // Service 확인용 API
-//    @Operation(summary = "오늘 일기 조회", description = "사용자의 오늘 일기를 조회합니다. 작성한 일기가 있을 경우 일기의 id를 반환합니다.")
-//    @GetMapping(value = "{userId}/today")
-//    public String todayDiary(@PathVariable String userId) {
-//        return diaryService.todayDiary(userId);
-//    }
 
 }

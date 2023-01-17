@@ -24,6 +24,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,8 +58,10 @@ import java.util.stream.Collectors;
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-13           방근호             일기 분석 및 썸네일 업로드 기능 추가
  * 2023-01-14           김주현             오늘 일기 조회 기능 추가
+ * 2023-01-15           김주현             감정 통계 기능 추가 및 사용자 일기 검색에서 검색 날짜 포함해서 검색되도록 수정
  * 2023-01-16           방근호             모든 메소드 리턴값 수정(ResponseEntity 사용)
  * 2023-01-16           방근호             써드파티 api 이용 예외처리 추가
+ 
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -81,6 +86,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final TranslationFeign translationFeign;
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
+    private final MongoTemplate mongoTemplate;
     @Override
     // 전체 일기 조회
     public ResponseEntity<List<Diary>> allDiaries(){
@@ -185,30 +191,24 @@ public class DiaryServiceImpl implements DiaryService {
         LocalDateTime start_date;
         LocalDateTime end_date;
         // 시간 조건 설정
-        if(params.containsKey("startDate"))
-            start_date = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);
-        else
-            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);
-        if(params.containsKey("endDate"))
-            end_date = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);
-        else
-            end_date = LocalDate.now().atTime(9,0);
+        if(params.containsKey("startDate")){
+            start_date = (LocalDate.parse(((String)params.get("startDate")))).minusDays(1).atTime(9,0);}
+        else{
+            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);}
+        if(params.containsKey("endDate")){
+            end_date = (LocalDate.parse(((String)params.get("endDate")))).plusDays(1).atTime(9,0);}
+        else{
+            end_date = LocalDate.now().plusDays(1).atTime(9,0);}
         // 조건으로 조회
-        if(params.containsKey("emotion")) {
-            new DiaryInfoResponse();
-            diaries = diaryRepository
-                    .findDiariesByUserIdAndEmotionAndDateBetween(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date)
-                    .stream()
-                    .map(DiaryInfoResponse::of)
+        if(params.containsKey("emotion"))
+            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
+                    .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
-        } else {
-            new DiaryInfoResponse();
-            diaries = diaryRepository
-                    .findDiariesByUserIdAndDateBetween(new ObjectId(userId), start_date, end_date)
-                    .stream()
-                    .map(DiaryInfoResponse::of)
+        else
+            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
+                    .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
-        }
+
         System.out.println("Diaries : " + diaries);
 
         return ResponseEntity.ok(diaries);
@@ -354,4 +354,49 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         return ResponseEntity.ok(todayDiary.getId().toString());
     }
+
+    /**
+     * @param userId 유저 아이디
+     * @param params 조회 기간(startDate,endDate)
+     * @return DiaryEmotionStaticsResponse
+     */
+    // 감정 통계
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatics(String userId, Map<String, Object> params){
+
+        LocalDateTime startDate;
+        LocalDateTime endDate;
+        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
+        if(params.containsKey("startDate")){
+            startDate = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);}
+        else{
+            startDate = LocalDate.of(1990, 1, 1).atTime(9, 0);}
+        if(params.containsKey("endDate")){
+            endDate = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);}
+        else{
+            endDate = LocalDate.now().atTime(9,0);}
+
+        List<DiaryEmotionStatics> emotionStatics = null;
+
+        // Aggregation 설정
+        // filter
+        MatchOperation matchOperation = Aggregation.match(
+                Criteria.where("date").gte(startDate).lte(endDate)
+                        .and("userId").is(new ObjectId(userId))
+        );
+        // group (Group By)
+        GroupOperation groupOperation = Aggregation.group("emotion").count().as("countEmotion");
+        // projection (원하는 필드를 제외하거나 포함)
+        ProjectionOperation projectionOperation = Aggregation.project("emotion", "countEmotion");
+
+        // 모든 조건을 포함하여 쿼리 실행. (Input : Diary.class / Output : DiaryEmotionStatics.class)
+        AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
+                Diary.class,
+                DiaryEmotionStatics.class);
+
+        // 쿼리 실행 결과 중 Output class에 매핑 된 결과
+        emotionStatics = aggregation.getMappedResults();
+
+        return ResponseEntity.ok(new DiaryEmotionStaticsResponse(emotionStatics));
+    }
+
 }
