@@ -2,6 +2,7 @@ package com.sweep.jaksim31.dto.member;
 
 import com.sweep.jaksim31.domain.members.Members;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,6 +24,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class MemberSaveResponse {
 
     private String userId;

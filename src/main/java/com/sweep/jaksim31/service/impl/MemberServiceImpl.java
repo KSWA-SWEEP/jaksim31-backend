@@ -57,7 +57,8 @@ import java.util.TimeZone;
  * 2023-01-12           방근호          회원가입 시 오브젝트 디렉토리 생성
  * 2023-01-15           방근호          MemberSaveRequest 수정으로 인한 toMember 요청 인자 변경
  * 2023-01-16           김주현          로그인 시 오늘 일기 id Set-Cookie
- * 2023-01-16           김주현          비밀번호 재설정 변경
+ * 2023-01-16           방근호          비밀번호 재설정 변경
+ * 2023-01-17           방근호          비밀번호 재설정 메소드 이름 변경
  */
 
 @Slf4j
@@ -70,14 +71,10 @@ public class MemberServiceImpl implements MemberService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
-    private final MakeObjectDirectoryFeign makeObjectDirectoryFeign;
-    private final ApiTokenRefreshFeign apiTokenRefreshFeign;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
-
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
-
     private final DiaryRepository diaryRepository;
 
     @Transactional
@@ -130,7 +127,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<?> reissue(TokenRequest tokenRequest,
+    public ResponseEntity<TokenResponse> reissue(TokenRequest tokenRequest,
                                      HttpServletResponse response) {
 
 
@@ -196,7 +193,7 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response){
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response){
 
         String originAccessToken = HeaderUtil.getAccessToken(request);
 
@@ -223,7 +220,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<?> isMember(MemberCheckLoginIdRequest memberRequestDto) {
+    public ResponseEntity<String> isMember(MemberCheckLoginIdRequest memberRequestDto) {
         memberRepository
                 .existsByLoginId(memberRequestDto.getLoginId())
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -232,7 +229,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public ResponseEntity<?> updatePw(String loginId, MemberUpdatePasswordRequest dto) {
+    public ResponseEntity<String> updatePassword(String loginId, MemberUpdatePasswordRequest dto) {
         Members members = memberRepository
                 .findMembersByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -283,12 +280,10 @@ public class MemberServiceImpl implements MemberService {
                 .path("/").build();
 
         // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
-        ResponseEntity response = ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
+        return ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
                         .body(memberRepository.findMembersByLoginId(loginId)
                         .map(MemberInfoResponse::of)
                         .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
-
-        return response;
     }
 
 
@@ -299,18 +294,18 @@ public class MemberServiceImpl implements MemberService {
      */
 
     @Transactional
-    public ResponseEntity<?> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
+    public ResponseEntity<String> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
         Members members = memberRepository
                 .findById(new ObjectId(userId))
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        members.updateMember(memberUpdateRequest, passwordEncoder);
+        members.updateMember(memberUpdateRequest);
         memberRepository.save(members);
         return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
     }
 
     @Transactional
-    public ResponseEntity<Boolean> isMyPassword(String loginId, MemberCheckPasswordRequest dto){
+    public ResponseEntity<String> isMyPassword(String loginId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
                 .findMembersByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -319,7 +314,7 @@ public class MemberServiceImpl implements MemberService {
         if (!passwordEncoder.matches(dto.getPassword(), members.getPassword()))
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
 
-        return new ResponseEntity<>(true, HttpStatus.OK);
+        return ResponseEntity.ok("비밀번호가 일치합니다.");
     }
 
     @Transactional

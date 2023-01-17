@@ -4,7 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sweep.jaksim31.dto.login.KakaoLoginRequest;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+
+import javax.xml.ws.BindingType;
 
 /**
 * packageName :  com.sweep.jaksim31.domain
@@ -18,6 +22,7 @@ import lombok.Data;
 * 2023-01-15           방근호                최초 생성
 */
 @Data
+@Builder
 public class KakaoProfile {
 
     public String id;
@@ -28,7 +33,8 @@ public class KakaoProfile {
     public KakaoAccount kakaoAccount;
 
     @Data
-    public class Properties { //(1)
+    @AllArgsConstructor
+    public static class Properties { //(1)
         public String nickname;
         @JsonProperty("profile_image")
         public String profileImage; // 이미지 경로 필드1

@@ -72,26 +72,24 @@ public class MembersApiController {
 
     @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
     @GetMapping(value="/kakao-login")
-    public ResponseEntity<?> kakaoLogin(@RequestParam("code") String authorizationCode, HttpServletResponse response) throws Exception {
+    public ResponseEntity<TokenResponse> kakaoLogin(@RequestParam("code") String authorizationCode, HttpServletResponse response) throws Exception {
         System.out.println(authorizationCode);
         // 카카오 인증코드로 토큰 얻어서 유저 정보 얻기
         KakaoProfile userInfo = kaKaoMemberService.getKakaoUserInfo((kaKaoMemberService.getAccessToken(authorizationCode)));
         // 회원가입이 되어있는지 조회하고 없으면 회원가입 있으면 로그인.
-        KakaoLoginRequest loginRequest = userInfo.toLoginRequest();
-
-        return kaKaoMemberService.login(loginRequest, response);
+        return kaKaoMemberService.login(userInfo.toLoginRequest(), response);
     }
 
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
     @PostMapping("")
-    public ResponseEntity<?> isMember(
+    public ResponseEntity<String> isMember(
             @RequestBody MemberCheckLoginIdRequest memberRequestDto) {
         return memberServiceImpl.isMember(memberRequestDto);
     }
 
     @Operation(summary = "토큰 재발급", description = "리프레쉬 토큰으로 토큰을 재발급 합니다.")
     @PostMapping("/{userId}/reissue")
-    public ResponseEntity<?> reissue(@PathVariable("userId") String userId, @RequestBody TokenRequest tokenRequest,
+    public ResponseEntity<TokenResponse> reissue(@PathVariable("userId") String userId, @RequestBody TokenRequest tokenRequest,
                             HttpServletResponse response
     ) {
         return memberServiceImpl.reissue(tokenRequest, response);
@@ -100,8 +98,8 @@ public class MembersApiController {
 //    @Hidden
     @Operation(summary = "비밀번호 변경", description = "비밀번호 재설정을 요청합니다.")
     @PutMapping("/{loginId}/password")
-    public ResponseEntity<?> changePw(@PathVariable("loginId") String loginId, @RequestBody MemberUpdatePasswordRequest dto) {
-        return memberServiceImpl.updatePw(loginId, dto);
+    public ResponseEntity<String> changePassword(@PathVariable("loginId") String loginId, @RequestBody MemberUpdatePasswordRequest dto) {
+        return memberServiceImpl.updatePassword(loginId, dto);
     }
 
 //    @Hidden
@@ -121,7 +119,7 @@ public class MembersApiController {
 
     @Operation(summary = "유저 정보 업데이트 요청", description = "유저 정보 업데이트를 요청합니다.")
     @PatchMapping("/{userId}")
-    public ResponseEntity<?> updateMember(@PathVariable("userId") String userId, @RequestBody MemberUpdateRequest dto) {
+    public ResponseEntity<String> updateMember(@PathVariable("userId") String userId, @RequestBody MemberUpdateRequest dto) {
         return memberServiceImpl.updateMemberInfo(userId, dto);
     }
 
@@ -133,20 +131,19 @@ public class MembersApiController {
 
     @Operation(summary = "내 비밀번호 검증(확인)", description = "이메일과 비밀번호 입력 시 비밀번호가 맞는지 확인")
     @PostMapping("/{loginId}/password")
-    public ResponseEntity<Boolean> isMyPw(@PathVariable("loginId") String loginId, @RequestBody MemberCheckPasswordRequest dto) {
+    public ResponseEntity<String> isMyPw(@PathVariable("loginId") String loginId, @RequestBody MemberCheckPasswordRequest dto) {
         return memberServiceImpl.isMyPassword(loginId, dto);}
 
     @Operation(summary = "로그아웃", description = "해당 유저의 토큰 정보가 db에서 삭제 됩니다.")
-    @PostMapping("/{userId}/logout")
-    public ResponseEntity<?> logout(@PathVariable("userId") String userId,
-            HttpServletRequest request, HttpServletResponse response) {
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         return memberServiceImpl.logout(request, response);
     }
 
     // 아직 테스트 X -> 프론트 연결 후 테스트 진행
     @Operation(summary = "카카오 로그아웃", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
     @GetMapping(value="/kakao-logout")
-    public ResponseEntity<?> kakaoLogout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+    public ResponseEntity<String> kakaoLogout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
         return kaKaoMemberService.logout(request, response);
     }
 
