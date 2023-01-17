@@ -2,8 +2,10 @@ package com.sweep.jaksim31.dto.diary;
 
 import com.sweep.jaksim31.domain.diary.Diary;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 
 import java.time.LocalDate;
 
@@ -18,14 +20,16 @@ import java.time.LocalDate;
  * -----------------------------------------------------------
  * 2023-01-12                김주현             최초 생성
  * 2023-01-13                방근호             클래스 이름 변경
+ * 2023-01-17                김주현             contents field 삭제
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class DiaryInfoResponse {
+    @Id
     private String diaryId;
     private String userId;
-    private String content;
     private LocalDate date;
     private LocalDate modifyDate;
     private String emotion;
@@ -33,6 +37,6 @@ public class DiaryInfoResponse {
     private String thumbnail;
 
     public static DiaryInfoResponse of(Diary diary){
-        return new DiaryInfoResponse(diary.getId().toString(), diary.getUserId().toString(), diary.getContent(), diary.getDate().toLocalDate(), diary.getModifyDate().toLocalDate(), diary.getEmotion(), diary.getKeywords(), diary.getThumbnail());
+        return new DiaryInfoResponse(diary.getId().toString(), diary.getUserId().toString(), diary.getDate().toLocalDate(), diary.getModifyDate().toLocalDate(), diary.getEmotion(), diary.getKeywords(), diary.getThumbnail());
     }
 }

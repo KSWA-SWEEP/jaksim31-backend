@@ -24,9 +24,15 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,6 +67,7 @@ import java.util.stream.Collectors;
  * 2023-01-15           김주현             감정 통계 기능 추가 및 사용자 일기 검색에서 검색 날짜 포함해서 검색되도록 수정
  * 2023-01-16           방근호             모든 메소드 리턴값 수정(ResponseEntity 사용)
  * 2023-01-16           방근호             써드파티 api 이용 예외처리 추가
+ * 2023-01-17           김주현             사용자 일기 조회(전체) Service에 Paging 추가
  
  */
 /* TODO
@@ -92,17 +99,48 @@ public class DiaryServiceImpl implements DiaryService {
     public ResponseEntity<List<Diary>> allDiaries(){
         return ResponseEntity.ok(diaryRepository.findAll());
     }
-
+    /**
+     *  findUserDiaries 사용자 일기 목록 조회
+     * @param userId
+     * @param params 페이징 조건(page(0부터 시작), size) 및 정렬(sort)
+     * @return Page<DiaryInfoResponse>
+     */
     @Override
     // 사용자 id 전체 일기 조회
-    public ResponseEntity<List<DiaryInfoResponse>> findUserDiaries(String userId){
-
-        memberRepository.findById(userId)
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiaries(String userId, Map params){
+        // 사용자를 찾을 수 없을 때
+        memberRepository
+                .findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        return ResponseEntity.ok(diaryRepository.findAllByUserId(new ObjectId(userId)).stream()
-                .map(DiaryInfoResponse::of)
-                .collect(Collectors.toList()));
+        Pageable pageable;
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=9) 세팅
+        if(!params.containsKey("page"))
+            params.put("page", "0");
+        if(!params.containsKey("size"))
+            params.put("size", "9");
+        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
+        if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
+        else
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
+        // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
+        Query query = new Query()
+                .with(pageable)
+                .skip(pageable.getPageSize() * pageable.getPageNumber())
+                .limit(pageable.getPageSize());
+        // filter(사용자 id)
+        query.addCriteria(Criteria.where("userId").is(new ObjectId(userId)));
+        // filtering 된 데이터
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, DiaryInfoResponse.class, "diary");
+        // filtering 된 데이터, 페이징 정보, document 개수 정보로 Page 객체 생성
+        Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
+                diaries,
+                pageable,
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), DiaryInfoResponse.class, "diary")
+        );
+
+        return ResponseEntity.ok(diaryPage);
     }
 
     /**
@@ -155,9 +193,9 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 삭제
-    public ResponseEntity<String> remove(String diary_id) {
+    public ResponseEntity<String> remove(String diaryId) {
         Diary diary = diaryRepository
-                .findById(diary_id)
+                .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
         diaryRepository.delete(diary);
         return ResponseEntity.ok(diary.getId().toString());
@@ -165,17 +203,12 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 조회
-    public ResponseEntity<DiaryInfoResponse> findDiary(String diary_id) {
+    public ResponseEntity<Diary> findDiary(String diaryId) {
         return ResponseEntity.ok(
-                DiaryInfoResponse
-                        .of(diaryRepository.findById(new ObjectId(diary_id))
-                                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY))));
+                diaryRepository.findById(new ObjectId(diaryId))
+                                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY)));
     }
 
-
-
-
-    
     /**
      * @param userId 유저 아이디
      * @param params 정렬 조건
@@ -184,34 +217,36 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 검색, 조건 조회
-    public ResponseEntity<List<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params){
+    public ResponseEntity<Page<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params){
+        // TODO
+        //  * ElasticSearch로 검색하도록 구현
+//
+//        // Repository 방식
+//        List<DiaryInfoResponse> diaries;
+//        LocalDateTime start_date;
+//        LocalDateTime end_date;
+//        // 시간 조건 설정
+//        if(params.containsKey("startDate")){
+//            start_date = (LocalDate.parse(((String)params.get("startDate")))).minusDays(1).atTime(9,0);}
+//        else{
+//            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);}
+//        if(params.containsKey("endDate")){
+//            end_date = (LocalDate.parse(((String)params.get("endDate")))).plusDays(1).atTime(9,0);}
+//        else{
+//            end_date = LocalDate.now().plusDays(1).atTime(9,0);}
+//        // 조건으로 조회
+//        if(params.containsKey("emotion"))
+//            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
+//                    .map(m -> new DiaryInfoResponse().of(m))
+//                    .collect(Collectors.toList());
+//        else
+//            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
+//                    .map(m -> new DiaryInfoResponse().of(m))
+//                    .collect(Collectors.toList());
+//
+//        System.out.println("Diaries : " + diaries);
 
-        // Repository 방식
-        List<DiaryInfoResponse> diaries;
-        LocalDateTime start_date;
-        LocalDateTime end_date;
-        // 시간 조건 설정
-        if(params.containsKey("startDate")){
-            start_date = (LocalDate.parse(((String)params.get("startDate")))).minusDays(1).atTime(9,0);}
-        else{
-            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);}
-        if(params.containsKey("endDate")){
-            end_date = (LocalDate.parse(((String)params.get("endDate")))).plusDays(1).atTime(9,0);}
-        else{
-            end_date = LocalDate.now().plusDays(1).atTime(9,0);}
-        // 조건으로 조회
-        if(params.containsKey("emotion"))
-            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
-                    .map(m -> new DiaryInfoResponse().of(m))
-                    .collect(Collectors.toList());
-        else
-            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
-                    .map(m -> new DiaryInfoResponse().of(m))
-                    .collect(Collectors.toList());
-
-        System.out.println("Diaries : " + diaries);
-
-        return ResponseEntity.ok(diaries);
+        return ResponseEntity.ok(null);
     }
 
     /**
