@@ -1,0 +1,10 @@
+## Database DataSource
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+#      authentication-database: admin
+#      database: jaksim31-dev
+#      username: sweep
+#      password: sweep

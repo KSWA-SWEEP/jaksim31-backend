@@ -45,6 +45,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.Optional;
 import java.util.TimeZone;
 
 /**
@@ -64,6 +65,7 @@ import java.util.TimeZone;
  * 2023-01-16           방근호          비밀번호 재설정 변경
  * 2023-01-17           방근호          비밀번호 재설정 메소드 이름 변경
  * 2023-01-17           방근호          로그인 로직 수정
+ * 2023-01-18           방근호          GetMyInfoByLoginId 리턴값 수정
  */
 
 @Slf4j
@@ -88,9 +90,9 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
-        memberRepository
-                .existsByLoginId(memberRequestDto.getLoginId())
-                .orElseThrow(()-> new BizException(MemberExceptionType.DUPLICATE_USER));
+
+        if(memberRepository.existsByLoginId(memberRequestDto.getLoginId()).isPresent())
+           throw new BizException(MemberExceptionType.DUPLICATE_USER);
 
         Members members = memberRequestDto.toMember(passwordEncoder, false);
         return ResponseEntity.ok(MemberSaveResponse.of(memberRepository.save(members)));
@@ -270,7 +272,8 @@ public class MemberServiceImpl implements MemberService {
 
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
         // 로그인 id로 사용자 정보 불러오기
-        Members member = memberRepository.findMembersByLoginId(loginId).get();
+        Members member = memberRepository.findMembersByLoginId(loginId)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 오늘 날짜로 작성 된 일기가 있는지 확인
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
@@ -294,7 +297,7 @@ public class MemberServiceImpl implements MemberService {
 
         // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
         return ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
-                        .body(memberRepository.findMembersByLoginId(loginId)
+                        .body(Optional.of(member)
                         .map(MemberInfoResponse::of)
                         .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }

@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             id -> userId
  * 2023-01-12           방근호             클래스 이름 변경
+ * 2023-01-18           방근호             프로필 이미지 필드 추가
  */
 
 @Data
@@ -30,8 +31,9 @@ public class MemberSaveResponse {
     private String userId;
     private String loginId;
     private String username;
+    private String profileImage;
 
     public static MemberSaveResponse of(Members members) {
-        return new MemberSaveResponse(members.getId().toString(), members.getLoginId(), members.getUsername());
+        return new MemberSaveResponse(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfileImage());
     }
 }
