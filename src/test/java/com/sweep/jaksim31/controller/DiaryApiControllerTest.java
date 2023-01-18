@@ -22,6 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -191,6 +196,80 @@ public class DiaryApiControllerTest  {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.WRONG_DATE.getErrorCode())))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.WRONG_DATE.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+    }
+    @Nested
+    @DisplayName("일기 조회 컨트롤러")
+    class findUserDiary {
+        @Test
+        @DisplayName("[정상]일기 조회 완료")
+        public void findUserDiary() throws Exception{
+            String[] keywords = {"happy"};
+            LocalDate date = LocalDate.of(2023, 1, 18);
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("userId")
+                    .date(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.findUserDiaries(any(),any()))
+                    .willReturn(ResponseEntity.ok(page));
+
+            //when
+            mockMvc.perform(get("/v0/diaries/userId")
+                            .with(csrf()) //403 에러 방지
+                            .queryParam("page", String.valueOf(0))
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("userId")))
+                    .andExpect(jsonPath("$.content[0].date", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @Test
+        @DisplayName("[예외]사용자가 없는 경우")
+        public void failFindUserDiaryNotFoundUser() throws Exception{
+            String[] keywords = {"happy"};
+            LocalDate date = LocalDate.of(2023, 1, 18);
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("userId")
+                    .date(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.findUserDiaries(any(),any()))
+                    .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
+
+            //when
+            mockMvc.perform(get("/v0/diaries/userId")
+                            .with(csrf()) //403 에러 방지
+                            .queryParam("page", String.valueOf(0))
+                    )
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }
