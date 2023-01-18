@@ -1,14 +1,15 @@
 package com.sweep.jaksim31.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.parser.ParseException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -34,12 +35,13 @@ import java.util.Map;
  * 2023-01-14           김주현             오늘 일기 조회 추가(서비스 확인용_주석 처리)
  * 2023-01-16           방근호             모든 컨트롤러에 ResponseEntity Wrapper class 사용
  * 2023-01-17           김주현             감정 통계 추가
+ * 2023-01-17           김주현             사용자 일기 조회 Paging 추가
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 일기 분석 method 명 수정
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
     * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제
-    * 사용자 일기 검색 Paging 기능 추가 하기
+    * 사용자 일기 검색 Paging 기능 추가 하기(전체 조회는 추가 완료. 조건 조회에 추가 필요)
 * */
 @Slf4j
 @RestController
@@ -93,21 +95,21 @@ public class DiaryApiController {
     // 개별 일기 조회
     @Operation(summary = "개별 일기 조회", description = "일기ID로 하나의 일기를 조회합니다.")
     @GetMapping(value="{userId}/{diaryId}")
-    public ResponseEntity<DiaryInfoResponse> findDiary(@PathVariable String userId, @PathVariable String diaryId){
+    public ResponseEntity<Diary> findDiary(@PathVariable String userId, @PathVariable String diaryId){
         return diaryService.findDiary(diaryId);
     }
 
-    // 사용자 일기 검색
-    @Operation(summary = "사용자 일기 검색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
+    // 사용자 일기 조회
+    @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public ResponseEntity<List<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
-        System.out.println(userId + "'s diaries");
-        // 조건이 없으면 사용자 일기 전체 조회
-        if(params.isEmpty()){
-            return diaryService.findUserDiaries(userId);
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam String page, @RequestParam(required = false) Map<String, Object> params){
+        if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate")){
+            // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
+            return diaryService.findDiaries(userId, params);
         }else
-            System.out.println("parameters : " + params.toString());
-        return diaryService.findDiaries(userId, params);
+            // 페이징 및 정렬 조건만 있으면 사용자 일기 전체 조회
+            return diaryService.findUserDiaries(userId, params);
+
     }
 
     @Operation(summary = "일기 분석", description = "해당 일기 문장들을 분석하고 결과(번역, 키워드 추출)를 반환합니다.")
