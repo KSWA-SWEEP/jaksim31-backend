@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import javax.xml.ws.BindingType;
 
 /**
 * packageName :  com.sweep.jaksim31.domain

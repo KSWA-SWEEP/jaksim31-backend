@@ -34,6 +34,7 @@ import java.util.Map;
  * 2023-01-14           김주현             오늘 일기 조회 추가(서비스 확인용_주석 처리)
  * 2023-01-16           방근호             모든 컨트롤러에 ResponseEntity Wrapper class 사용
  * 2023-01-17           김주현             감정 통계 추가
+ * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 일기 분석 method 명 수정
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -63,8 +64,8 @@ public class DiaryApiController {
         // System.out.println("Diary dto = " + diaryDto.toString());
 
         //사용자 current_diaries에 현재 작성한 다이어리 넣기
-//        ObjectId userId = new ObjectId(diaryDto.getUserId());
-//        Members user = member.findUser(new ObjectId(diaryDto.getUserId()));
+//        String userId = diaryDto.getUserId();
+//        Members user = member.findUser(diaryDto.getUserId());
 //        List<Diary> diaries = user.getRecentDiaries();
 //
 //        user.setRecentDiaries(diaries);
@@ -111,7 +112,7 @@ public class DiaryApiController {
 
     @Operation(summary = "일기 분석", description = "해당 일기 문장들을 분석하고 결과(번역, 키워드 추출)를 반환합니다.")
     @PostMapping(value = "analyze")
-    public ResponseEntity<DiaryAnalysisResponse> findUserDiary(@RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
+    public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(@RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
         return diaryService.analyzeDiary(diaryAnalysisRequest);
     }
 

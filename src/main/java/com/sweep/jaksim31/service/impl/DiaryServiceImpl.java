@@ -19,7 +19,6 @@ import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.DiaryExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -61,6 +60,7 @@ import java.util.stream.Collectors;
  * 2023-01-15           김주현             감정 통계 기능 추가 및 사용자 일기 검색에서 검색 날짜 포함해서 검색되도록 수정
  * 2023-01-16           방근호             모든 메소드 리턴값 수정(ResponseEntity 사용)
  * 2023-01-16           방근호             써드파티 api 이용 예외처리 추가
+ * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 예외 처리 추가
  
  */
 /* TODO
@@ -100,7 +100,7 @@ public class DiaryServiceImpl implements DiaryService {
         memberRepository.findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        return ResponseEntity.ok(diaryRepository.findAllByUserId(new ObjectId(userId)).stream()
+        return ResponseEntity.ok(diaryRepository.findAllByUserId(userId).stream()
                 .map(DiaryInfoResponse::of)
                 .collect(Collectors.toList()));
     }
@@ -113,18 +113,16 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public ResponseEntity<Diary> saveDiary(DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
-        memberRepository
-                .findById(diarySaveRequest.getUserId())
+        memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        // 해당 날짜에 이미 등록 된 다이어리가 있을 때
-        diaryRepository
-                .findDiaryByUserIdAndDate(new ObjectId(diarySaveRequest.getUserId()), diarySaveRequest.getDate().atTime(9,0))
-                .orElseThrow(() -> new BizException(DiaryExceptionType.DUPLICATE_DIARY));
-
+        // 해당 날짜에 이미 등록 된 일기가 있을 때
+        if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
+                throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
         // 날짜가 유효하지 않을 때(미래)
         if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
             throw new BizException(DiaryExceptionType.WRONG_DATE);
         }
+
         Diary diary = diarySaveRequest.toEntity();
         // 썸네일 URL 추가
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
@@ -140,14 +138,14 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     @Transactional
     public ResponseEntity<Diary> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
+        // 일기를 찾을 수 없을 때
+        diaryRepository
+                .findById(diaryId)
+                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
         memberRepository
                 .findById(diarySaveRequest.getUserId())
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        // 날짜가 유효하지 않을 때(미래)
-        if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
-            throw new BizException(DiaryExceptionType.WRONG_DATE);
-        }
 
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
         return ResponseEntity.ok(diaryRepository.save(updatedDiary));
@@ -160,7 +158,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(diary_id)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
         diaryRepository.delete(diary);
-        return ResponseEntity.ok(diary.getId().toString());
+        return ResponseEntity.ok(diary.getId());
     }
 
     @Override
@@ -168,12 +166,9 @@ public class DiaryServiceImpl implements DiaryService {
     public ResponseEntity<DiaryInfoResponse> findDiary(String diary_id) {
         return ResponseEntity.ok(
                 DiaryInfoResponse
-                        .of(diaryRepository.findById(new ObjectId(diary_id))
+                        .of(diaryRepository.findById(diary_id)
                                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY))));
     }
-
-
-
 
     
     /**
@@ -201,11 +196,11 @@ public class DiaryServiceImpl implements DiaryService {
             end_date = LocalDate.now().plusDays(1).atTime(9,0);}
         // 조건으로 조회
         if(params.containsKey("emotion"))
-            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(new ObjectId(userId), (String) params.get("emotion"), start_date, end_date).stream()
+            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(userId, (String) params.get("emotion"), start_date, end_date).stream()
                     .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
         else
-            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(new ObjectId(userId), start_date, end_date).stream()
+            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(userId, start_date, end_date).stream()
                     .map(m -> new DiaryInfoResponse().of(m))
                     .collect(Collectors.toList());
 
@@ -350,7 +345,7 @@ public class DiaryServiceImpl implements DiaryService {
     public ResponseEntity<String> todayDiary(String userId){
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository
-                .findDiaryByUserIdAndDate(new ObjectId(userId), today.atTime(9,0))
+                .findDiaryByUserIdAndDate(userId, today.atTime(9,0))
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         return ResponseEntity.ok(todayDiary.getId().toString());
     }
@@ -362,7 +357,10 @@ public class DiaryServiceImpl implements DiaryService {
      */
     // 감정 통계
     public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatics(String userId, Map<String, Object> params){
-
+        // 사용자를 찾을 수 없을 때
+        memberRepository
+                .findById(userId)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
@@ -381,7 +379,7 @@ public class DiaryServiceImpl implements DiaryService {
         // filter
         MatchOperation matchOperation = Aggregation.match(
                 Criteria.where("date").gte(startDate).lte(endDate)
-                        .and("userId").is(new ObjectId(userId))
+                        .and("userId").is(userId)
         );
         // group (Group By)
         GroupOperation groupOperation = Aggregation.group("emotion").count().as("countEmotion");
