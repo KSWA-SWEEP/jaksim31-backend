@@ -4,6 +4,7 @@ import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.exception.type.AuthorityExceptionType;
 import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.*;
@@ -112,6 +113,8 @@ public class TokenProvider {
      * @return 토큰 값을 파싱하여 클레임에 담긴 LoginId 값을 가져온다.
      */
     public String getMemberLoginIdByToken(String token) {
+        if (token == null)
+            throw new BizException(JwtExceptionType.EMPTY_TOKEN);
         // 토큰의 claim 의 sub 키에 이메일 값이 들어있다.
         return this.parseClaims(token).getSubject();
     }
@@ -187,6 +190,7 @@ public class TokenProvider {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) { // 만료된 토큰이 더라도 일단 파싱을 함
+//            throw new BizException(JwtExceptionType.BAD_TOKEN);
             return e.getClaims();
         }
     }
