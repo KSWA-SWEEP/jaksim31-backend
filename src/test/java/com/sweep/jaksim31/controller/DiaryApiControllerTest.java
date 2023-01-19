@@ -55,6 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-17           김주현             최초 생성
+ * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  */
 
 @WebMvcTest(controllers = DiaryApiController.class)
@@ -96,10 +97,10 @@ public class DiaryApiControllerTest  {
             LocalDate date = LocalDate.of(2023, 1, 18);
             //given
             given(diaryService.saveDiary(any()))
-                    .willReturn(ResponseEntity.ok(Diary.builder()
+                    .willReturn(ResponseEntity.ok(DiaryResponse.builder()
                             .userId("63c0cb6f30dc3d547e3b88bb")
                             .content("contents")
-                            .date(date)
+                            .diaryDate(date)
                             .emotion("happy")
                             .keywords(keywords)
                             .thumbnail("thumbnail")
@@ -210,7 +211,7 @@ public class DiaryApiControllerTest  {
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
                     .diaryId("diaryId")
                     .userId("userId")
-                    .date(date)
+                    .diaryDate(date)
                     .modifyDate(LocalDate.now())
                     .emotion("happy")
                     .keywords(keywords)
@@ -247,7 +248,7 @@ public class DiaryApiControllerTest  {
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
                     .diaryId("diaryId")
                     .userId("userId")
-                    .date(date)
+                    .diaryDate(date)
                     .modifyDate(LocalDate.now())
                     .emotion("happy")
                     .keywords(keywords)
@@ -286,13 +287,13 @@ public class DiaryApiControllerTest  {
             //given
             given(diaryService.updateDiary(any(), any()))
                     .willReturn(ResponseEntity.ok(
-                            new Diary("diaryId", DiarySaveRequest.builder().userId("userId")
+                            DiaryResponse.of(new Diary("diaryId", DiarySaveRequest.builder().userId("userId")
                                     .content("contents")
                                     .date(date)
                                     .emotion("happy")
                                     .keywords(keywords)
                                     .thumbnail("thumbnail")
-                                    .build())));
+                                    .build()))));
 
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("userId", "contents", date, "happy", keywords,"thumbnail");

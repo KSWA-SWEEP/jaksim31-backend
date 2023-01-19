@@ -280,7 +280,7 @@ public class MemberServiceImpl implements MemberService {
         // 작성 된 일기가 있다면 diary_id, 없으면 ""
         String todayDiaryId = "";
         if(todayDiary != null)
-            todayDiaryId = todayDiary.getId().toString();
+            todayDiaryId = todayDiary.getId();
         // 만료 시간을 당일 23:59:59로 설정
         long expTime = LocalTime.of(23,59,59).toSecondOfDay() - LocalTime.now().minusHours(9).toSecondOfDay();
         // check

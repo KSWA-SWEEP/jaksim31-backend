@@ -28,6 +28,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+/**
+ * packageName :  com.sweep.jaksim31.service.impl
+ * fileName : MemberServiceImplTest
+ * author :  방근호
+ * date : 2023-01-17
+ * description : Member Service Test
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-17           방근호             최초 생성
+ */
+
 @ExtendWith(MockitoExtension.class)
 @WithMockUser(username = "usernmae", password = "password", roles = "ROLE_USER")
 class MemberServiceImplTest {
