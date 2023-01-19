@@ -24,7 +24,6 @@ import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,6 +64,7 @@ import java.util.TimeZone;
  * 2023-01-16           방근호          비밀번호 재설정 변경
  * 2023-01-17           방근호          비밀번호 재설정 메소드 이름 변경
  * 2023-01-17           방근호          로그인 로직 수정
+ * 2023-01-18           김주현          id data type 변경(ObjectId -> String)
  * 2023-01-18           방근호          GetMyInfoByLoginId 리턴값 수정
  */
 
@@ -264,7 +264,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional(readOnly = true)
     public ResponseEntity<MemberInfoResponse> getMyInfo(String userId) {
-        return ResponseEntity.ok().body(memberRepository.findById(new ObjectId(userId))
+        return ResponseEntity.ok().body(memberRepository.findById(userId)
                 .map(MemberInfoResponse::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
     }
@@ -312,7 +312,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<String> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
         Members members = memberRepository
-                .findById(new ObjectId(userId))
+                .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         members.updateMember(memberUpdateRequest);
@@ -337,7 +337,7 @@ public class MemberServiceImpl implements MemberService {
     public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) throws URISyntaxException {
         // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
         Members entity = memberRepository
-                .findById(new ObjectId(userId))
+                .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, redirectionUtil.getHomeUrl()));
 
         // 비밀번호가 불일치 할 경우

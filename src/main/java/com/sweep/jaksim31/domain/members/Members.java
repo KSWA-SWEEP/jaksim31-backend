@@ -7,7 +7,7 @@ import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import lombok.*;
-import org.bson.types.ObjectId;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 public class Members {
 
     @Id
-    private ObjectId id;
+    private String id;
 
     private String loginId; // 사용자 로그인 아이디
     private String password;

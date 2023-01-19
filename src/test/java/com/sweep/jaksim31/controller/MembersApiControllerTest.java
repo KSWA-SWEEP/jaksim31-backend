@@ -57,6 +57,17 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+/**
+ * packageName :  com.sweep.jaksim31.controller
+ * fileName : DiaryApiControllerTest
+ * author :  방근호
+ * date : 2023-01-17
+ * description : Member Controller 단위 테스트
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-17           방근호             최초 생성
+ */
 
 @WebMvcTest(controllers = MembersApiController.class)
 @ExtendWith(MockitoExtension.class)
