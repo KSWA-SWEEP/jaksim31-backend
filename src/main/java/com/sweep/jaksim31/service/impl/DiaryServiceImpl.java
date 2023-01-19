@@ -168,6 +168,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         Diary diary = diarySaveRequest.toEntity();
         // 썸네일 URL 추가
+        // TODO 썸네일 저장 부분 고려해보기. 아직 미완.
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
         return new ResponseEntity<>(DiaryResponse.of(diaryRepository.save(diary))
                 , HttpStatus.CREATED);
@@ -295,6 +296,9 @@ public class DiaryServiceImpl implements DiaryService {
      * @throws JsonProcessingException Json processing 예외
      * @throws ParseException parsing 예외
      */
+    /** TODO
+     *   코드 리팩토링
+     */
     @Override
     public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
 
@@ -418,8 +422,6 @@ public class DiaryServiceImpl implements DiaryService {
         else{
             endDate = LocalDate.now().atTime(9,0);}
 
-        List<DiaryEmotionStatics> emotionStatics = null;
-
         // Aggregation 설정
         // filter
         MatchOperation matchOperation = Aggregation.match(
@@ -435,11 +437,12 @@ public class DiaryServiceImpl implements DiaryService {
         AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
                 Diary.class,
                 DiaryEmotionStatics.class);
-
+//        System.out.println("## aggregation : "+ aggregation.getRawResults());
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
-        emotionStatics = aggregation.getMappedResults();
+        List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
+        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics);
 
-        return ResponseEntity.ok(new DiaryEmotionStaticsResponse(emotionStatics));
+        return ResponseEntity.ok(diaryEmotionStaticsResponse);
     }
 
 }

@@ -22,4 +22,8 @@ import java.util.List;
 @AllArgsConstructor
 public class DiaryEmotionStaticsResponse {
     private List<DiaryEmotionStatics> emotionStatics;
+
+    public static DiaryEmotionStaticsResponse of(List<DiaryEmotionStatics> emotionStatics) {
+        return new DiaryEmotionStaticsResponse(emotionStatics);
+    }
 }
