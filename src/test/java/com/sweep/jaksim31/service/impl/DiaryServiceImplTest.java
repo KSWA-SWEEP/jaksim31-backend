@@ -61,7 +61,6 @@ public class DiaryServiceImplTest {
     private static MockedStatic<DiaryResponse> diaryResponse;
     private static MockedStatic<DiaryInfoResponse> diaryInfoResponse;
     private static MockedStatic<DiaryEmotionStaticsResponse> diaryEmotionStaticsResponse;
-    private static MockedStatic<Diary> diaryMockedStatic;
     private static MockedStatic<PageableExecutionUtils> pageableExecutionUtils;
     private static MockedStatic<Page> pageMockedStatic;
 
@@ -99,9 +98,14 @@ public class DiaryServiceImplTest {
     public static void finish(){
         diaryResponse.close();
         diaryInfoResponse.close();
+        diaryEmotionStaticsResponse.close();
+        pageMockedStatic.close();
+        pageableExecutionUtils.close();
+
     }
     /** TODO
-     * 일기 저장 Service 구현 완료 후 Test 짜기
+     *   일기 저장 Service 구현 완료 후 Test 짜기
+     *   일기 분석 코드 리팩토링 후 Test 짜기
      */
 //    @Nested
 //    @DisplayName("일기 저장 서비스")
@@ -230,12 +234,13 @@ public class DiaryServiceImplTest {
     @DisplayName("개별 일기 조회 서비스")
     class findDiary{
         String diaryId = "diaryId";
+        String userId = "userId";
         @Test
         @DisplayName("[정상]일기 조회 성공")
         void findDiary(){
             // given
-            Diary diary = new Diary(diaryId, diarySaveRequest);
-            DiaryResponse diaryResponse = new DiaryResponse(diaryId,"userId", "testContext", diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
+            Diary diary = diarySaveRequest.toEntity();
+            DiaryResponse diaryResponse = new DiaryResponse(diaryId,userId, "testContext", diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
 
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(diary));
@@ -243,7 +248,7 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryResponse);
 
             // when
-            ResponseEntity<DiaryResponse> result = diaryService.findDiary(diaryId);
+            ResponseEntity<DiaryResponse> result = diaryService.findDiary(userId, diaryId);
 
             // then
             DiaryResponse expected = result.getBody();
@@ -263,7 +268,21 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.findDiary(diaryId));
+            assertThrows(BizException.class, () -> diaryService.findDiary(userId, diaryId));
+            verify(diaryRepository, times(1)).findById(any());
+        }
+        @Test
+        @DisplayName("[예외]사용자의 일기가 아닐 경우")
+        void failFindDiaryNoPermission(){
+            Diary diary = diarySaveRequest.toEntity();
+
+            // given
+            given(diaryRepository.findById(diaryId))
+                    .willReturn(Optional.of(diary));
+
+            // when
+            // then
+            assertThrows(BizException.class, () -> diaryService.findDiary("DifferentUserId", diaryId));
             verify(diaryRepository, times(1)).findById(any());
         }
     }
@@ -435,24 +454,23 @@ public class DiaryServiceImplTest {
     class emotionStatics{
         String userId = "userId";
         @Test
-        @DisplayName("[정상]감정 통계 성공")
+        @DisplayName("[정상]감정 통계 성공_전체기간(기간 조건이 들어오지 않았을 때)")
         void emotionStatics(){
             Diary diary = diarySaveRequest.toEntity();
             DiaryEmotionStatics diaryEmotionStatics = new DiaryEmotionStatics("emotion", 1);
-            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
-            DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = new DiaryEmotionStaticsResponse(emotionStatics);
 
-            AggregationResults<Object> aggregation = new AggregationResults<Object>(Collections.singletonList(emotionStatics), new Document());
             Map<String, Object> param = new HashMap<>();
-            param.put("startDate", "2023-01-01");
-            param.put("endDate","2023-01-20");
+
+            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
+            AggregationResults<Object> aggregation = new AggregationResults<Object>(Collections.singletonList(emotionStatics), new Document());
+            DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = new DiaryEmotionStaticsResponse(emotionStatics,LocalDate.of(1990, 1, 1),LocalDate.now());
 
             // given
             given(memberRepository.findById(userId))
                     .willReturn(Optional.of(Members.builder().build()));
             given(mongoTemplate.aggregate(any(), (Class<?>) any(), any()))
                     .willReturn(aggregation);
-            given(DiaryEmotionStaticsResponse.of(emotionStatics))
+            given(DiaryEmotionStaticsResponse.of(any(),any(),any()))
                     .willReturn(diaryEmotionStaticsResponse);
 
             // when
@@ -460,12 +478,134 @@ public class DiaryServiceImplTest {
 
             // then
             DiaryEmotionStaticsResponse expected = result.getBody();
-//            assert expected != null;
-//            assertEquals(expected.getEmotionStatics().get(0).getEmotion(), emotionStatics.get(0).getEmotion());
-//            assertEquals(expected.getEmotionStatics().get(0).getCountEmotion(), emotionStatics.get(0).getCountEmotion());
-
+            assert expected != null;
+            assertEquals(expected.getEmotionStatics(), emotionStatics);
+            assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
+            assertEquals(expected.getEndDate(), diaryEmotionStaticsResponse.getEndDate());
             verify(memberRepository, times(1)).findById(userId);
             verify(mongoTemplate, times(1)).aggregate(any(), (Class<?>) any(), any());
+        }
+        @Test
+        @DisplayName("[정상]감정 통계 성공_기간 조회")
+        void emotionStaticsStartDateEndDate(){
+            Diary diary = diarySaveRequest.toEntity();
+            DiaryEmotionStatics diaryEmotionStatics = new DiaryEmotionStatics("emotion", 1);
+
+            Map<String, Object> param = new HashMap<>();
+            param.put("startDate", "2023-01-01");
+            param.put("endDate","2023-01-20");
+
+            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
+            AggregationResults<Object> aggregation = new AggregationResults<Object>(Collections.singletonList(emotionStatics), new Document());
+            DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = new DiaryEmotionStaticsResponse(emotionStatics,LocalDate.parse("2023-01-01"),LocalDate.parse("2023-01-20"));
+
+            // given
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(Members.builder().build()));
+            given(mongoTemplate.aggregate(any(), (Class<?>) any(), any()))
+                    .willReturn(aggregation);
+            given(DiaryEmotionStaticsResponse.of(any(),any(),any()))
+                    .willReturn(diaryEmotionStaticsResponse);
+
+            // when
+            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+
+            // then
+            DiaryEmotionStaticsResponse expected = result.getBody();
+            assert expected != null;
+            assertEquals(expected.getEmotionStatics(), emotionStatics);
+
+            verify(memberRepository, times(1)).findById(userId);
+            assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
+            assertEquals(expected.getEndDate(), diaryEmotionStaticsResponse.getEndDate());
+            verify(mongoTemplate, times(1)).aggregate(any(), (Class<?>) any(), any());
+        }
+        @Test
+        @DisplayName("[정상]감정 통계 성공_startDate만 있을 때")
+        void emotionStaticsStartDateOnly(){
+            Diary diary = diarySaveRequest.toEntity();
+            DiaryEmotionStatics diaryEmotionStatics = new DiaryEmotionStatics("emotion", 1);
+
+            Map<String, Object> param = new HashMap<>();
+            param.put("startDate", "2023-01-01");
+
+            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
+            AggregationResults<Object> aggregation = new AggregationResults<Object>(Collections.singletonList(emotionStatics), new Document());
+            DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = new DiaryEmotionStaticsResponse(emotionStatics,LocalDate.parse(param.get("startDate").toString()),LocalDate.now());
+
+            // given
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(Members.builder().build()));
+            given(mongoTemplate.aggregate(any(), (Class<?>) any(), any()))
+                    .willReturn(aggregation);
+            given(DiaryEmotionStaticsResponse.of(any(),any(),any()))
+                    .willReturn(diaryEmotionStaticsResponse);
+
+            // when
+            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+
+            // then
+            DiaryEmotionStaticsResponse expected = result.getBody();
+            assert expected != null;
+            assertEquals(expected.getEmotionStatics(), emotionStatics);
+            assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
+            assertEquals(expected.getEndDate(), diaryEmotionStaticsResponse.getEndDate());
+            verify(memberRepository, times(1)).findById(userId);
+            verify(mongoTemplate, times(1)).aggregate(any(), (Class<?>) any(), any());
+        }
+        @Test
+        @DisplayName("[정상]감정 통계 성공_endDate만 있을 때")
+        void emotionStaticsEndDateOnly(){
+            Diary diary = diarySaveRequest.toEntity();
+            DiaryEmotionStatics diaryEmotionStatics = new DiaryEmotionStatics("emotion", 1);
+
+            Map<String, Object> param = new HashMap<>();
+            param.put("endDate","2023-01-20");
+
+            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
+            AggregationResults<Object> aggregation = new AggregationResults<Object>(Collections.singletonList(emotionStatics), new Document());
+            DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = new DiaryEmotionStaticsResponse(emotionStatics,LocalDate.of(1990, 1, 1),LocalDate.parse(param.get("endDate").toString()));
+
+            // given
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(Members.builder().build()));
+            given(mongoTemplate.aggregate(any(), (Class<?>) any(), any()))
+                    .willReturn(aggregation);
+            given(DiaryEmotionStaticsResponse.of(any(),any(),any()))
+                    .willReturn(diaryEmotionStaticsResponse);
+
+            // when
+            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+
+            // then
+            DiaryEmotionStaticsResponse expected = result.getBody();
+            assert expected != null;
+            assertEquals(expected.getEmotionStatics(), emotionStatics);
+            assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
+            assertEquals(expected.getEndDate(), diaryEmotionStaticsResponse.getEndDate());
+            verify(memberRepository, times(1)).findById(userId);
+            verify(mongoTemplate, times(1)).aggregate(any(), (Class<?>) any(), any());
+        }
+        @Test
+        @DisplayName("[예외]사용자가 존재하지 않을 때")
+        void failEmotionStaticsNotFoundUser(){
+            Diary diary = diarySaveRequest.toEntity();
+            DiaryEmotionStatics diaryEmotionStatics = new DiaryEmotionStatics("emotion", 1);
+            List<DiaryEmotionStatics> emotionStatics = List.of(diaryEmotionStatics);
+            Map<String, Object> param = new HashMap<>();
+            param.put("startDate", "2023-01-01");
+            param.put("endDate","2023-01-20");
+
+            // given
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.empty());
+
+            // when
+            // then
+            assertThrows(BizException.class, () -> diaryService.emotionStatics(userId, param));
+
+            verify(memberRepository, times(1)).findById(userId);
+            verify(mongoTemplate, never()).aggregate(any(), (Class<?>) any(), any());
         }
     }
 
@@ -488,10 +628,5 @@ public class DiaryServiceImplTest {
 //            // then
 //        }
 //    }
-    /** TODO
-     *
-     *   일기 분석
-     *   감정 통계 (수정 필요)
-     */
 
 }

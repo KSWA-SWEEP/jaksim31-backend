@@ -69,6 +69,7 @@ import java.util.stream.Collectors;
  * 2023-01-17           김주현             사용자 일기 조회(전체) Service에 Paging 추가
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 예외 처리 추가
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             findDiary input 값에 userId 추가 및 조회하고자 하는 diary가 사용자의 diary 인지 검증 추가
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -208,9 +209,12 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 조회
-    public ResponseEntity<DiaryResponse> findDiary(String diaryId) {
+    public ResponseEntity<DiaryResponse> findDiary(String userId, String diaryId) {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
+        // 본인의 일기가 아닌 다른 사람의 일기를 조회하고자 하였을 때, 권한 없음
+        if(!diary.getUserId().equals(userId))
+            throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
         return ResponseEntity.ok(DiaryResponse.of(diary));
     }
@@ -437,11 +441,9 @@ public class DiaryServiceImpl implements DiaryService {
         AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
                 Diary.class,
                 DiaryEmotionStatics.class);
-//        System.out.println("## aggregation : "+ aggregation.getRawResults());
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
-        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics);
-
+        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
         return ResponseEntity.ok(diaryEmotionStaticsResponse);
     }
 

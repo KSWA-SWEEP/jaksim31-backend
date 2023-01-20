@@ -37,7 +37,9 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -56,6 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * -----------------------------------------------------------
  * 2023-01-17           김주현             최초 생성
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             개별 일기 조회 controller test 추가 및 DiaryResponse의 date -> diaryDate
  */
 
 @WebMvcTest(controllers = DiaryApiController.class)
@@ -101,6 +104,7 @@ public class DiaryApiControllerTest  {
                             .userId("63c0cb6f30dc3d547e3b88bb")
                             .content("contents")
                             .diaryDate(date)
+                            .modifyDate(LocalDate.now())
                             .emotion("happy")
                             .keywords(keywords)
                             .thumbnail("thumbnail")
@@ -120,8 +124,8 @@ public class DiaryApiControllerTest  {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.userId", Matchers.is("63c0cb6f30dc3d547e3b88bb")))
                     .andExpect(jsonPath("$.content", Matchers.is("contents")))
-                    .andExpect(jsonPath("$.date", Matchers.is(date.atTime(9,0,0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
-                    .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().atTime(9,0,0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$.diaryDate", Matchers.is(date.toString())))
+                    .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().toString())))
                     .andExpect(jsonPath("$.emotion", Matchers.is("happy")))
                     .andExpect(jsonPath("$.keywords", Matchers.contains(keywords)))
                     .andExpect(jsonPath("$.thumbnail", Matchers.is("thumbnail")))
@@ -201,11 +205,109 @@ public class DiaryApiControllerTest  {
         }
     }
     @Nested
-    @DisplayName("일기 조회 컨트롤러")
-    class findUserDiary {
+    @DisplayName("개별 일기 조회 컨트롤러")
+    class findDiary {
         @Test
         @DisplayName("[정상]일기 조회 완료")
-        public void findUserDiary() throws Exception{
+        public void findDiary() throws Exception{
+            String[] keywords = {"happy"};
+            LocalDate date = LocalDate.of(2023, 1, 18);
+            DiaryResponse diary = DiaryResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("userId")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build();
+
+            //given
+            given(diaryService.findDiary(any(),any()))
+                    .willReturn(ResponseEntity.ok(diary));
+
+            //when
+            mockMvc.perform(get("/v0/diaries/userId/diaryId")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
+                    .andExpect(jsonPath("$.diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @Test
+        @DisplayName("[예외]일기가 없는 경우")
+        public void failFindDiaryNotFoundDiary() throws Exception{
+            String[] keywords = {"happy"};
+            LocalDate date = LocalDate.of(2023, 1, 18);
+            DiaryResponse diary = DiaryResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("userId")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build();
+
+            //given
+            given(diaryService.findDiary(any(),any()))
+                    .willThrow(new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
+
+            //when
+            mockMvc.perform(get("/v0/diaries/userId/diaryId")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.NOT_FOUND_DIARY.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.NOT_FOUND_DIARY.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @Test
+        @DisplayName("[예외]사용자의 일기가 아닌 경우")
+        public void failFindDiaryNoPermission() throws Exception{
+            String[] keywords = {"happy"};
+            LocalDate date = LocalDate.of(2023, 1, 18);
+            DiaryResponse diary = DiaryResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("userId")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build();
+
+            //given
+            given(diaryService.findDiary(any(),any()))
+                    .willThrow(new BizException(DiaryExceptionType.NO_PERMISSION));
+
+            //when
+            mockMvc.perform(get("/v0/diaries/userId/diaryId")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.NO_PERMISSION.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.NO_PERMISSION.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+    }
+    @Nested
+    @DisplayName("사용자 일기 조회 컨트롤러")
+    class findUserDiaries {
+        @Test
+        @DisplayName("[정상]일기 조회 완료")
+        public void findUserDiaries() throws Exception{
             String[] keywords = {"happy"};
             LocalDate date = LocalDate.of(2023, 1, 18);
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
@@ -233,7 +335,7 @@ public class DiaryApiControllerTest  {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.content[0].userId", Matchers.is("userId")))
-                    .andExpect(jsonPath("$.content[0].date", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
                     .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
@@ -242,7 +344,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자가 없는 경우")
-        public void failFindUserDiaryNotFoundUser() throws Exception{
+        public void failFindUserDiariesNotFoundUser() throws Exception{
             String[] keywords = {"happy"};
             LocalDate date = LocalDate.of(2023, 1, 18);
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
@@ -307,11 +409,11 @@ public class DiaryApiControllerTest  {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.id", Matchers.is("diaryId")))
+                    .andExpect(jsonPath("$.diaryId", Matchers.is("diaryId")))
                     .andExpect(jsonPath("$.userId", Matchers.is("userId")))
                     .andExpect(jsonPath("$.content", Matchers.is("contents")))
-                    .andExpect(jsonPath("$.date", Matchers.is(date.atTime(9,0,0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
-                    .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().atTime(9,0,0).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")))))
+                    .andExpect(jsonPath("$.diaryDate", Matchers.is(date.toString())))
+                    .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().toString())))
                     .andExpect(jsonPath("$.emotion", Matchers.is("happy")))
                     .andExpect(jsonPath("$.keywords", Matchers.contains(keywords)))
                     .andExpect(jsonPath("$.thumbnail", Matchers.is("thumbnail")))
@@ -583,11 +685,12 @@ public class DiaryApiControllerTest  {
         @DisplayName("[정상]감정 통계 완료")
         public void emotionStatistics() throws Exception{
             List<DiaryEmotionStatics> emotionStatics = List.of(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
-
             //given
             given(diaryService.emotionStatics(any(), any()))
                     .willReturn(ResponseEntity.ok(DiaryEmotionStaticsResponse.builder()
                                     .emotionStatics(emotionStatics)
+                                    .startDate(LocalDate.of(1990, 1, 1))
+                                    .endDate(LocalDate.now())
                                     .build()));
 
             //when
@@ -605,21 +708,28 @@ public class DiaryApiControllerTest  {
         public void emotionStatisticsWithDate() throws Exception{
             List<DiaryEmotionStatics> emotionStatics = List.of(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
 //            emotionStatics.add(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
+            Map<String, Object> param = new HashMap<>();
+            param.put("startDate", "2023-01-01");
+            param.put("endDate","2023-01-20");
 
             //given
             given(diaryService.emotionStatics(any(), any()))
                     .willReturn(ResponseEntity.ok(DiaryEmotionStaticsResponse.builder()
                             .emotionStatics(emotionStatics)
+                            .startDate(LocalDate.parse(param.get("startDate").toString()))
+                            .endDate(LocalDate.parse(param.get("endDate").toString()))
                             .build()));
 
             //when
-            mockMvc.perform(get("/v0/diaries/userId/emotions?startDate=2023-01-01&endDate=2023-01-10")
+            mockMvc.perform(get("/v0/diaries/userId/emotions?startDate=2023-01-01&endDate=2023-01-20")
                             .with(csrf())) //403 에러 방지
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.emotionStatics[0].emotion", Matchers.is(emotionStatics.get(0).getEmotion())))
                     .andExpect(jsonPath("$.emotionStatics[0].countEmotion", Matchers.is(emotionStatics.get(0).getCountEmotion())))
+                    .andExpect(jsonPath("$.startDate",Matchers.is(param.get("startDate"))))
+                    .andExpect(jsonPath("$.endDate",Matchers.is(param.get("endDate"))))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
