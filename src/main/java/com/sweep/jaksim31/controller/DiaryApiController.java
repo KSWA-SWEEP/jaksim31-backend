@@ -39,6 +39,7 @@ import java.util.Map;
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 일기 분석 method 명 수정
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  * 2023-01-20           김주현             findDiary input 값에 userId 추가
+ *                      김주현             일기 삭제 api path 및 input 값에 userId 추가
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -64,18 +65,6 @@ public class DiaryApiController {
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
     public ResponseEntity<DiaryResponse> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
-        //확인
-        // System.out.println("Diary dto = " + diaryDto.toString());
-
-        //사용자 current_diaries에 현재 작성한 다이어리 넣기
-//        String userId = diaryDto.getUserId();
-//        Members user = member.findUser(diaryDto.getUserId());
-//        List<Diary> diaries = user.getRecentDiaries();
-//
-//        user.setRecentDiaries(diaries);
-//        userService.updateUser(user);
-//        diaries.add(diary);
-
         return diaryService.saveDiary(diarySaveRequest);
     }
 
@@ -89,9 +78,9 @@ public class DiaryApiController {
 
     // 일기 삭제
     @Operation(summary = "일기 삭제", description = "일기를 삭제합니다.")
-    @DeleteMapping(value="{diaryId}")
-    public ResponseEntity<String> deleteDiary(@PathVariable String diaryId){
-        return diaryService.remove(diaryId);
+    @DeleteMapping(value="{userId}/{diaryId}")
+    public ResponseEntity<String> deleteDiary(@PathVariable String userId, @PathVariable String diaryId){
+        return diaryService.remove(userId, diaryId);
     }
 
     // 개별 일기 조회
@@ -104,7 +93,7 @@ public class DiaryApiController {
     // 사용자 일기 조회
     @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam String page, @RequestParam(required = false) Map<String, Object> params){
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
         if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate")){
             // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
             return diaryService.findDiaries(userId, params);

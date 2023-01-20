@@ -47,9 +47,6 @@ public class MembersApiController {
     private final MemberServiceImpl memberServiceImpl;
     private final KaKaoMemberServiceImpl kaKaoMemberService;
 
-
-
-
     @GetMapping("/test")
     public String test(){
         return "OK";

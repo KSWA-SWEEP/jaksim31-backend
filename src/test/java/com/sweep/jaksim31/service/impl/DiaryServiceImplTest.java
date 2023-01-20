@@ -42,6 +42,7 @@ import static org.mockito.Mockito.*;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-19           김주현             최초 생성
+ * 2023-01-20           김주현             일기 삭제 service 수정으로 인한 test 수정
  */
 @ExtendWith(MockitoExtension.class)
 @WithMockUser(username = "username", password = "password", roles = "ROLE_USER")
@@ -198,6 +199,7 @@ public class DiaryServiceImplTest {
     @DisplayName("일기 삭제 서비스")
     class removeDiary{
         String diaryId = "diaryId";
+        String userId = "userId";
         @Test
         @DisplayName("[정상]일기 삭제 성공")
         void removeDiary(){
@@ -208,7 +210,7 @@ public class DiaryServiceImplTest {
                     .willReturn(Optional.of(diary));
 
             // when
-            String result = diaryService.remove(diaryId).getBody();
+            String result = diaryService.remove(userId, diaryId).getBody();
 
             // then
             assertEquals(result, diaryId);
@@ -225,7 +227,7 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove(diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(userId, diaryId));
             verify(diaryRepository, never()).delete(any());
         }
     }
