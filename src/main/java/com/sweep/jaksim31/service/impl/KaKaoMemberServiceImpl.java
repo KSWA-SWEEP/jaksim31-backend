@@ -92,7 +92,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
     public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
 
         // 회원이 아닐 경우 회원 생성
-        if (!memberRepository.existsByLoginId(loginRequest.getLoginId()).isPresent()) {
+        if (!memberRepository.existsByLoginId(loginRequest.getLoginId())) {
             MemberSaveRequest memberSaveRequest = loginRequest.toMemberSaveRequest();
             Members members = memberSaveRequest.toMember(passwordEncoder, true);
             System.out.println(members.toString());

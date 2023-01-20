@@ -1,4 +1,4 @@
-package com.sweep.jaksim31;
+package com.sweep.jaksim31.auth;
 
 import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.domain.auth.Authority;
@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -28,7 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOf
 @SpringBootTest    // 1
 @Nested
 @DisplayName("JWT 관련 테스트")
-class JwtTokenProviderTest {
+class TokenProviderTest {
     @Autowired
     private TokenProvider jwtTokenProvider;
 

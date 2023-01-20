@@ -3,29 +3,26 @@ package com.sweep.jaksim31.service.impl;
 import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
-import com.sweep.jaksim31.controller.feign.ApiTokenRefreshFeign;
-import com.sweep.jaksim31.controller.feign.MakeObjectDirectoryFeign;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
-import com.sweep.jaksim31.dto.login.LoginRequest;
-import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenResponse;
-import com.sweep.jaksim31.dto.token.TokenRequest;
+import com.sweep.jaksim31.domain.members.MemberRepository;
+import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
-import com.sweep.jaksim31.service.MemberService;
-import com.sweep.jaksim31.utils.CookieUtil;
-import com.sweep.jaksim31.utils.HeaderUtil;
-import com.sweep.jaksim31.domain.members.Members;
-import com.sweep.jaksim31.domain.members.MemberRepository;
+import com.sweep.jaksim31.dto.login.LoginRequest;
+import com.sweep.jaksim31.dto.member.*;
+import com.sweep.jaksim31.dto.token.TokenRequest;
+import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.service.MemberService;
+import com.sweep.jaksim31.utils.CookieUtil;
+import com.sweep.jaksim31.utils.HeaderUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -37,11 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
 import java.util.Optional;
@@ -91,7 +86,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
 
-        if(memberRepository.existsByLoginId(memberRequestDto.getLoginId()).isPresent())
+        if(memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
            throw new BizException(MemberExceptionType.DUPLICATE_USER);
 
         Members members = memberRequestDto.toMember(passwordEncoder, false);
@@ -236,9 +231,9 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public ResponseEntity<String> isMember(MemberCheckLoginIdRequest memberRequestDto) {
-        memberRepository
-                .existsByLoginId(memberRequestDto.getLoginId())
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+
+        if (!memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
+            throw new BizException(MemberExceptionType.NOT_FOUND_USER);
 
         return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
     }
@@ -246,7 +241,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<String> updatePassword(String loginId, MemberUpdatePasswordRequest dto) {
         Members members = memberRepository
-                .findMembersByLoginId(loginId)
+                .findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         members.setPassword(passwordEncoder.encode(dto.getNewPassword()));
@@ -272,7 +267,7 @@ public class MemberServiceImpl implements MemberService {
 
     public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
         // 로그인 id로 사용자 정보 불러오기
-        Members member = memberRepository.findMembersByLoginId(loginId)
+        Members member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 오늘 날짜로 작성 된 일기가 있는지 확인
         LocalDate today = LocalDate.now();
@@ -315,7 +310,7 @@ public class MemberServiceImpl implements MemberService {
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
-        members.updateMember(memberUpdateRequest);
+        members.updateMember( memberUpdateRequest);
         memberRepository.save(members);
         return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
     }
@@ -323,7 +318,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public ResponseEntity<String> isMyPassword(String loginId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
-                .findMembersByLoginId(loginId)
+                .findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 비밀번호 검증

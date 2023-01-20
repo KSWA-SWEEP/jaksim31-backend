@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             profilePhoto -> profileImage
+ * 2023-01-19           방근호             updateTime 수정(9시간 추가)
  */
 
 @Getter
@@ -63,7 +65,7 @@ public class Members {
 
     @Builder
     public Members(String username, String loginId, String password, Boolean isSocial, char delYn, List<Diary> recentDiaries,
-                   String profileImage, int diaryTotal, Set<Authority> authorities, Instant register_date, Instant update_date) {
+                   String profileImage, int diaryTotal,  Instant register_date, Instant update_date) {
         this.username = username;
         this.loginId = loginId;
         this.password = password;
@@ -96,7 +98,8 @@ public class Members {
 
         if(dto.getUsername() != null) this.username = dto.getUsername();
         if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
-        this.updateDate = Instant.now();
+
+        this.updateDate = Instant.now().plus(9, ChronoUnit.HOURS);
     }
 
 

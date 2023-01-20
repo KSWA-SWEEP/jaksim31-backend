@@ -118,14 +118,14 @@ public class DiaryServiceImpl implements DiaryService {
         if(!params.containsKey("size"))
             params.put("size", "9");
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
-        if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
+        if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
         else
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
         // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
         Query query = new Query()
                 .with(pageable)
-                .skip(pageable.getPageSize() * pageable.getPageNumber())
+                .skip((long) pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
         // filter(사용자 id)
         query.addCriteria(Criteria.where("userId").is(userId));
