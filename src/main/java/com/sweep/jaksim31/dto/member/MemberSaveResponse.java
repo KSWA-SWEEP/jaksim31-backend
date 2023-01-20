@@ -34,6 +34,6 @@ public class MemberSaveResponse {
     private String profileImage;
 
     public static MemberSaveResponse of(Members members) {
-        return new MemberSaveResponse(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfileImage());
+        return new MemberSaveResponse(members.getId(), members.getLoginId(), members.getUsername(), members.getProfileImage());
     }
 }

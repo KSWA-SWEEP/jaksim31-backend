@@ -37,6 +37,8 @@ import java.util.Map;
  * 2023-01-17           김주현             감정 통계 추가
  * 2023-01-17           김주현             사용자 일기 조회 Paging 추가
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 일기 분석 method 명 수정
+ * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             findDiary input 값에 userId 추가
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -54,14 +56,14 @@ public class DiaryApiController {
     // 전체 일기 조회
     @Operation(summary = "전체 일기 조회", description = "모든 일기를 조회합니다.")
     @GetMapping(value = "")
-    public ResponseEntity<List<Diary>> allDiaries(){
+    public ResponseEntity<List<DiaryResponse>> allDiaries(){
         return diaryService.allDiaries();
     }
 
     // 일기 등록
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
-    public ResponseEntity<Diary> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<DiaryResponse> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
         //확인
         // System.out.println("Diary dto = " + diaryDto.toString());
 
@@ -80,7 +82,7 @@ public class DiaryApiController {
     // 일기 수정
     @Operation(summary = "일기 수정", description = "일기를 수정합니다.")
     @PutMapping(value = "{diaryId}")
-    public ResponseEntity<Diary> updateDiary(@PathVariable String diaryId, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<DiaryResponse> updateDiary(@PathVariable String diaryId, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
         System.out.printf("Diary ID \"%s\" Update%n",diaryId);
         return diaryService.updateDiary(diaryId, diarySaveRequest);
     }
@@ -95,8 +97,8 @@ public class DiaryApiController {
     // 개별 일기 조회
     @Operation(summary = "개별 일기 조회", description = "일기ID로 하나의 일기를 조회합니다.")
     @GetMapping(value="{userId}/{diaryId}")
-    public ResponseEntity<Diary> findDiary(@PathVariable String userId, @PathVariable String diaryId){
-        return diaryService.findDiary(diaryId);
+    public ResponseEntity<DiaryResponse> findDiary(@PathVariable String userId, @PathVariable String diaryId){
+        return diaryService.findDiary(userId, diaryId);
     }
 
     // 사용자 일기 조회

@@ -1,23 +1,12 @@
 package com.sweep.jaksim31.service.impl;
 
-import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
-import com.sweep.jaksim31.auth.CustomUserDetailsService;
-import com.sweep.jaksim31.auth.TokenProvider;
-import com.sweep.jaksim31.auth.UsernamePasswordAuthenticationToken;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
-import com.sweep.jaksim31.domain.token.RefreshToken;
-import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
-import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.utils.RedirectionUtil;
-import jdk.nashorn.internal.parser.Token;
-import lombok.With;
-import org.bson.types.ObjectId;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,15 +15,9 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 
-import java.lang.reflect.Member;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -44,6 +27,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
+
+/**
+ * packageName :  com.sweep.jaksim31.service.impl
+ * fileName : MemberServiceImplTest
+ * author :  방근호
+ * date : 2023-01-17
+ * description : Member Service Test
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-17           방근호             최초 생성
+ */
 
 @ExtendWith(MockitoExtension.class)
 @WithMockUser(username = "usernmae", password = "password", roles = "ROLE_USER")
@@ -237,7 +232,7 @@ class MemberServiceImplTest {
             MemberInfoResponse memberInfoResponse1 = new MemberInfoResponse(userId, "loginId", "username", "profileImage", null, 10);
             //given
 
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.of(members));
 
             given(MemberInfoResponse.of(members))
@@ -247,7 +242,7 @@ class MemberServiceImplTest {
             ResponseEntity<MemberInfoResponse> memberInfo = memberService.getMyInfo(userId);
             MemberInfoResponse res = memberInfo.getBody();
             //then
-            verify(memberRepository).findById(new ObjectId(userId));
+            verify(memberRepository).findById(userId);
             assert res != null;
             assertEquals(res.getUserId(), userId);
         }
@@ -258,12 +253,12 @@ class MemberServiceImplTest {
             String userId = "63c4f6cbeb0a310a89188df6";
 
             //given
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.empty());
 
             //when & then
             assertThrows(BizException.class, () -> memberService.getMyInfo(userId));
-            verify(memberRepository, times(1)).findById(new ObjectId(userId));
+            verify(memberRepository, times(1)).findById(userId);
 
         }
     }
@@ -331,7 +326,7 @@ class MemberServiceImplTest {
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("username", "profileImage");
 
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.of(members));
 
             given(memberRepository.save(members))
@@ -342,7 +337,7 @@ class MemberServiceImplTest {
 
             //then
             assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
-            verify(memberRepository, times(1)).findById(new ObjectId(userId));
+            verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, times(1)).save(members);
         }
 
@@ -353,12 +348,12 @@ class MemberServiceImplTest {
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("username", "profileImage");
             String userId = "63c4f6cbeb0a310a89188df6";
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.empty());
 
             //when & then
             assertThrows(BizException.class, ()-> memberService.updateMemberInfo(userId, memberUpdateRequest));
-            verify(memberRepository, times(1)).findById(new ObjectId(userId));
+            verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, never()).save(members);
         }
 
@@ -457,7 +452,7 @@ class MemberServiceImplTest {
             given(redirectionUtil.getLocationHeader())
                     .willReturn(httpHeaders);
 
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.of(members));
 
             given(passwordEncoder.matches(any(), any()))
@@ -471,7 +466,7 @@ class MemberServiceImplTest {
 
             //then
             assertEquals(res, "정상적으로 회원탈퇴 작업이 처리되었습니다.");
-            verify(memberRepository, times(1)).findById(new ObjectId(userId));
+            verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
 
@@ -481,7 +476,7 @@ class MemberServiceImplTest {
         @DisplayName("실패한 경우 - 회원 존재 X")
         void failure() {
             // given
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.empty());
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest(userId, "password");
@@ -500,7 +495,7 @@ class MemberServiceImplTest {
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
 
 
-            given(memberRepository.findById(new ObjectId(userId)))
+            given(memberRepository.findById(userId))
                     .willReturn(Optional.of(members));
 
             given(passwordEncoder.matches(any(), any()))
@@ -514,7 +509,7 @@ class MemberServiceImplTest {
 
             // when & then
             assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest));
-            verify(memberRepository, times(1)).findById(new ObjectId(userId));
+            verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
         }

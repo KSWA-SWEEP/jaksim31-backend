@@ -68,6 +68,8 @@ import java.util.stream.Collectors;
  * 2023-01-16           방근호             써드파티 api 이용 예외처리 추가
  * 2023-01-17           김주현             사용자 일기 조회(전체) Service에 Paging 추가
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 예외 처리 추가
+ * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             findDiary input 값에 userId 추가 및 조회하고자 하는 diary가 사용자의 diary 인지 검증 추가
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -95,8 +97,11 @@ public class DiaryServiceImpl implements DiaryService {
     private final MongoTemplate mongoTemplate;
     @Override
     // 전체 일기 조회
-    public ResponseEntity<List<Diary>> allDiaries(){
-        return ResponseEntity.ok(diaryRepository.findAll());
+    public ResponseEntity<List<DiaryResponse>> allDiaries(){
+        return ResponseEntity.ok(diaryRepository.findAll()
+                .stream()
+                .map(DiaryResponse::of)
+                .collect(Collectors.toList()));
     }
     /**
      *  findUserDiaries 사용자 일기 목록 조회
@@ -130,12 +135,15 @@ public class DiaryServiceImpl implements DiaryService {
         // filter(사용자 id)
         query.addCriteria(Criteria.where("userId").is(userId));
         // filtering 된 데이터
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, DiaryInfoResponse.class, "diary");
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
+                .stream()
+                .map(DiaryInfoResponse::of)
+                .collect(Collectors.toList());
         // filtering 된 데이터, 페이징 정보, document 개수 정보로 Page 객체 생성
         Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
                 diaries,
                 pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), DiaryInfoResponse.class, "diary")
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
         );
 
         return ResponseEntity.ok(diaryPage);
@@ -147,7 +155,7 @@ public class DiaryServiceImpl implements DiaryService {
      * @return Diary
      */
     @Override
-    public ResponseEntity<Diary> saveDiary(DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<DiaryResponse> saveDiary(DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
         memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -161,8 +169,10 @@ public class DiaryServiceImpl implements DiaryService {
 
         Diary diary = diarySaveRequest.toEntity();
         // 썸네일 URL 추가
+        // TODO 썸네일 저장 부분 고려해보기. 아직 미완.
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
-        return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.CREATED);
+        return new ResponseEntity<>(DiaryResponse.of(diaryRepository.save(diary))
+                , HttpStatus.CREATED);
     }
 
     /**
@@ -173,7 +183,7 @@ public class DiaryServiceImpl implements DiaryService {
      */
     @Override
     @Transactional
-    public ResponseEntity<Diary> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
+    public ResponseEntity<DiaryResponse> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
         // 일기를 찾을 수 없을 때
         diaryRepository
                 .findById(diaryId)
@@ -184,7 +194,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
-        return ResponseEntity.ok(diaryRepository.save(updatedDiary));
+        return ResponseEntity.ok(DiaryResponse.of(diaryRepository.save(updatedDiary)));
     }
 
     @Override
@@ -199,10 +209,14 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 조회
-    public ResponseEntity<Diary> findDiary(String diaryId) {
-        return ResponseEntity.ok(
-                 diaryRepository.findById(diaryId)
-                                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY)));
+    public ResponseEntity<DiaryResponse> findDiary(String userId, String diaryId) {
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
+        // 본인의 일기가 아닌 다른 사람의 일기를 조회하고자 하였을 때, 권한 없음
+        if(!diary.getUserId().equals(userId))
+            throw new BizException(DiaryExceptionType.NO_PERMISSION);
+
+        return ResponseEntity.ok(DiaryResponse.of(diary));
     }
 
     /**
@@ -285,6 +299,9 @@ public class DiaryServiceImpl implements DiaryService {
      * @return DiaryAnalysisResponse
      * @throws JsonProcessingException Json processing 예외
      * @throws ParseException parsing 예외
+     */
+    /** TODO
+     *   코드 리팩토링
      */
     @Override
     public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
@@ -383,7 +400,7 @@ public class DiaryServiceImpl implements DiaryService {
         Diary todayDiary = diaryRepository
                 .findDiaryByUserIdAndDate(userId, today.atTime(9,0))
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
-        return ResponseEntity.ok(todayDiary.getId().toString());
+        return ResponseEntity.ok(todayDiary.getId());
     }
 
     /**
@@ -409,8 +426,6 @@ public class DiaryServiceImpl implements DiaryService {
         else{
             endDate = LocalDate.now().atTime(9,0);}
 
-        List<DiaryEmotionStatics> emotionStatics = null;
-
         // Aggregation 설정
         // filter
         MatchOperation matchOperation = Aggregation.match(
@@ -426,11 +441,10 @@ public class DiaryServiceImpl implements DiaryService {
         AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
                 Diary.class,
                 DiaryEmotionStatics.class);
-
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
-        emotionStatics = aggregation.getMappedResults();
-
-        return ResponseEntity.ok(new DiaryEmotionStaticsResponse(emotionStatics));
+        List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
+        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
+        return ResponseEntity.ok(diaryEmotionStaticsResponse);
     }
 
 }

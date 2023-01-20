@@ -37,6 +37,6 @@ public class MemberInfoResponse {
     private int diaryTotal;
 
     public static MemberInfoResponse of(Members members) {
-        return new MemberInfoResponse(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
+        return new MemberInfoResponse(members.getId(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
     }
 }
