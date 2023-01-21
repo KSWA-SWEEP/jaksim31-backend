@@ -483,7 +483,7 @@ public class DiaryApiControllerTest  {
                     .willReturn(ResponseEntity.ok("diaryId"));
 
             //when
-            mockMvc.perform(delete("/v0/diaries/diaryId")
+            mockMvc.perform(delete("/v0/diaries/userId/diaryId")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -501,7 +501,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
 
             //when
-            mockMvc.perform(delete("/v0/diaries/diaryId")
+            mockMvc.perform(delete("/v0/diaries/userId/diaryId")
                             .with(csrf()) //403 에러 방지
                     )
 
