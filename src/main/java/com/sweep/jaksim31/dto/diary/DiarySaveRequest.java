@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 /**
@@ -30,17 +28,12 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class DiarySaveRequest {
-    @NotBlank(message = "사용자를 찾을 수 없습니다.")
+
     String userId;
-    @NotBlank(message = "내용을 입력해주세요.")
     String content;
-    @NotNull(message = "날짜를 입력해주세요.")
     LocalDate date;
-    @NotBlank(message = "감정 분석 결과가 없습니다.")
     String emotion;
-    @NotNull(message = "키워드가 없습니다.")
     String[] keywords;
-    @NotBlank(message = "썸네일이 없습니다.")
     String thumbnail;
 
     public Diary toEntity() {
