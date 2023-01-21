@@ -42,6 +42,7 @@ import static org.mockito.Mockito.*;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-19           김주현             최초 생성
+ * 2023-01-20           김주현             일기 삭제 service 수정으로 인한 test 수정
  */
 @ExtendWith(MockitoExtension.class)
 @WithMockUser(username = "username", password = "password", roles = "ROLE_USER")
@@ -198,23 +199,47 @@ public class DiaryServiceImplTest {
     @DisplayName("일기 삭제 서비스")
     class removeDiary{
         String diaryId = "diaryId";
+        String userId = "userId";
         @Test
         @DisplayName("[정상]일기 삭제 성공")
         void removeDiary(){
             // given
             Diary diary = new Diary(diaryId, diarySaveRequest);
+            Members user = Members.builder().diaryTotal(5).build();
             // 삭제하려고 하는 일기가 존재함
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(diary));
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(user));
 
             // when
-            String result = diaryService.remove(diaryId).getBody();
+            String result = diaryService.remove(userId, diaryId).getBody();
 
             // then
             assertEquals(result, diaryId);
 
             verify(diaryRepository, times(1)).findById(diaryId);
+            verify(memberRepository, times(1)).findById(userId);
+            verify(memberRepository, times(1)).save(user);
             verify(diaryRepository, times(1)).delete(diary);
+        }
+        @Test
+        @DisplayName("[예외]사용자의 일기가 아닐 경우")
+        void failUpdateDiaryNoPermission(){
+            // given
+            Diary diary = new Diary(diaryId, diarySaveRequest);
+            Members user = Members.builder().diaryTotal(5).build();
+            // 삭제하려고 하는 일기가 존재함
+            given(diaryRepository.findById(diaryId))
+                    .willReturn(Optional.of(diary));
+
+            // when
+            // then
+            assertThrows(BizException.class, () -> diaryService.remove("wrong_userId", diaryId));
+            verify(diaryRepository, times(1)).findById(diaryId);
+            verify(memberRepository, never()).findById(userId);
+            verify(memberRepository, never()).save(user);
+            verify(diaryRepository, never()).delete(diary);
         }
         @Test
         @DisplayName("[예외]일기가 존재하지 않을 때")
@@ -225,7 +250,8 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove(diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(userId, diaryId));
+            verify(memberRepository, never()).findById(userId);
             verify(diaryRepository, never()).delete(any());
         }
     }
@@ -380,7 +406,9 @@ public class DiaryServiceImplTest {
             Page<Object> page = new PageImpl(diaryInfoResponses, pageable, 1);
 
             given(memberRepository.findById(userId))
-                    .willReturn(Optional.of(Members.builder().build()));
+                    .willReturn(Optional.of(Members.builder()
+                            .diaryTotal(5)
+                            .build()));
             given(mongoTemplate.find(any(),any(),any()))
                     .willReturn(List.of(diary));
             given(PageableExecutionUtils.getPage(any(),any(),any()))
@@ -414,7 +442,9 @@ public class DiaryServiceImplTest {
             Page<Object> page = new PageImpl(diaryInfoResponses, pageable, 1);
 
             given(memberRepository.findById(userId))
-                    .willReturn(Optional.of(Members.builder().build()));
+                    .willReturn(Optional.of(Members.builder()
+                            .diaryTotal(5)
+                            .build()));
             given(mongoTemplate.find(any(),any(),any()))
                     .willReturn(List.of(diary));
             given(PageableExecutionUtils.getPage(any(),any(),any()))

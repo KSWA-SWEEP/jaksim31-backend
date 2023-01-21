@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
+import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
@@ -70,6 +71,8 @@ import java.util.stream.Collectors;
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 예외 처리 추가
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  * 2023-01-20           김주현             findDiary input 값에 userId 추가 및 조회하고자 하는 diary가 사용자의 diary 인지 검증 추가
+ *                      김주현             일기 삭제 서비스 input 값에 userId 추가
+ *                      김주현             일기 삭제 및 생성 시 사용자 정보의 totalDiary 값 업데이트
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -113,15 +116,15 @@ public class DiaryServiceImpl implements DiaryService {
     // 사용자 id 전체 일기 조회
     public ResponseEntity<Page<DiaryInfoResponse>> findUserDiaries(String userId, Map params){
         // 사용자를 찾을 수 없을 때
-        memberRepository
+        Members user = memberRepository
                 .findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         Pageable pageable;
-        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=9) 세팅
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
         if(!params.containsKey("size"))
-            params.put("size", "9");
+            params.put("size", user.getDiaryTotal()+"");
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
@@ -157,7 +160,7 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public ResponseEntity<DiaryResponse> saveDiary(DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
-        memberRepository.findById(diarySaveRequest.getUserId())
+        Members user = memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
@@ -166,10 +169,15 @@ public class DiaryServiceImpl implements DiaryService {
         if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
             throw new BizException(DiaryExceptionType.WRONG_DATE);
         }
+        // 사용자 정보의 total diary 정보 업데이트
+        user.setDiaryTotal(user.getDiaryTotal()+1);
+        memberRepository.save(user);
 
         Diary diary = diarySaveRequest.toEntity();
         // 썸네일 URL 추가
-        // TODO 썸네일 저장 부분 고려해보기. 아직 미완.
+        // TODO
+        //  * 썸네일 저장 부분 고려해보기. 아직 미완.
+        //  * 최근 일기 저장(recentDiaries) 고려해보기. 만약 한다고 하면 구현 필요.
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
         return new ResponseEntity<>(DiaryResponse.of(diaryRepository.save(diary))
                 , HttpStatus.CREATED);
@@ -199,11 +207,22 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 삭제
-    public ResponseEntity<String> remove(String diaryId) {
+    public ResponseEntity<String> remove(String userId, String diaryId) {
         Diary diary = diaryRepository
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
+
+        // 다른 사용자의 일기 삭제 요청시, NO_PERMISSION Exception
+        if(!diary.getUserId().equals(userId))
+            throw new BizException(DiaryExceptionType.NO_PERMISSION);
+
+        // 사용자 정보의 total diary 정보 업데이트
+        Members user = memberRepository.findById(userId)
+                .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        user.setDiaryTotal(user.getDiaryTotal()-1);
+
         diaryRepository.delete(diary);
+        memberRepository.save(user);
         return ResponseEntity.ok(diary.getId());
     }
 
@@ -229,34 +248,53 @@ public class DiaryServiceImpl implements DiaryService {
     // 일기 검색, 조건 조회
     public ResponseEntity<Page<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params){
         // TODO
-        //  * ElasticSearch로 검색하도록 구현
-//
-//        // Repository 방식
-//        List<DiaryInfoResponse> diaries;
-//        LocalDateTime start_date;
-//        LocalDateTime end_date;
-//        // 시간 조건 설정
-//        if(params.containsKey("startDate")){
-//            start_date = (LocalDate.parse(((String)params.get("startDate")))).minusDays(1).atTime(9,0);}
-//        else{
-//            start_date = LocalDate.of(1990, 1, 1).atTime(9, 0);}
-//        if(params.containsKey("endDate")){
-//            end_date = (LocalDate.parse(((String)params.get("endDate")))).plusDays(1).atTime(9,0);}
-//        else{
-//            end_date = LocalDate.now().plusDays(1).atTime(9,0);}
-//        // 조건으로 조회
-//        if(params.containsKey("emotion"))
-//            diaries = diaryRepository.findDiariesByUserIdAndEmotionAndDateBetweenOrderByDate(userId, (String) params.get("emotion"), start_date, end_date).stream()
-//                    .map(m -> new DiaryInfoResponse().of(m))
-//                    .collect(Collectors.toList());
-//        else
-//            diaries = diaryRepository.findDiariesByUserIdAndDateBetweenOrderByDate(userId, start_date, end_date).stream()
-//                    .map(m -> new DiaryInfoResponse().of(m))
-//                    .collect(Collectors.toList());
-//
-//        System.out.println("Diaries : " + diaries);
+        //  * ElasticSearch 연결 되면 elasticSerch 사용해서 검색하도록 수정
 
-        return ResponseEntity.ok(null);
+        //mongoTemplate 사용해서 일단 구현
+        // 사용자를 찾을 수 없을 때
+        memberRepository
+                .findById(userId)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        Pageable pageable;
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=9) 세팅
+        if(!params.containsKey("page"))
+            params.put("page", "0");
+        if(!params.containsKey("size"))
+            params.put("size", "9");
+        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
+        if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
+        else
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
+        // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
+        Query query = new Query()
+                .with(pageable)
+                .skip(pageable.getPageSize() * pageable.getPageNumber())
+                .limit(pageable.getPageSize());
+        query.addCriteria(Criteria.where("userId").is(userId));
+
+        for(String i : params.keySet()){
+            if(i.equals("startDate")){
+                query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)));
+            }else if(i.equals("endDate")){
+                query.addCriteria(Criteria.where("date").lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
+            }else if(i.equals("page") || i.equals("sort") || i.equals("size"))
+                continue;
+            else{
+                query.addCriteria(Criteria.where(i).is(params.get(i).toString()));
+            }
+        }
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
+                .stream()
+                .map(DiaryInfoResponse::of)
+                .collect(Collectors.toList());
+        // filtering 된 데이터, 페이징 정보, document 개수 정보로 Page 객체 생성
+        Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
+                diaries,
+                pageable,
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
+        );
+        return ResponseEntity.ok(diaryPage);
     }
 
     /**

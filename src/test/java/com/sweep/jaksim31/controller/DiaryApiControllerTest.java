@@ -59,6 +59,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 2023-01-17           김주현             최초 생성
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  * 2023-01-20           김주현             개별 일기 조회 controller test 추가 및 DiaryResponse의 date -> diaryDate
+ *                      김주현             일기 삭제 service 수정으로 인한 test 코드 수정
  */
 
 @WebMvcTest(controllers = DiaryApiController.class)
@@ -478,11 +479,11 @@ public class DiaryApiControllerTest  {
         @DisplayName("[정상]일기 삭제 완료")
         public void removeDiary() throws Exception{
             //given
-            given(diaryService.remove(any()))
+            given(diaryService.remove(any(), any()))
                     .willReturn(ResponseEntity.ok("diaryId"));
 
             //when
-            mockMvc.perform(delete("/v0/diaries/diaryId")
+            mockMvc.perform(delete("/v0/diaries/userId/diaryId")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -496,11 +497,11 @@ public class DiaryApiControllerTest  {
         @DisplayName("[정상]일기 정보가 없을 때")
         public void removeDiaryNotFoundDiary() throws Exception{
             //given
-            given(diaryService.remove(any()))
+            given(diaryService.remove(any(), any()))
                     .willThrow(new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
 
             //when
-            mockMvc.perform(delete("/v0/diaries/diaryId")
+            mockMvc.perform(delete("/v0/diaries/userId/diaryId")
                             .with(csrf()) //403 에러 방지
                     )
 

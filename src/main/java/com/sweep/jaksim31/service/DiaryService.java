@@ -19,12 +19,13 @@ import java.util.Map;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-09           김주현             최초 생성
- * 2023-01-12           김주현       Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
- * 2023-01-12           방근호       analyzeDiary 메소드 추가
- * 2023-01-14           김주현         todayDiary 메소드 추가
- * 2023-01-17           김주현         findUserDiaries 메소드 수정
- * 2023-01-19           김주현       Return 타입 변경(Diary -> DiaryResponse)
- * 2023-01-20           김주현         findDiary 메소드 input값에 userId 추가
+ * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
+ * 2023-01-12           방근호             analyzeDiary 메소드 추가
+ * 2023-01-14           김주현             todayDiary 메소드 추가
+ * 2023-01-17           김주현             findUserDiaries 메소드 수정
+ * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             findDiary 메소드 input값에 userId 추가
+ *                      김주현             일기 삭제 service input 값에 userId 추가
  */
 
 public interface DiaryService {
@@ -41,7 +42,7 @@ public interface DiaryService {
     ResponseEntity<DiaryResponse> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest);
 
     // 일기 삭제
-    ResponseEntity<String> remove(String diaryId);
+    ResponseEntity<String> remove(String userId,String diaryId);
 
     // 일기 조회
     ResponseEntity<DiaryResponse> findDiary(String userId, String diaryId);
