@@ -73,6 +73,7 @@ import java.util.stream.Collectors;
  * 2023-01-20           김주현             findDiary input 값에 userId 추가 및 조회하고자 하는 diary가 사용자의 diary 인지 검증 추가
  *                      김주현             일기 삭제 서비스 input 값에 userId 추가
  *                      김주현             일기 삭제 및 생성 시 사용자 정보의 totalDiary 값 업데이트
+ *                      김주현             사용자 일기 조회 및 검색 시 page 정보가 input으로 들어오지 않았을 때 default(page=0, size=user.diaryTotal)
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -252,7 +253,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         //mongoTemplate 사용해서 일단 구현
         // 사용자를 찾을 수 없을 때
-        memberRepository
+        Members user = memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         Pageable pageable;
@@ -260,7 +261,7 @@ public class DiaryServiceImpl implements DiaryService {
         if(!params.containsKey("page"))
             params.put("page", "0");
         if(!params.containsKey("size"))
-            params.put("size", "9");
+            params.put("size", user.getDiaryTotal()+"");
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
