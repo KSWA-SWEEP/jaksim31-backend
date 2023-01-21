@@ -17,11 +17,13 @@ import java.util.OptionalInt;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             조회 조건 수정 및 추가
  * 2023-01-18           김주현             id data type 변경(ObjectId -> String)
+ * 2023-01-21           방근호             existsByLoginId 메소드 type 변경(Optional<Members> -> boolean
+ * 2023-01-21           방근호             findMemberByLoginId 이름 변경 (-> findByLoginId)
  */
 
 public interface MemberRepository extends MongoRepository<Members, String> {
     Optional<Members> findById(String id);
-    Optional<Members> findMembersByLoginId(String loginId);
+    Optional<Members> findByLoginId(String loginId);
     boolean existsById(String id);
-    Optional<Members> existsByLoginId(String loginId);
+    boolean existsByLoginId(String loginId);
 }

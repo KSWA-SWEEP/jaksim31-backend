@@ -39,14 +39,14 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String loginId) throws BizException {
         log.debug("CustomUserDetailsService -> loginId = {}",loginId);
-        return memberRepository.findMembersByLoginId(loginId)
+        return memberRepository.findByLoginId(loginId)
                 .map(this::createUserDetails)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
 
     @Transactional(readOnly = true)
     public Members getMember(String loginId) throws BizException {
-        return memberRepository.findMembersByLoginId(loginId)
+        return memberRepository.findByLoginId(loginId)
                 .orElseThrow(()->new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
 

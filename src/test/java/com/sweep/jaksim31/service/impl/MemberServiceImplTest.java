@@ -90,7 +90,7 @@ class MemberServiceImplTest {
             MemberSaveResponse memberSaveResponse = new MemberSaveResponse("userid", fakeMemberId, "username123", "profileImage");
             assert memberSaveRequest.toMember(passwordEncoder, false) != null;
             given(memberRepository.existsByLoginId(any()))
-                    .willReturn(Optional.empty());
+                    .willReturn(false);
 
             given(memberRepository.save(any()))
                     .willReturn(members);
@@ -145,7 +145,7 @@ class MemberServiceImplTest {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(loginId);
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             given(memberRepository.existsByLoginId(any()))
-                    .willReturn(Optional.of(members));
+                    .willReturn(true);
 
             //when
             ResponseEntity<String> isMember = memberService.isMember(memberCheckLoginIdRequest);
@@ -163,7 +163,7 @@ class MemberServiceImplTest {
             String loginId = "loginId";
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(loginId);
             given(memberRepository.existsByLoginId(any()))
-                    .willReturn(Optional.empty());
+                    .willReturn(false);
 
             assertThrows(BizException.class, () -> memberService.isMember(memberCheckLoginIdRequest));
         }
@@ -184,7 +184,7 @@ class MemberServiceImplTest {
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("password");
 
-            given(memberRepository.findMembersByLoginId(fakeMemberId))
+            given(memberRepository.findByLoginId(fakeMemberId))
                     .willReturn(Optional.of(members));
 
             given(memberRepository.save(members))
@@ -195,7 +195,7 @@ class MemberServiceImplTest {
 
             //then
             assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
-            verify(memberRepository, times(1)).findMembersByLoginId(fakeMemberId);
+            verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(memberRepository, times(1)).save(members);
         }
 
@@ -209,12 +209,12 @@ class MemberServiceImplTest {
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("password");
 
-            given(memberRepository.findMembersByLoginId(fakeMemberId))
+            given(memberRepository.findByLoginId(fakeMemberId))
                     .willThrow( new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when & then
             assertThrows(BizException.class, () -> memberService.updatePassword(fakeMemberId, memberUpdatePasswordRequest));
-            verify(memberRepository, times(1)).findMembersByLoginId(fakeMemberId);
+            verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(memberRepository, never()).save(members); // save 메소드는 호출 되지 않을 것이다.
         }
     }
@@ -277,7 +277,7 @@ class MemberServiceImplTest {
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             MemberInfoResponse memberInfoResponse1 = new MemberInfoResponse(loginId, fakeMemberId, "username", "profileImage", null, 10);
 
-            given(memberRepository.findMembersByLoginId(loginId))
+            given(memberRepository.findByLoginId(loginId))
                     .willReturn(Optional.of(members));
 
             given(diaryRepository.findDiaryByUserIdAndDate(any(), any()))
@@ -290,7 +290,7 @@ class MemberServiceImplTest {
             MemberInfoResponse res = memberService.getMyInfoByLoginId(loginId).getBody();
 
             //then
-            verify(memberRepository, times(1)).findMembersByLoginId(loginId);
+            verify(memberRepository, times(1)).findByLoginId(loginId);
             verify(diaryRepository, times(1)).findDiaryByUserIdAndDate(any(), any());
             assert res != null;
             assertEquals(res.getLoginId(), members.getLoginId());
@@ -301,7 +301,7 @@ class MemberServiceImplTest {
         void fail() {
             //given
 
-            given(memberRepository.findMembersByLoginId(loginId))
+            given(memberRepository.findByLoginId(loginId))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when & then
@@ -372,7 +372,7 @@ class MemberServiceImplTest {
 
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
 
-            given(memberRepository.findMembersByLoginId(fakeMemberId))
+            given(memberRepository.findByLoginId(fakeMemberId))
                     .willReturn(Optional.of(members));
 
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
@@ -385,7 +385,7 @@ class MemberServiceImplTest {
 
             //then
             assertEquals(res, "비밀번호가 일치합니다.");
-            verify(memberRepository, times(1)).findMembersByLoginId(fakeMemberId);
+            verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
 
@@ -395,7 +395,7 @@ class MemberServiceImplTest {
         @DisplayName("실패한 경우 - 회원 존재 X")
         void failure() {
             // given
-            given(memberRepository.findMembersByLoginId(fakeMemberId))
+            given(memberRepository.findByLoginId(fakeMemberId))
                     .willReturn(Optional.empty());
 
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
@@ -413,7 +413,7 @@ class MemberServiceImplTest {
 
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
 
-            given(memberRepository.findMembersByLoginId(fakeMemberId))
+            given(memberRepository.findByLoginId(fakeMemberId))
                     .willReturn(Optional.of(members));
 
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
@@ -423,7 +423,7 @@ class MemberServiceImplTest {
 
             // when & then
             assertThrows(BizException.class, () -> memberService.isMyPassword(fakeMemberId, memberCheckPasswordRequest));
-            verify(memberRepository, times(1)).findMembersByLoginId(fakeMemberId);
+            verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
         }
@@ -540,7 +540,7 @@ class MemberServiceImplTest {
 //                            .expTime("100000")
 //                            .build());
 //
-//            given(memberRepository.findMembersByLoginId(any()))
+//            given(memberRepository.findByLoginId(any()))
 //                    .willReturn(Optional.ofNullable(members));
 //
 //            setUserToContextByUsername("abcedfg");
