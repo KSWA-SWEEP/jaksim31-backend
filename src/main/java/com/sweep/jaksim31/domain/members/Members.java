@@ -4,8 +4,10 @@ import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
 import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import lombok.*;
-import org.bson.types.ObjectId;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -13,6 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             profilePhoto -> profileImage
+ * 2023-01-19           방근호             updateTime 수정(9시간 추가)
  */
 
 @Getter
@@ -40,7 +44,7 @@ import java.util.stream.Collectors;
 public class Members {
 
     @Id
-    private ObjectId id;
+    private String id;
 
     private String loginId; // 사용자 로그인 아이디
     private String password;
@@ -61,7 +65,7 @@ public class Members {
 
     @Builder
     public Members(String username, String loginId, String password, Boolean isSocial, char delYn, List<Diary> recentDiaries,
-                   String profileImage, int diaryTotal, Set<Authority> authorities, Instant register_date, Instant update_date) {
+                   String profileImage, int diaryTotal,  Instant register_date, Instant update_date) {
         this.username = username;
         this.loginId = loginId;
         this.password = password;
@@ -90,19 +94,14 @@ public class Members {
                 .collect(Collectors.joining(","));
     }
 
-    public void updateMember(MemberUpdateRequest dto, PasswordEncoder passwordEncoder) throws Exception {
+    public void updateMember(MemberUpdateRequest dto) throws BizException {
 
-        if(dto.getOldPassword() != null) {
-            // 비밀번호가 같지 않다면
-            if (!passwordEncoder.matches(dto.getOldPassword(), this.password)){
-                throw new Exception("비밀 번호가 불일치 합니다.");
-            }
-            this.password = passwordEncoder.encode(dto.getNewPassword());
-        }
         if(dto.getUsername() != null) this.username = dto.getUsername();
         if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
-        this.updateDate = Instant.now();
+
+        this.updateDate = Instant.now().plus(9, ChronoUnit.HOURS);
     }
+
 
     public void remove(char delYn){
         this.delYn = delYn;

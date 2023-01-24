@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.exception.type;
 
 import com.sweep.jaksim31.exception.BaseExceptionType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -12,7 +13,8 @@ import org.springframework.http.HttpStatus;
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
- * 2023-01-13                방근호             최초 생성
+ * 2023-01-13               방근호             최초 생성
+ * 2023-01-17               방근호          LOGOUT_EMPTY_TOKEN 3xx로 변경
  *
  */
 
@@ -24,6 +26,7 @@ public enum JwtExceptionType implements BaseExceptionType {
     REFRESH_TOKEN_EXPIRED("REFRESH_TOKEN_EXPIRED","리프레시 토큰의 유효기간이 만료되었습니다.",HttpStatus.BAD_REQUEST),
     BAD_TOKEN("BAD_TOKEN","잘못된 토큰 값입니다.",HttpStatus.BAD_REQUEST),
     EMPTY_TOKEN("EMPTY_TOKEN","토큰 값이 비어있습니다.",HttpStatus.BAD_REQUEST),
+    LOGOUT_EMPTY_TOKEN("LOGOUT_EMPTY_TOKEN","이미 로그아웃된 사용자입니다.",HttpStatus.SEE_OTHER),
     ;
 
     private final String errorCode;

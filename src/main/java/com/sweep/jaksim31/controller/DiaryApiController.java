@@ -2,15 +2,20 @@ package com.sweep.jaksim31.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sweep.jaksim31.dto.diary.*;
-import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.dto.diary.validator.DiaryAnalysisRequestValidator;
+import com.sweep.jaksim31.dto.diary.validator.DiarySaveRequestValidator;
+import com.sweep.jaksim31.dto.diary.validator.DiaryThumbnailRequestValidator;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.parser.ParseException;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
@@ -31,10 +36,20 @@ import java.util.Map;
  * 2023-01-11           김주현             Tag 추가 및 일기 존재 여부 확인 api 추가
  * 2023-01-12           김주현             Diary 정보 조회 Return형식을 DiaryInfoDTO로 변경
  * 2023-01-12           방근호             Diary 컨트롤러에 클라우드와 api 통신 및 사진 다운로드 & 업로드
- */
+ * 2023-01-14           김주현             오늘 일기 조회 추가(서비스 확인용_주석 처리)
+ * 2023-01-16           방근호             모든 컨트롤러에 ResponseEntity Wrapper class 사용
+ * 2023-01-17           김주현             감정 통계 추가
+ * 2023-01-17           김주현             사용자 일기 조회 Paging 추가
+ * 2023-01-18           김주현             id data type 변경(ObjectId -> String) 및 일기 분석 method 명 수정
+ * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
+ * 2023-01-20           김주현             findDiary input 값에 userId 추가
+ *                      김주현             일기 삭제 api path 및 input 값에 userId 추가
+ * 2023-01-21           김주현             Validation 추가
+*/
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
     * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제
+    * 사용자 일기 검색 Paging 기능 추가 하기(전체 조회는 추가 완료. 조건 조회에 추가 필요)
 * */
 @Slf4j
 @RestController
@@ -43,78 +58,77 @@ import java.util.Map;
 @RequestMapping(path = "/v0/diaries")
 public class DiaryApiController {
     private final DiaryServiceImpl diaryService;
-
+    @InitBinder
+    public void init(WebDataBinder binder) {
+        binder.addValidators(new DiarySaveRequestValidator(), new DiaryThumbnailRequestValidator(), new DiaryAnalysisRequestValidator());
+    }
     // 전체 일기 조회
     @Operation(summary = "전체 일기 조회", description = "모든 일기를 조회합니다.")
     @GetMapping(value = "")
-    public List<Diary> allDiaries(){
-        return diaryService.allDiaries();
+    public ResponseEntity<List<DiaryResponse>> allDiaries(){
+        return ResponseEntity.ok(diaryService.allDiaries());
     }
 
     // 일기 등록
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
-    public Diary saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
-        //확인
-        // System.out.println("Diary dto = " + diaryDto.toString());
-
-        //사용자 current_diaries에 현재 작성한 다이어리 넣기
-//        ObjectId userId = new ObjectId(diaryDto.getUser_id());
-//        Members user = member.findUser(new ObjectId(diaryDto.getUser_id()));
-//        List<Diary> diaries = user.getRecentDiaries();
-//
-//        user.setRecentDiaries(diaries);
-//        userService.updateUser(user);
-//        diaries.add(diary);
-        Diary diary = diaryService.saveDiary(diarySaveRequest);
-        return diary;
+    //BindingResult bindingResult 는 검증 되는 객체(@Validated로 선언 된 객체) 바로 뒤에 선언되어 있어야 한다.
+    public ResponseEntity<DiaryResponse> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
+        return new ResponseEntity<>(diaryService.saveDiary(diarySaveRequest), HttpStatus.CREATED);
     }
 
     // 일기 수정
     @Operation(summary = "일기 수정", description = "일기를 수정합니다.")
     @PutMapping(value = "{diaryId}")
-    public Diary updateDiary(@PathVariable String diaryId, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
-        System.out.println(String.format("Diary ID \"%s\" Update",diaryId));
-        return diaryService.updateDiary(diaryId, diarySaveRequest);
+    public ResponseEntity<DiaryResponse> updateDiary(@PathVariable String diaryId,@Validated @RequestBody DiarySaveRequest diarySaveRequest){
+        System.out.printf("Diary ID \"%s\" Update%n",diaryId);
+        return ResponseEntity.ok(diaryService.updateDiary(diaryId, diarySaveRequest));
     }
 
     // 일기 삭제
     @Operation(summary = "일기 삭제", description = "일기를 삭제합니다.")
-    @DeleteMapping(value="{diaryId}")
-    public String deleteDiary(@PathVariable String diaryId){
-        return diaryService.remove(diaryId);
+    @DeleteMapping(value="{userId}/{diaryId}")
+    public ResponseEntity<String> deleteDiary(@PathVariable String userId, @PathVariable String diaryId){
+        return ResponseEntity.ok(diaryService.remove(userId, diaryId));
     }
 
     // 개별 일기 조회
     @Operation(summary = "개별 일기 조회", description = "일기ID로 하나의 일기를 조회합니다.")
     @GetMapping(value="{userId}/{diaryId}")
-    public DiaryInfoResponse findDiary(@PathVariable String userId, @PathVariable String diaryId){
-        return diaryService.findDiary(diaryId);
+    public ResponseEntity<DiaryResponse> findDiary(@PathVariable String userId, @PathVariable String diaryId){
+        return ResponseEntity.ok(diaryService.findDiary(userId, diaryId));
     }
 
-    // 사용자 일기 검색
-    @Operation(summary = "사용자 일기 겁색", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
+    // 사용자 일기 조회
+    @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public List<DiaryInfoResponse> findUserDiary(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params){
-        System.out.println(userId + "'s diaries");
-        // 조건이 없으면 사용자 일기 전체 조회
-        if(params.isEmpty()){
-            return diaryService.findUserDiaries(userId);
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
+        if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate")){
+            // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
+            return ResponseEntity.ok(diaryService.findDiaries(userId, params));
         }else
-            System.out.println("parameters : " + params.toString());
-        return diaryService.findDiaries(userId, params);
+            // 페이징 및 정렬 조건만 있으면 사용자 일기 전체 조회
+            return ResponseEntity.ok(diaryService.findUserDiaries(userId, params));
+
     }
 
     @Operation(summary = "일기 분석", description = "해당 일기 문장들을 분석하고 결과(번역, 키워드 추출)를 반환합니다.")
     @PostMapping(value = "analyze")
-    public DiaryAnalysisResponse findUserDiary(@RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
-        return diaryService.analyzeDiary(diaryAnalysisRequest);
+    public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(@Validated @RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
+        return ResponseEntity.ok(diaryService.analyzeDiary(diaryAnalysisRequest));
     }
 
     @Operation(summary = "썸네일 생성 및 교체", description = "사용자가 요청한 사진에 대한 URL을 이용하여 사진을 오브젝트 스토리지에 업로드 합니다.")
-    @PostMapping(value = "thumbnail")
-    public ResponseEntity<String> saveThumbnail(@RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
-        return diaryService.saveThumbnail(diaryThumbnailRequest);
+    @PutMapping(value = "thumbnail")
+    public ResponseEntity<String> saveThumbnail(@Validated @RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
+        return ResponseEntity.ok(diaryService.saveThumbnail(diaryThumbnailRequest));
     }
+    
+    @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
+    @GetMapping(value = "{userId}/emotions")
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@PathVariable String userId, @RequestParam(required = false) Map<String, Object> params) {
+        return ResponseEntity.ok(diaryService.emotionStatics(userId, params));
+    }
+
 
 }

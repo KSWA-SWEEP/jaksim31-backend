@@ -7,9 +7,11 @@ import lombok.ToString;
 @ToString
 public class ErrorResponse {
 
-    private String errorMessage;
+    private final String errorMessage;
+    private final String errorCode;
 
-    public ErrorResponse(String errorMessage) {
+    public ErrorResponse(String errorCode, String errorMessage) {
+        this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
 }

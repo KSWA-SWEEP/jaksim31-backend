@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.dto.token;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
  */
 
 @Data
-@NoArgsConstructor
+@AllArgsConstructor
 public class TokenRequest {
     private String accessToken;
     private String refreshToken;

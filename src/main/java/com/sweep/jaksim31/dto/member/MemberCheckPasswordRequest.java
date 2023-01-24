@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.dto.member;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class MemberCheckPasswordRequest {
     private String password;
 }

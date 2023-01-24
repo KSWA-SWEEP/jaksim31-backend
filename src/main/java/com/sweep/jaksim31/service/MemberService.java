@@ -24,6 +24,6 @@ import java.net.URISyntaxException;
 
 public interface MemberService {
 //    ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto);
-    ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException;
-    ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException;
+    TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException;
+    String logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException;
 }

@@ -3,6 +3,7 @@ package com.sweep.jaksim31.dto.member;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.members.Members;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +27,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class MemberInfoResponse {
     private String userId;
     private String loginId;
@@ -35,6 +37,6 @@ public class MemberInfoResponse {
     private int diaryTotal;
 
     public static MemberInfoResponse of(Members members) {
-        return new MemberInfoResponse(members.getId().toString(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
+        return new MemberInfoResponse(members.getId(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
     }
 }

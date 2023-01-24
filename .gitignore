@@ -36,7 +36,13 @@ build/
 /logs
 applicaion.yml
 src/main/resources/application.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-test.yml
+src/test/resources/application.yml
 
 ### log files ###
 was-logs
+./docker-data
+./docker-data/**
 .logs
+

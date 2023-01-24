@@ -17,14 +17,13 @@ import lombok.NoArgsConstructor;
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             profilePhoto -> profileImage
  * 2023-01-13           방근호             클래스 이름 변경
+ * 2023-01-17           방근호             필드 제거 (password)
  */
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class MemberUpdateRequest {
-    private String oldPassword;
-    private String newPassword;
     private String username;
     private String profileImage;
 //    private List<String> authorities;

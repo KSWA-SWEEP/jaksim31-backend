@@ -15,9 +15,12 @@ import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
 import com.sweep.jaksim31.dto.token.TokenResponse;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.HeaderUtil;
+import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,6 +72,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
     private final KakaoOAuthTokenFeign kakaoOAuthTokenFeign;
     private final KakaoOAuthInfoFeign kakaoOAuthInfoFeign;
     private final KakaoOAuthLogoutFeign kakaoOAuthLogoutFeign;
+    private final RedirectionUtil redirectionUtil;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
 
@@ -77,15 +81,10 @@ public class KaKaoMemberServiceImpl implements MemberService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
 
-    @Value("${kakao.auth.login-redirect-url}")
-    private String loginRedirectUrl;
-
-    @Value("${kakao.auth.logout-redirect-url}")
-    private String logoutRedirectUrl;
 
     @Override
     @Transactional
-    public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
+    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
 
         // 회원이 아닐 경우 회원 생성
         if (!memberRepository.existsByLoginId(loginRequest.getLoginId())) {
@@ -133,19 +132,14 @@ public class KaKaoMemberServiceImpl implements MemberService {
                         .build()
         );
 
-        // Redirect 주소 설정
-        URI redirectUri = new URI(loginRedirectUrl+loginRequest.getLoginId());
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("accessToken", accessToken);
-        httpHeaders.setLocation(redirectUri);
 
-        return new ResponseEntity<>(httpHeaders, HttpStatus.SEE_OTHER);
+        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId);
 
     }
 
     @Override
     @Transactional
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+    public String logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
 
         String originAccessToken = HeaderUtil.getAccessToken(request);
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
@@ -165,18 +159,13 @@ public class KaKaoMemberServiceImpl implements MemberService {
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
         CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
 
-        URI redirectUri = new URI(logoutRedirectUrl);
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setLocation(redirectUri);
+        refreshTokenRepository
+                .findByLoginId(loginId)
+                .orElseThrow(()->new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN, redirectionUtil.getHomeUrl()));
 
-        try{
-            if(refreshTokenRepository.findByLoginId(loginId).isPresent()){
-                refreshTokenRepository.deleteByLoginId(loginId);
-            }
-            return new ResponseEntity<>(httpHeaders, HttpStatus.SEE_OTHER);
-        } catch (NullPointerException e){
-            return new ResponseEntity<>("잘못된 접근입니다.", HttpStatus.BAD_REQUEST);
-        }
+        refreshTokenRepository.deleteByLoginId(loginId);
+
+        return "로그아웃 되었습니다.";
     }
 
         // 카카오 인증서버로 부터 Access Token 받아오는 함수
