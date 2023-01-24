@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
  * 2023-01-12                김주현            NOT_FOUND_DIARY 추가
  * 2023-01-15                방근호            DELETE_NOT_FOUND_USER 추가
  * 2023-01-20                김주현            NO_PERMISSION 추가
+ * 2023-01-21                김주현            Validation 관련 Exception type 추가
  */
 @Getter
 public enum DiaryExceptionType implements BaseExceptionType {
@@ -26,8 +27,16 @@ public enum DiaryExceptionType implements BaseExceptionType {
     WRONG_DATE("WRONG_DATE", "잘못 된 날짜입니다.",HttpStatus.BAD_REQUEST),
     NO_PERMISSION("NO_PERMISSION", "권한이 없습니다.",HttpStatus.FORBIDDEN),
     // 삭제 메소드 수행 시 존재 하지 않을 경우 200 응답
-    DELETE_NOT_FOUND_DIARY("ALREADY_NOT_EXIST_DIARY", "존재하지 않는 일기입니다.", HttpStatus.OK);
-
+    DELETE_NOT_FOUND_DIARY("ALREADY_NOT_EXIST_DIARY", "존재하지 않는 일기입니다.", HttpStatus.OK),
+    // Validation Exception type
+    USER_ID_IS_NULL("USER_ID_IS_NULL", "사용자 ID가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    DIARY_ID_IS_NULL("DIARY_ID_IS_NULL", "Diary ID가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    CONTENT_IS_NULL("CONTENT_IS_NULL", "일기 내용이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    DIARY_DATE_IS_NULL("DIARY_DATE_IS_NULL", "날짜가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    EMOTION_IS_NULL("EMOTION_IS_NULL", "감정 분석 결과가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    KEYWORDS_IS_NULL("KEYWORDS_IS_NULL", "키워드가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    THUMBNAIL_IS_NULL("THUMBNAIL_IS_NULL", "썸네일이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+    INPUT_SENTENCES_IS_NULL("NO_INPUT_SENTENCES", "분석할 문장이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST);
     private final String errorCode;
     private final String message;
     private final HttpStatus httpStatus;

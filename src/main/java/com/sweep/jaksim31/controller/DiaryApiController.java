@@ -1,8 +1,10 @@
 package com.sweep.jaksim31.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.dto.diary.*;
+import com.sweep.jaksim31.dto.diary.validator.DiaryAnalysisRequestValidator;
+import com.sweep.jaksim31.dto.diary.validator.DiarySaveRequestValidator;
+import com.sweep.jaksim31.dto.diary.validator.DiaryThumbnailRequestValidator;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URISyntaxException;
@@ -41,6 +44,7 @@ import java.util.Map;
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  * 2023-01-20           김주현             findDiary input 값에 userId 추가
  *                      김주현             일기 삭제 api path 및 input 값에 userId 추가
+ * 2023-01-21           김주현             Validation 추가
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -54,7 +58,10 @@ import java.util.Map;
 @RequestMapping(path = "/v0/diaries")
 public class DiaryApiController {
     private final DiaryServiceImpl diaryService;
-
+    @InitBinder
+    public void init(WebDataBinder binder) {
+        binder.addValidators(new DiarySaveRequestValidator(), new DiaryThumbnailRequestValidator(), new DiaryAnalysisRequestValidator());
+    }
     // 전체 일기 조회
     @Operation(summary = "전체 일기 조회", description = "모든 일기를 조회합니다.")
     @GetMapping(value = "")
@@ -65,6 +72,7 @@ public class DiaryApiController {
     // 일기 등록
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
+    //BindingResult bindingResult 는 검증 되는 객체(@Validated로 선언 된 객체) 바로 뒤에 선언되어 있어야 한다.
     public ResponseEntity<DiaryResponse> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
         return new ResponseEntity<>(diaryService.saveDiary(diarySaveRequest), HttpStatus.CREATED);
     }
@@ -72,7 +80,7 @@ public class DiaryApiController {
     // 일기 수정
     @Operation(summary = "일기 수정", description = "일기를 수정합니다.")
     @PutMapping(value = "{diaryId}")
-    public ResponseEntity<DiaryResponse> updateDiary(@PathVariable String diaryId, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<DiaryResponse> updateDiary(@PathVariable String diaryId,@Validated @RequestBody DiarySaveRequest diarySaveRequest){
         System.out.printf("Diary ID \"%s\" Update%n",diaryId);
         return ResponseEntity.ok(diaryService.updateDiary(diaryId, diarySaveRequest));
     }
@@ -106,13 +114,13 @@ public class DiaryApiController {
 
     @Operation(summary = "일기 분석", description = "해당 일기 문장들을 분석하고 결과(번역, 키워드 추출)를 반환합니다.")
     @PostMapping(value = "analyze")
-    public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(@RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
+    public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(@Validated @RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
         return ResponseEntity.ok(diaryService.analyzeDiary(diaryAnalysisRequest));
     }
 
     @Operation(summary = "썸네일 생성 및 교체", description = "사용자가 요청한 사진에 대한 URL을 이용하여 사진을 오브젝트 스토리지에 업로드 합니다.")
     @PutMapping(value = "thumbnail")
-    public ResponseEntity<String> saveThumbnail(@RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
+    public ResponseEntity<String> saveThumbnail(@Validated @RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
         return ResponseEntity.ok(diaryService.saveThumbnail(diaryThumbnailRequest));
     }
     
