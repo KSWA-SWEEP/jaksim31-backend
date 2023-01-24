@@ -6,6 +6,7 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,9 +16,13 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -56,6 +61,7 @@ class MemberServiceImplTest {
     private RedirectionUtil redirectionUtil;
     private static MockedStatic<MemberSaveResponse> memberSaveResponse;
     private static MockedStatic<MemberInfoResponse> memberInfoResponse;
+    private static MockedStatic<CookieUtil> cookieUtil;
     private static MemberSaveRequest memberSaveRequest;
     private  static String fakeMemberId;
 
@@ -64,6 +70,7 @@ class MemberServiceImplTest {
     public static void setup(){
         memberSaveResponse = mockStatic(MemberSaveResponse.class);
         memberInfoResponse = mockStatic(MemberInfoResponse.class);
+        cookieUtil = mockStatic(CookieUtil.class);
         fakeMemberId = "abcedfg";
         memberSaveRequest = MemberSaveRequest.builder()
                 .username("username123")

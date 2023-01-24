@@ -44,6 +44,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -66,6 +67,7 @@ import java.util.TimeZone;
  * 2023-01-18           김주현          id data type 변경(ObjectId -> String)
  * 2023-01-18           방근호          GetMyInfoByLoginId 리턴값 수정
  * 2023-01-23           방근호          ResponseEntity Wrapper class 제거
+ * 2023-01-25           방근호          getMyInfoByLoginId 수정
  */
 
 @Slf4j
@@ -282,15 +284,11 @@ public class MemberServiceImpl implements MemberService {
         // 오늘 날짜로 작성 된 일기가 있는지 확인
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
-        // 작성 된 일기가 있다면 diary_id, 없으면 ""
-        String todayDiaryId = "";
-        if(todayDiary != null)
-            todayDiaryId = todayDiary.getId();
         // 만료 시간을 당일 23:59:59로 설정
         long expTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
                 - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
-        CookieUtil.addSecureCookie(response, "todayDiaryId", todayDiaryId, expTime);
+        CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", expTime);
         // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
         return MemberInfoResponse.of(member);
     }
