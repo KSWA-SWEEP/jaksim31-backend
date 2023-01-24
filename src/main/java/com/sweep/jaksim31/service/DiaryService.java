@@ -1,10 +1,9 @@
 package com.sweep.jaksim31.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.dto.diary.*;
 import org.json.simple.parser.ParseException;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -26,32 +25,34 @@ import java.util.Map;
  * 2023-01-19           김주현             Return 타입 변경(Diary -> DiaryResponse)
  * 2023-01-20           김주현             findDiary 메소드 input값에 userId 추가
  *                      김주현             일기 삭제 service input 값에 userId 추가
+ * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
+ * 2023-01-24           방근호             Page -> RestPage 수정
  */
 
 public interface DiaryService {
     // 일기 전체 조회
-    ResponseEntity<List<DiaryResponse>> allDiaries();
+    List<DiaryResponse> allDiaries();
 
     // 사용자 일기 전체 조회
-    ResponseEntity<Page<DiaryInfoResponse>> findUserDiaries(String userId, Map params);
+    RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map params);
 
     // 일기 생성
-    ResponseEntity<DiaryResponse> saveDiary(DiarySaveRequest diarySaveRequest);
+    DiaryResponse saveDiary(DiarySaveRequest diarySaveRequest);
 
     // 일기 수정
-    ResponseEntity<DiaryResponse> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest);
+    DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest);
 
     // 일기 삭제
-    ResponseEntity<String> remove(String userId,String diaryId);
+    String remove(String userId,String diaryId);
 
     // 일기 조회
-    ResponseEntity<DiaryResponse> findDiary(String userId, String diaryId);
+    DiaryResponse findDiary(String userId, String diaryId);
 
     // 일기 검색
-    ResponseEntity<Page<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params);
+    RestPage<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params);
 
     // 일기 분석
-    ResponseEntity<DiaryAnalysisResponse> analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException;
+    DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException;
 
 
 }

@@ -1,12 +1,14 @@
 package com.sweep.jaksim31.adapter.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.sweep.jaksim31.dto.diary.DiaryResponse;
+import com.sweep.jaksim31.adapter.RestPage;
+import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
@@ -16,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @Slf4j
-public class DiaryPagingCacheSerializer implements RedisSerializer<DiaryResponse> {
+public class DiaryPagingCacheSerializer implements RedisSerializer<RestPage<DiaryInfoResponse>> {
     
     // JSON Mapper
     public static final ObjectMapper MAPPER = new ObjectMapper()
@@ -28,7 +30,7 @@ public class DiaryPagingCacheSerializer implements RedisSerializer<DiaryResponse
     private final Charset UTF_8 = StandardCharsets.UTF_8;
 
     @Override
-    public byte[] serialize(DiaryResponse diaryResponse) throws SerializationException {
+    public byte[] serialize(RestPage<DiaryInfoResponse> diaryResponse) throws SerializationException {
         if (Objects.isNull(diaryResponse))
             return null;
 
@@ -41,13 +43,12 @@ public class DiaryPagingCacheSerializer implements RedisSerializer<DiaryResponse
     }
 
     @Override
-    public DiaryResponse deserialize(byte[] bytes) throws SerializationException {
-
+    public RestPage<DiaryInfoResponse> deserialize(byte[] bytes) throws SerializationException {
         if (Objects.isNull(bytes))
             return null;
 
         try {
-            return MAPPER.readValue(new String(bytes, UTF_8), DiaryResponse.class);
+            return MAPPER.readValue(new String(bytes, UTF_8), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new SerializationException("json deserialize error", e);
         }

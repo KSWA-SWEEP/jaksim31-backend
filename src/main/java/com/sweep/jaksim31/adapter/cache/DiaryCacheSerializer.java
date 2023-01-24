@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @Slf4j
-public class DiaryResponseSerializer implements RedisSerializer<DiaryResponse> {
+public class DiaryCacheSerializer implements RedisSerializer<DiaryResponse> {
 
     // JSON Mapper
     public static final ObjectMapper MAPPER = new ObjectMapper()

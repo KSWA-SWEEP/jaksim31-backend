@@ -42,5 +42,6 @@ src/test/resources/application.yml
 
 ### log files ###
 was-logs
+./docker-data
 .logs
 

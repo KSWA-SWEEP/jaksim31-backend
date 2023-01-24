@@ -1,4 +1,4 @@
-package com.sweep.jaksim31.adapter.page;
+package com.sweep.jaksim31.adapter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

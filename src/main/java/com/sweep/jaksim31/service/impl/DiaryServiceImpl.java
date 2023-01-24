@@ -2,6 +2,8 @@ package com.sweep.jaksim31.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sweep.jaksim31.adapter.RestPage;
+import com.sweep.jaksim31.adapter.cache.CacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
 import com.sweep.jaksim31.domain.members.Members;
@@ -24,6 +26,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -74,10 +78,13 @@ import java.util.stream.Collectors;
  *                      김주현             일기 삭제 서비스 input 값에 userId 추가
  *                      김주현             일기 삭제 및 생성 시 사용자 정보의 totalDiary 값 업데이트
  *                      김주현             사용자 일기 조회 및 검색 시 page 정보가 input으로 들어오지 않았을 때 default(page=0, size=user.diaryTotal)
+ * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
     * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
+    * 오늘 일기 삭제 시 set-cookie 다시 설정
+    * 캐시 테스트 코드 작성
 */
 @Slf4j
 @Service
@@ -99,13 +106,15 @@ public class DiaryServiceImpl implements DiaryService {
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
     private final MongoTemplate mongoTemplate;
+    private final CacheAdapter cacheAdapter;
+
     @Override
     // 전체 일기 조회
-    public ResponseEntity<List<DiaryResponse>> allDiaries(){
-        return ResponseEntity.ok(diaryRepository.findAll()
+    public List<DiaryResponse> allDiaries(){
+        return diaryRepository.findAll()
                 .stream()
                 .map(DiaryResponse::of)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
     }
     /**
      *  findUserDiaries 사용자 일기 목록 조회
@@ -113,13 +122,14 @@ public class DiaryServiceImpl implements DiaryService {
      * @param params 페이징 조건(page(0부터 시작), size) 및 정렬(sort)
      * @return Page<DiaryInfoResponse>
      */
-    @Override
+
     // 사용자 id 전체 일기 조회
-    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiaries(String userId, Map params){
+    public RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map params){
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository
                 .findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
+
         Pageable pageable;
         // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
@@ -131,6 +141,12 @@ public class DiaryServiceImpl implements DiaryService {
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
         else
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
+
+        // 캐싱된 값이 있는지 확인
+        RestPage<DiaryInfoResponse> cacheDiaryPage = cacheAdapter.get(userId+pageable);
+
+        if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
+
         // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
         Query query = new Query()
                 .with(pageable)
@@ -149,8 +165,10 @@ public class DiaryServiceImpl implements DiaryService {
                 pageable,
                 () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
         );
+        // 캐시에 저장
+        cacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
 
-        return ResponseEntity.ok(diaryPage);
+        return new RestPage<>(diaryPage);
     }
 
     /**
@@ -159,7 +177,7 @@ public class DiaryServiceImpl implements DiaryService {
      * @return Diary
      */
     @Override
-    public ResponseEntity<DiaryResponse> saveDiary(DiarySaveRequest diarySaveRequest){
+    public DiaryResponse saveDiary(DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -180,8 +198,11 @@ public class DiaryServiceImpl implements DiaryService {
         //  * 썸네일 저장 부분 고려해보기. 아직 미완.
         //  * 최근 일기 저장(recentDiaries) 고려해보기. 만약 한다고 하면 구현 필요.
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
-        return new ResponseEntity<>(DiaryResponse.of(diaryRepository.save(diary))
-                , HttpStatus.CREATED);
+
+        // 페이징 캐시 데이터 삭제
+        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+
+        return DiaryResponse.of(diaryRepository.save(diary));
     }
 
     /**
@@ -192,7 +213,11 @@ public class DiaryServiceImpl implements DiaryService {
      */
     @Override
     @Transactional
-    public ResponseEntity<DiaryResponse> updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
+    @CacheEvict(
+            value = "diaryCache",
+            key = "#diaryId"
+    )
+    public DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
         // 일기를 찾을 수 없을 때
         diaryRepository
                 .findById(diaryId)
@@ -202,13 +227,22 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(diarySaveRequest.getUserId())
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
+        // 페이징 캐시 데이터 삭제
+        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
-        return ResponseEntity.ok(DiaryResponse.of(diaryRepository.save(updatedDiary)));
+        return DiaryResponse.of(diaryRepository.save(updatedDiary));
     }
 
     @Override
+    @CacheEvict(
+            value = "diaryCache",
+            key = "#diaryId"
+    )
     // 일기 삭제
-    public ResponseEntity<String> remove(String userId, String diaryId) {
+    public String remove(String userId, String diaryId) {
+
+
         Diary diary = diaryRepository
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
@@ -224,19 +258,26 @@ public class DiaryServiceImpl implements DiaryService {
 
         diaryRepository.delete(diary);
         memberRepository.save(user);
-        return ResponseEntity.ok(diary.getId());
+
+        // 페이징 캐시 데이터 삭제
+        cacheAdapter.findAndDelete(userId+"Page");
+        return diary.getId();
     }
 
     @Override
+    @Cacheable(
+            value = "diaryCache",
+            key = "#diaryId"
+    )
     // 일기 조회
-    public ResponseEntity<DiaryResponse> findDiary(String userId, String diaryId) {
+    public DiaryResponse findDiary(String userId, String diaryId) {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 본인의 일기가 아닌 다른 사람의 일기를 조회하고자 하였을 때, 권한 없음
         if(!diary.getUserId().equals(userId))
             throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
-        return ResponseEntity.ok(DiaryResponse.of(diary));
+        return DiaryResponse.of(diary);
     }
 
     /**
@@ -247,7 +288,7 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     // 일기 검색, 조건 조회
-    public ResponseEntity<Page<DiaryInfoResponse>> findDiaries(String userId, Map<String, Object> params){
+    public RestPage<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params){
         // TODO
         //  * ElasticSearch 연결 되면 elasticSerch 사용해서 검색하도록 수정
 
@@ -295,7 +336,7 @@ public class DiaryServiceImpl implements DiaryService {
                 pageable,
                 () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
         );
-        return ResponseEntity.ok(diaryPage);
+        return new RestPage<>(diaryPage);
     }
 
     /**
@@ -306,14 +347,14 @@ public class DiaryServiceImpl implements DiaryService {
      */
 
     @Transactional
-    public ResponseEntity<String> saveThumbnail(DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
+    public String saveThumbnail(DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
         String userId = diaryThumbnailRequest.getUserId();
         String url = diaryThumbnailRequest.getThumbnail();
         byte[] image = downloadImageFeign.getImage(new URI(url)).getBody();
 
         try {
             uploadImageFeign.uploadFile("/" + userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png", image);
-            return ResponseEntity.ok().body("객체 스토리지에 업로드 성공");
+            return "객체 스토리지에 업로드 성공";
 
         } catch (Exception e){
             // 인증 API 토큰 발급 후 추출
@@ -326,7 +367,7 @@ public class DiaryServiceImpl implements DiaryService {
             if(!res.getStatusCode().equals(HttpStatus.CREATED))
                 throw new BizException(ThirdPartyExceptionType.NOT_UPLOAD_IMAGE);
 //            System.out.println(UPLOAD_URL+"/" +userId+ "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png");
-            return ResponseEntity.ok().body("객체 스토리지에 업로드 성공");
+            return "객체 스토리지에 업로드 성공";
         } finally {
             System.out.println(DOWNLOAD_URL+"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
         }
@@ -343,7 +384,7 @@ public class DiaryServiceImpl implements DiaryService {
      *   코드 리팩토링
      */
     @Override
-    public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
+    public DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
 
         List<String> koreanKeywords;
         List<String> englishKeywords = new ArrayList<>();
@@ -430,16 +471,16 @@ public class DiaryServiceImpl implements DiaryService {
         koreanKeywords = Arrays.asList(Objects.requireNonNull(tmpTranslationResponse.getBody()).getOutput().get(0).get(0).split(","));
 
         // 응답 생성
-        return ResponseEntity.ok(new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion));
+        return new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion);
     }
 
     // 오늘 일기 조회
-    public ResponseEntity<String> todayDiary(String userId){
+    public String todayDiary(String userId){
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository
                 .findDiaryByUserIdAndDate(userId, today.atTime(9,0))
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
-        return ResponseEntity.ok(todayDiary.getId());
+        return todayDiary.getId();
     }
 
     /**
@@ -448,7 +489,7 @@ public class DiaryServiceImpl implements DiaryService {
      * @return DiaryEmotionStaticsResponse
      */
     // 감정 통계
-    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatics(String userId, Map<String, Object> params){
+    public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
         memberRepository
                 .findById(userId)
@@ -483,7 +524,7 @@ public class DiaryServiceImpl implements DiaryService {
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
         DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
-        return ResponseEntity.ok(diaryEmotionStaticsResponse);
+        return diaryEmotionStaticsResponse;
     }
 
 }

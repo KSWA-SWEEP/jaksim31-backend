@@ -106,11 +106,11 @@ class MembersApiControllerTest {
         public void singup() throws Exception {
             //given
             given(memberService.signup(any()))
-                    .willReturn(ResponseEntity.ok(MemberSaveResponse.builder()
+                    .willReturn(MemberSaveResponse.builder()
                             .userId("userId")
                             .loginId("loginId")
                             .username("geunho")
-                            .build()));
+                            .build());
 
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "geunho", "profileImage");
@@ -122,7 +122,7 @@ class MembersApiControllerTest {
                             .contentType(MediaType.APPLICATION_JSON))
 
                     //then
-                    .andExpect(status().isOk())
+                    .andExpect(status().isCreated())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.userId", Matchers.is("userId")))
                     .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
@@ -139,13 +139,13 @@ class MembersApiControllerTest {
         void login() throws Exception {
             //given
             given(memberService.login(any(), any()))
-                    .willReturn(ResponseEntity.ok(TokenResponse.builder()
+                    .willReturn(TokenResponse.builder()
                             .loginId("loginId")
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
                             .expTime("1000")
-                            .build()));
+                            .build());
 
             // when
             LoginRequest loginRequest = new LoginRequest("loginId", "password");
@@ -200,13 +200,13 @@ class MembersApiControllerTest {
         void reissue() throws Exception {
             //given
             given(memberService.reissue(any(), any()))
-                    .willReturn(ResponseEntity.ok(TokenResponse.builder()
+                    .willReturn(TokenResponse.builder()
                             .loginId("reissueTest")
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
                             .expTime("2000")
-                            .build()));
+                            .build());
             //when
             TokenRequest tokenRequest = new TokenRequest("accessToken", "refreshToken");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
@@ -238,7 +238,7 @@ class MembersApiControllerTest {
         void isMember() throws Exception {
             //given
             given(memberService.isMember(any()))
-                    .willReturn(ResponseEntity.ok("test ok"));
+                    .willReturn("test ok");
             //when
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
@@ -286,7 +286,7 @@ class MembersApiControllerTest {
         void changePw() throws Exception {
 
             given(memberService.updatePassword(any(), any()))
-                    .willReturn(new ResponseEntity<>("회원 정보가 정상적으로 변경되었습니다.", HttpStatus.OK));
+                    .willReturn("회원 정보가 정상적으로 변경되었습니다.");
 
             //when
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("string");
@@ -337,14 +337,14 @@ class MembersApiControllerTest {
         void getMyInfoByLoginId() throws Exception {
 
             //given
-            given(memberService.getMyInfoByLoginId(any()))
-                    .willReturn(ResponseEntity.ok(MemberInfoResponse.builder()
+            given(memberService.getMyInfoByLoginId(any(), any()))
+                    .willReturn(MemberInfoResponse.builder()
                             .loginId("loginId")
                             .userId("userId")
                             .username("username")
                             .profileImage("profileImage")
                             .diaryTotal(10)
-                            .build()));
+                            .build());
 
             //when
             mockMvc.perform(get("/v0/members/")
@@ -367,7 +367,7 @@ class MembersApiControllerTest {
         @Test
         void invalidGetMyInfoByLoginId() throws Exception {
 
-            given(memberService.getMyInfoByLoginId(any()))
+            given(memberService.getMyInfoByLoginId(any(), any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
@@ -393,13 +393,13 @@ class MembersApiControllerTest {
         @Test
         void getMyInfoByUserId() throws Exception {
             given(memberService.getMyInfo(any()))
-                    .willReturn(ResponseEntity.ok(MemberInfoResponse.builder()
+                    .willReturn(MemberInfoResponse.builder()
                             .loginId("loginId")
                             .userId("userId")
                             .username("username")
                             .profileImage("profileImage")
                             .diaryTotal(10)
-                            .build()));
+                            .build());
 
             //when
             mockMvc.perform(get("/v0/members/geunho")
@@ -444,7 +444,7 @@ class MembersApiControllerTest {
         @Test
         void updateMember() throws Exception {
             given(memberService.updateMemberInfo(any(), any()))
-                    .willReturn(ResponseEntity.ok("회원 정보가 변경 되었습니다."));
+                    .willReturn("회원 정보가 변경 되었습니다.");
 
             //when
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
@@ -493,12 +493,12 @@ class MembersApiControllerTest {
         @Test
         void remove() throws Exception {
 
-            URI redirectUri = new URI("test");
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setLocation(redirectUri);
+//            URI redirectUri = new URI("test");
+//            HttpHeaders httpHeaders = new HttpHeaders();
+//            httpHeaders.setLocation(redirectUri);
 
             given(memberService.remove(any(), any()))
-                    .willReturn(new ResponseEntity<>("삭제되었습니다.", httpHeaders, HttpStatus.SEE_OTHER));
+                    .willReturn("삭제되었습니다.");
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
@@ -509,7 +509,6 @@ class MembersApiControllerTest {
                             .content(jsonString))
 
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(header().string("Location", "test"))
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andExpect(content().string("삭제되었습니다."))
                     .andDo(MockMvcResultHandlers.print(System.out));
@@ -572,7 +571,7 @@ class MembersApiControllerTest {
         void isMyPw() throws Exception {
 
             given(memberService.isMyPassword(any(), any()))
-                    .willReturn(ResponseEntity.ok("비밀번호가 일치합니다."));
+                    .willReturn("비밀번호가 일치합니다.");
 
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberCheckPasswordRequest);
@@ -643,12 +642,12 @@ class MembersApiControllerTest {
         void logout() throws Exception {
 
             given(memberService.logout(any(), any()))
-                    .willReturn(ResponseEntity.ok("로그아웃 되었습니다."));
+                    .willReturn("로그아웃 되었습니다.");
 
             mockMvc.perform(post("/v0/members/logout")
                             .with(csrf()))
 
-                    .andExpect(status().isOk())
+                    .andExpect(status().is3xxRedirection())
                     .andExpect(content().string("로그아웃 되었습니다."))
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andDo(MockMvcResultHandlers.print(System.out));
@@ -701,12 +700,12 @@ class MembersApiControllerTest {
                             .build());
 
             given(kaKaoMemberService.login(any(), any()))
-                    .willReturn(new ResponseEntity<>(TokenResponse.builder()
+                    .willReturn(TokenResponse.builder()
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
                             .grantType("USER_ROLE")
                             .expTime("100000")
-                            .build(), httpHeaders, HttpStatus.SEE_OTHER));
+                            .build());
 
             //when
             mockMvc.perform(get("/v0/members/kakao-login")
@@ -720,8 +719,7 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("100000")))
-                    .andExpect(header().string("accessToken", "accessToken"))
-                    .andExpect(header().string("location", "test"))
+                    .andExpect(header().string("location", "http://localhost:3000?userId=geunho"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }
@@ -734,20 +732,15 @@ class MembersApiControllerTest {
         @DisplayName("정상인 경우")
         void kakaoLogout() throws Exception {
 
-            URI redirectUri = new URI("test");
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setLocation(redirectUri);
-
             //given
             given(kaKaoMemberService.logout(any(), any()))
-                    .willReturn(new ResponseEntity<>("로그아웃 되었습니다.", httpHeaders, HttpStatus.SEE_OTHER));
+                    .willReturn("로그아웃 되었습니다.");
 
             //when
             mockMvc.perform(get("/v0/members/kakao-logout")
                             .with(csrf()))
                     //then
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(header().string("Location", "test"))
                     .andExpect(content().string("로그아웃 되었습니다."))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }

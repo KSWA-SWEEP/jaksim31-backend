@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.controller;
 
+import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
 import com.sweep.jaksim31.domain.diary.Diary;
@@ -28,7 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
@@ -101,7 +101,7 @@ public class DiaryApiControllerTest  {
             LocalDate date = LocalDate.of(2023, 1, 18);
             //given
             given(diaryService.saveDiary(any()))
-                    .willReturn(ResponseEntity.ok(DiaryResponse.builder()
+                    .willReturn(DiaryResponse.builder()
                             .userId("63c0cb6f30dc3d547e3b88bb")
                             .content("contents")
                             .diaryDate(date)
@@ -109,7 +109,7 @@ public class DiaryApiControllerTest  {
                             .emotion("happy")
                             .keywords(keywords)
                             .thumbnail("thumbnail")
-                            .build()));
+                            .build());
 
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
@@ -121,7 +121,7 @@ public class DiaryApiControllerTest  {
                             .contentType(MediaType.APPLICATION_JSON))
 
                     //then
-                    .andExpect(status().isOk())
+                    .andExpect(status().isCreated())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.userId", Matchers.is("63c0cb6f30dc3d547e3b88bb")))
                     .andExpect(jsonPath("$.content", Matchers.is("contents")))
@@ -224,7 +224,7 @@ public class DiaryApiControllerTest  {
 
             //given
             given(diaryService.findDiary(any(),any()))
-                    .willReturn(ResponseEntity.ok(diary));
+                    .willReturn(diary);
 
             //when
             mockMvc.perform(get("/v0/diaries/userId/diaryId")
@@ -324,7 +324,7 @@ public class DiaryApiControllerTest  {
             Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
             //given
             given(diaryService.findUserDiaries(any(),any()))
-                    .willReturn(ResponseEntity.ok(page));
+                    .willReturn(new RestPage<>(page));
 
             //when
             mockMvc.perform(get("/v0/diaries/userId")
@@ -389,14 +389,14 @@ public class DiaryApiControllerTest  {
 
             //given
             given(diaryService.updateDiary(any(), any()))
-                    .willReturn(ResponseEntity.ok(
+                    .willReturn(
                             DiaryResponse.of(new Diary("diaryId", DiarySaveRequest.builder().userId("userId")
                                     .content("contents")
                                     .date(date)
                                     .emotion("happy")
                                     .keywords(keywords)
                                     .thumbnail("thumbnail")
-                                    .build()))));
+                                    .build())));
 
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("userId", "contents", date, "happy", keywords,"thumbnail");
@@ -480,7 +480,7 @@ public class DiaryApiControllerTest  {
         public void removeDiary() throws Exception{
             //given
             given(diaryService.remove(any(), any()))
-                    .willReturn(ResponseEntity.ok("diaryId"));
+                    .willReturn("diaryId");
 
             //when
             mockMvc.perform(delete("/v0/diaries/userId/diaryId")
@@ -524,12 +524,12 @@ public class DiaryApiControllerTest  {
             List<String> sentences = List.of(new String[]{"문장1", "문장2", "문장3"});
             //given
             given(diaryService.analyzeDiary(any()))
-                    .willReturn(ResponseEntity.ok(DiaryAnalysisResponse.builder()
+                    .willReturn(DiaryAnalysisResponse.builder()
                             .englishEmotion("good")
                             .koreanEmotion("좋음")
                             .englishKeywords(engKeyword)
                             .koreanKeywords(korKeyword)
-                            .build()));
+                            .build());
 
             //when
             DiaryAnalysisRequest diaryAnalysisRequest = new DiaryAnalysisRequest();
@@ -638,7 +638,7 @@ public class DiaryApiControllerTest  {
             DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
             //given
             given(diaryService.saveThumbnail(any()))
-                    .willReturn(ResponseEntity.ok("downloadUrl/userId/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png"));
+                    .willReturn("downloadUrl/userId/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
 
             //when
             DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId","thumbnail");
@@ -688,11 +688,11 @@ public class DiaryApiControllerTest  {
             List<DiaryEmotionStatics> emotionStatics = List.of(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
             //given
             given(diaryService.emotionStatics(any(), any()))
-                    .willReturn(ResponseEntity.ok(DiaryEmotionStaticsResponse.builder()
+                    .willReturn(DiaryEmotionStaticsResponse.builder()
                                     .emotionStatics(emotionStatics)
                                     .startDate(LocalDate.of(1990, 1, 1))
                                     .endDate(LocalDate.now())
-                                    .build()));
+                                    .build());
 
             //when
             mockMvc.perform(get("/v0/diaries/userId/emotions")
@@ -715,11 +715,11 @@ public class DiaryApiControllerTest  {
 
             //given
             given(diaryService.emotionStatics(any(), any()))
-                    .willReturn(ResponseEntity.ok(DiaryEmotionStaticsResponse.builder()
+                    .willReturn(DiaryEmotionStaticsResponse.builder()
                             .emotionStatics(emotionStatics)
                             .startDate(LocalDate.parse(param.get("startDate").toString()))
                             .endDate(LocalDate.parse(param.get("endDate").toString()))
-                            .build()));
+                            .build());
 
             //when
             mockMvc.perform(get("/v0/diaries/userId/emotions?startDate=2023-01-01&endDate=2023-01-20")

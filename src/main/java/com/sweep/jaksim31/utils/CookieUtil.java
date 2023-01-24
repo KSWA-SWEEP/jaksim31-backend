@@ -37,11 +37,24 @@ public class CookieUtil {
         return Optional.empty();
     }
 
-    public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
+    public static void addCookie(HttpServletResponse response, String name, String value, long maxAge) {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
+                .maxAge(maxAge)
                 .build();
 
+
+        response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public static void addSecureCookie(HttpServletResponse response, String name, String value, long maxAge) {
+
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .maxAge(maxAge)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
     }

@@ -51,7 +51,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-
+        ex.printStackTrace();
         return new ResponseEntity<>(
                 new ErrorResponse("INTERNAL_SERVER_ERROR", "내부 서버 오류"),
                 HttpStatus.INTERNAL_SERVER_ERROR
