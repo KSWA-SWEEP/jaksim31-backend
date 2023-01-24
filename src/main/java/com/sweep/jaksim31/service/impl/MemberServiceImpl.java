@@ -18,14 +18,17 @@ import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
+import com.sweep.jaksim31.utils.DateTimeUtils;
 import com.sweep.jaksim31.utils.HeaderUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,9 +40,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Optional;
 import java.util.TimeZone;
 
 /**
@@ -61,12 +65,15 @@ import java.util.TimeZone;
  * 2023-01-17           방근호          로그인 로직 수정
  * 2023-01-18           김주현          id data type 변경(ObjectId -> String)
  * 2023-01-18           방근호          GetMyInfoByLoginId 리턴값 수정
+ * 2023-01-23           방근호          ResponseEntity Wrapper class 제거
  */
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'hh:mm:ss");
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
@@ -84,17 +91,17 @@ public class MemberServiceImpl implements MemberService {
 //    private String homeUrl;
 
     @Transactional
-    public ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto) {
+    public MemberSaveResponse signup(MemberSaveRequest memberRequestDto) {
 
         if(memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
            throw new BizException(MemberExceptionType.DUPLICATE_USER);
 
         Members members = memberRequestDto.toMember(passwordEncoder, false);
-        return ResponseEntity.ok(MemberSaveResponse.of(memberRepository.save(members)));
+        return MemberSaveResponse.of(memberRepository.save(members));
     }
     @Override
     @Transactional
-    public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) {
+    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) {
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
 
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
@@ -132,12 +139,12 @@ public class MemberServiceImpl implements MemberService {
                         .build()
         );
 
-        return ResponseEntity.ok(tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId));
+        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId);
 
     }
 
     @Transactional
-    public ResponseEntity<TokenResponse> reissue(TokenRequest tokenRequest,
+    public TokenResponse reissue(TokenRequest tokenRequest,
                                      HttpServletResponse response) {
 
 
@@ -199,11 +206,11 @@ public class MemberServiceImpl implements MemberService {
 
         // 토큰 발급
 //        return ApiResponse.success("token", newAccessToken);
-        return ResponseEntity.ok(tokenResponse);
+        return tokenResponse;
     }
     @Override
     @Transactional
-    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response){
+    public String logout(HttpServletRequest request, HttpServletResponse response){
 
         String originAccessToken = HeaderUtil.getAccessToken(request);
 
@@ -226,20 +233,20 @@ public class MemberServiceImpl implements MemberService {
 
         refreshTokenRepository.deleteByLoginId(loginId);
 
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+        return "로그아웃 되었습니다.";
     }
 
     @Transactional
-    public ResponseEntity<String> isMember(MemberCheckLoginIdRequest memberRequestDto) {
+    public String isMember(MemberCheckLoginIdRequest memberRequestDto) {
 
         if (!memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
             throw new BizException(MemberExceptionType.NOT_FOUND_USER);
 
-        return ResponseEntity.ok(memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.");
+        return memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.";
     }
 
     @Transactional
-    public ResponseEntity<String> updatePassword(String loginId, MemberUpdatePasswordRequest dto) {
+    public String updatePassword(String loginId, MemberUpdatePasswordRequest dto) {
         Members members = memberRepository
                 .findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -247,7 +254,7 @@ public class MemberServiceImpl implements MemberService {
         members.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         // 업데이트 한 정보 저장
         memberRepository.save(members);
-        return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
+        return "회원 정보가 정상적으로 변경되었습니다.";
     }
 
 
@@ -256,16 +263,19 @@ public class MemberServiceImpl implements MemberService {
      * @param userId 회원 아이디
      * @return MemberInfoResponse
      */
-
+    @Cacheable(
+            value = "memberCache",
+            key = "#userId"
+    )
     @Transactional(readOnly = true)
-    public ResponseEntity<MemberInfoResponse> getMyInfo(String userId) {
-        return ResponseEntity.ok().body(memberRepository.findById(userId)
+    public MemberInfoResponse getMyInfo(String userId) {
+        return memberRepository.findById(userId)
                 .map(MemberInfoResponse::of)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
 
 
-    public ResponseEntity<MemberInfoResponse> getMyInfoByLoginId(String loginId) {
+    public MemberInfoResponse getMyInfoByLoginId(String loginId, HttpServletResponse response) {
         // 로그인 id로 사용자 정보 불러오기
         Members member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -277,24 +287,12 @@ public class MemberServiceImpl implements MemberService {
         if(todayDiary != null)
             todayDiaryId = todayDiary.getId();
         // 만료 시간을 당일 23:59:59로 설정
-        long expTime = LocalTime.of(23,59,59).toSecondOfDay() - LocalTime.now().minusHours(9).toSecondOfDay();
-        // check
-//        System.out.println("### end of day : " + LocalTime.of(23,59,59) + "    " + LocalTime.of(23,59,59).toSecondOfDay());
-//        System.out.println("### now : " + LocalTime.now().toString() + "   " + LocalTime.now().toSecondOfDay());
-//        System.out.println("### exptime : " + expTime);
+        long expTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
-        // todayDiaryId Cookie 설정
-        ResponseCookie responseCookie = ResponseCookie.from("todayDiaryId", todayDiaryId)
-                .httpOnly(true)
-                .secure(true)
-                .maxAge(expTime)
-                .path("/").build();
-
+        CookieUtil.addSecureCookie(response, "todayDiaryId", todayDiaryId, expTime);
         // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
-        return ResponseEntity.ok().header("Set-Cookie", responseCookie.toString())
-                        .body(Optional.of(member)
-                        .map(MemberInfoResponse::of)
-                        .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)));
+        return MemberInfoResponse.of(member);
     }
 
 
@@ -304,19 +302,23 @@ public class MemberServiceImpl implements MemberService {
      * @param memberUpdateRequest member 수정 요청 dto
      */
 
+    @CacheEvict(
+            value = "memberCache",
+            key = "#userId"
+    )
     @Transactional
-    public ResponseEntity<String> updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
+    public String updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
         Members members = memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         members.updateMember( memberUpdateRequest);
         memberRepository.save(members);
-        return ResponseEntity.ok("회원 정보가 정상적으로 변경되었습니다.");
+        return "회원 정보가 정상적으로 변경되었습니다.";
     }
 
     @Transactional
-    public ResponseEntity<String> isMyPassword(String loginId, MemberCheckPasswordRequest dto){
+    public String isMyPassword(String loginId, MemberCheckPasswordRequest dto){
         Members members = memberRepository
                 .findByLoginId(loginId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -325,24 +327,29 @@ public class MemberServiceImpl implements MemberService {
         if (!passwordEncoder.matches(dto.getPassword(), members.getPassword()))
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
 
-        return ResponseEntity.ok("비밀번호가 일치합니다.");
+        return "비밀번호가 일치합니다.";
     }
 
+    @CacheEvict(
+            value = "memberCache",
+            key = "#userId"
+    )
     @Transactional
-    public ResponseEntity<String> remove(String userId, MemberRemoveRequest dto) throws URISyntaxException {
+    public String remove(String userId, MemberRemoveRequest dto) throws URISyntaxException {
         // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
         Members entity = memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, redirectionUtil.getHomeUrl()));
 
         // 비밀번호가 불일치 할 경우
-        if (!passwordEncoder.matches(entity.getPassword(), dto.getPassword()))
+        if (!passwordEncoder.matches(dto.getPassword(), entity.getPassword())) {
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
+        }
 
         // 멤버 엔티티의 delYn을 Yes로 변경 후 삭제 처리
         entity.remove('Y');
         memberRepository.save(entity);
 
-        return new ResponseEntity<>("정상적으로 회원탈퇴 작업이 처리되었습니다.", redirectionUtil.getLocationHeader(), HttpStatus.SEE_OTHER);
+        return "정상적으로 회원탈퇴 작업이 처리되었습니다.";
     }
 }

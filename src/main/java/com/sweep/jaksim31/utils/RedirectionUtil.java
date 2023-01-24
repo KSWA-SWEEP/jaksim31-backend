@@ -3,6 +3,7 @@ package com.sweep.jaksim31.utils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class RedirectionUtil {
     public RedirectionUtil(@Value("${home.url}") String homeUrl){
         this.homeUrl = homeUrl;
     }
+
 
     public HttpHeaders getLocationHeader() throws URISyntaxException {
         URI redirectUri = new URI(homeUrl);

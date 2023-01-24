@@ -2,8 +2,11 @@ version: '3'
 
 services:
   mongo:
+    container_name: mongo
     image: mongo:4.2
     restart: always
+    volumes:
+      - ./docker-data/mongo:/data/db
     ports:
       - "27017:27017"
     environment:
@@ -19,6 +22,18 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: sweep
       ME_CONFIG_MONGODB_ADMINPASSWORD: sweep
       ME_CONFIG_MONGODB_URL: mongodb://sweep:sweep@mongo:27017/
+
+  redis:
+    image: redis
+    command: redis-server --port 6379
+    container_name: "redis"
+    volumes:
+      - ./docker-data/redis:/data
+    labels:
+      - "name=redis"
+      - "mode=standalone"
+    ports:
+      - 6379:6379
 
 #  spring:
 #    container_name: jaksim31-backend

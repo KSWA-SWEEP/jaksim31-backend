@@ -150,10 +150,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryResponse);
 
             // when
-            ResponseEntity<DiaryResponse> result = diaryService.updateDiary(diaryId, diarySaveRequest);
+            DiaryResponse expected = diaryService.updateDiary(diaryId, diarySaveRequest);
 
             // then
-            DiaryResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getUserId(), diarySaveRequest.getUserId());
             assertEquals(expected.getDiaryDate(), diarySaveRequest.getDate());
@@ -213,7 +212,7 @@ public class DiaryServiceImplTest {
                     .willReturn(Optional.of(user));
 
             // when
-            String result = diaryService.remove(userId, diaryId).getBody();
+            String result = diaryService.remove(userId, diaryId);
 
             // then
             assertEquals(result, diaryId);
@@ -274,10 +273,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryResponse);
 
             // when
-            ResponseEntity<DiaryResponse> result = diaryService.findDiary(userId, diaryId);
+            DiaryResponse expected = diaryService.findDiary(userId, diaryId);
 
             // then
-            DiaryResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getDiaryId(), diaryResponse.getDiaryId());
             assertEquals(expected.getDiaryDate(), diaryResponse.getDiaryDate());
@@ -342,10 +340,9 @@ public class DiaryServiceImplTest {
                     .willReturn(page);
 
             // when
-            ResponseEntity<Page<DiaryInfoResponse>> result = diaryService.findUserDiaries(userId,param);
+            Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
             // then
-            Page<DiaryInfoResponse> expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getPageable(), pageable);
             assertEquals(expected.getSize(), page.getSize());
@@ -378,10 +375,9 @@ public class DiaryServiceImplTest {
                     .willReturn(page);
 
             // when
-            ResponseEntity<Page<DiaryInfoResponse>> result = diaryService.findUserDiaries(userId,param);
+            Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
             // then
-            Page<DiaryInfoResponse> expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getPageable(), pageable);
             assertEquals(expected.getSize(), page.getSize());
@@ -415,10 +411,9 @@ public class DiaryServiceImplTest {
                     .willReturn(page);
 
             // when
-            ResponseEntity<Page<DiaryInfoResponse>> result = diaryService.findUserDiaries(userId,param);
+            Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
             // then
-            Page<DiaryInfoResponse> expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getPageable(), pageable);
             assertEquals(expected.getSize(), page.getSize());
@@ -451,10 +446,9 @@ public class DiaryServiceImplTest {
                     .willReturn(page);
 
             // when
-            ResponseEntity<Page<DiaryInfoResponse>> result = diaryService.findUserDiaries(userId,param);
+            Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
             // then
-            Page<DiaryInfoResponse> expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getPageable(), pageable);
             assertEquals(expected.getSize(), page.getSize());
@@ -504,10 +498,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryEmotionStaticsResponse);
 
             // when
-            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+            DiaryEmotionStaticsResponse expected = diaryService.emotionStatics(userId,param);
 
             // then
-            DiaryEmotionStaticsResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getEmotionStatics(), emotionStatics);
             assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
@@ -538,10 +531,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryEmotionStaticsResponse);
 
             // when
-            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+            DiaryEmotionStaticsResponse expected = diaryService.emotionStatics(userId,param);
 
             // then
-            DiaryEmotionStaticsResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getEmotionStatics(), emotionStatics);
 
@@ -572,10 +564,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryEmotionStaticsResponse);
 
             // when
-            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+            DiaryEmotionStaticsResponse expected = diaryService.emotionStatics(userId,param);
 
             // then
-            DiaryEmotionStaticsResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getEmotionStatics(), emotionStatics);
             assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());
@@ -605,10 +596,9 @@ public class DiaryServiceImplTest {
                     .willReturn(diaryEmotionStaticsResponse);
 
             // when
-            ResponseEntity<DiaryEmotionStaticsResponse> result = diaryService.emotionStatics(userId,param);
+            DiaryEmotionStaticsResponse expected = diaryService.emotionStatics(userId,param);
 
             // then
-            DiaryEmotionStaticsResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getEmotionStatics(), emotionStatics);
             assertEquals(expected.getStartDate(), diaryEmotionStaticsResponse.getStartDate());

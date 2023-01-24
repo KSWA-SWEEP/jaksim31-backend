@@ -81,15 +81,10 @@ public class KaKaoMemberServiceImpl implements MemberService {
     @Value("${jwt.access-token-expire-time}")
     private long accExpTime;
 
-    @Value("${kakao.auth.login-redirect-url}")
-    private String loginRedirectUrl;
-
-    @Value("${kakao.auth.logout-redirect-url}")
-    private String logoutRedirectUrl;
 
     @Override
     @Transactional
-    public ResponseEntity<TokenResponse> login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
+    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
 
         // 회원이 아닐 경우 회원 생성
         if (!memberRepository.existsByLoginId(loginRequest.getLoginId())) {
@@ -137,19 +132,14 @@ public class KaKaoMemberServiceImpl implements MemberService {
                         .build()
         );
 
-        // Redirect 주소 설정
-        URI redirectUri = new URI(loginRedirectUrl+loginRequest.getLoginId());
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("accessToken", accessToken);
-        httpHeaders.setLocation(redirectUri);
 
-        return new ResponseEntity<>(httpHeaders, HttpStatus.SEE_OTHER);
+        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId);
 
     }
 
     @Override
     @Transactional
-    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+    public String logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
 
         String originAccessToken = HeaderUtil.getAccessToken(request);
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
@@ -175,7 +165,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
 
         refreshTokenRepository.deleteByLoginId(loginId);
 
-        return new ResponseEntity<>("로그아웃 되었습니다.", redirectionUtil.getLocationHeader(), HttpStatus.SEE_OTHER);
+        return "로그아웃 되었습니다.";
     }
 
         // 카카오 인증서버로 부터 Access Token 받아오는 함수

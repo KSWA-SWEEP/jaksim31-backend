@@ -99,10 +99,9 @@ class MemberServiceImplTest {
                     .willReturn(memberSaveResponse);
 
             //when
-            ResponseEntity<MemberSaveResponse> result = memberService.signup(memberSaveRequest);
+            MemberSaveResponse expected = memberService.signup(memberSaveRequest);
 
             //then
-            MemberSaveResponse expected = result.getBody();
             assert expected != null;
             assertEquals(expected.getLoginId(), memberSaveRequest.getLoginId());
             assertEquals(expected.getUsername(), memberSaveRequest.getUsername());
@@ -148,10 +147,9 @@ class MemberServiceImplTest {
                     .willReturn(true);
 
             //when
-            ResponseEntity<String> isMember = memberService.isMember(memberCheckLoginIdRequest);
+            String res = memberService.isMember(memberCheckLoginIdRequest);
 
             //then
-            String res = isMember.getBody();
             assertEquals(loginId+" 해당 이메일은 가입하였습니다.", res);
             verify(memberRepository, times(1)).existsByLoginId(loginId);
 
@@ -191,7 +189,7 @@ class MemberServiceImplTest {
                     .willReturn(members);
 
             //when
-            String res = memberService.updatePassword(fakeMemberId, memberUpdatePasswordRequest).getBody();
+            String res = memberService.updatePassword(fakeMemberId, memberUpdatePasswordRequest);
 
             //then
             assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
@@ -239,8 +237,7 @@ class MemberServiceImplTest {
                     .willReturn(memberInfoResponse1);
 
             //when
-            ResponseEntity<MemberInfoResponse> memberInfo = memberService.getMyInfo(userId);
-            MemberInfoResponse res = memberInfo.getBody();
+            MemberInfoResponse res = memberService.getMyInfo(userId);
             //then
             verify(memberRepository).findById(userId);
             assert res != null;
@@ -287,7 +284,7 @@ class MemberServiceImplTest {
                     .willReturn(memberInfoResponse1);
 
             //when
-            MemberInfoResponse res = memberService.getMyInfoByLoginId(loginId).getBody();
+            MemberInfoResponse res = memberService.getMyInfoByLoginId(loginId, any());
 
             //then
             verify(memberRepository, times(1)).findByLoginId(loginId);
@@ -305,7 +302,7 @@ class MemberServiceImplTest {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when & then
-            assertThrows(BizException.class, () -> memberService.getMyInfoByLoginId(loginId));
+            assertThrows(BizException.class, () -> memberService.getMyInfoByLoginId(loginId, any()));
             // diaryRepository method는 호출되지 않을 것
             verify(diaryRepository, never()).findDiaryByUserIdAndDate(any(), any());
         }
@@ -333,7 +330,7 @@ class MemberServiceImplTest {
                     .willReturn(members);
 
             //when
-            String res = memberService.updateMemberInfo(userId, memberUpdateRequest).getBody();
+            String res = memberService.updateMemberInfo(userId, memberUpdateRequest);
 
             //then
             assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
@@ -381,7 +378,7 @@ class MemberServiceImplTest {
                     .willReturn(true);
 
             // when
-            String res = memberService.isMyPassword(fakeMemberId, memberCheckPasswordRequest).getBody();
+            String res = memberService.isMyPassword(fakeMemberId, memberCheckPasswordRequest);
 
             //then
             assertEquals(res, "비밀번호가 일치합니다.");
@@ -443,14 +440,6 @@ class MemberServiceImplTest {
 
             Members members = memberSaveRequest.toMember(passwordEncoder, false);
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest(userId, "password");
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setLocation(new URI("http://localhost"));
-
-//            given(redirectionUtil.getHomeUrl())
-//                    .willReturn("http://localhost/");
-
-            given(redirectionUtil.getLocationHeader())
-                    .willReturn(httpHeaders);
 
             given(memberRepository.findById(userId))
                     .willReturn(Optional.of(members));
@@ -462,7 +451,7 @@ class MemberServiceImplTest {
                     .willReturn(members);
 
             // when
-            String res = memberService.remove(userId, memberRemoveRequest).getBody();
+            String res = memberService.remove(userId, memberRemoveRequest);
 
             //then
             assertEquals(res, "정상적으로 회원탈퇴 작업이 처리되었습니다.");

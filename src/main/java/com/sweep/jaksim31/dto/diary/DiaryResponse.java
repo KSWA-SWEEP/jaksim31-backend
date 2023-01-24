@@ -1,10 +1,7 @@
 package com.sweep.jaksim31.dto.diary;
 
 import com.sweep.jaksim31.domain.diary.Diary;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 
 import java.time.LocalDate;
