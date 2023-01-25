@@ -6,6 +6,8 @@ import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.controller.feign.KakaoOAuthInfoFeign;
 import com.sweep.jaksim31.controller.feign.KakaoOAuthLogoutFeign;
 import com.sweep.jaksim31.controller.feign.KakaoOAuthTokenFeign;
+import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.dto.login.KakaoOAuth;
 import com.sweep.jaksim31.dto.login.KakaoProfile;
 import com.sweep.jaksim31.domain.members.MemberRepository;
@@ -13,6 +15,7 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
+import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
@@ -38,6 +41,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -73,6 +79,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
     private final KakaoOAuthInfoFeign kakaoOAuthInfoFeign;
     private final KakaoOAuthLogoutFeign kakaoOAuthLogoutFeign;
     private final RedirectionUtil redirectionUtil;
+    private final DiaryRepository diaryRepository;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
 
@@ -132,8 +139,15 @@ public class KaKaoMemberServiceImpl implements MemberService {
                         .build()
         );
 
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
+        // 만료 시간을 당일 23:59:59로 설정
+        long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
-        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId);
+        CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
+
+        return tokenProvider.createTokenDTO(MemberInfoResponse.of(members), accessToken,refreshToken, expTime);
 
     }
 
@@ -158,6 +172,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
         String expTime = "expTime";
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
         CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
+        CookieUtil.addSecureCookie(response, "todayDiaryId", "", 0);
 
         refreshTokenRepository
                 .findByLoginId(loginId)

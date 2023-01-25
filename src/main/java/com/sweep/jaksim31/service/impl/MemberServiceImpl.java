@@ -68,6 +68,7 @@ import java.util.TimeZone;
  * 2023-01-18           방근호          GetMyInfoByLoginId 리턴값 수정
  * 2023-01-23           방근호          ResponseEntity Wrapper class 제거
  * 2023-01-25           방근호          getMyInfoByLoginId 수정
+ * 2023-01-25           방근호          getMyInfoByLoginId 제거
  */
 
 @Slf4j
@@ -127,7 +128,6 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-//        System.out.println("redis " + redisService.getValues(loginId));
 
         // db에 있을 경우 지워준다.
         if(refreshTokenRepository.findByLoginId(loginId).isPresent())
@@ -141,7 +141,15 @@ public class MemberServiceImpl implements MemberService {
                         .build()
         );
 
-        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime,loginId);
+        LocalDate today = LocalDate.now();
+        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
+        // 만료 시간을 당일 23:59:59로 설정
+        long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+
+        CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
+
+        return tokenProvider.createTokenDTO(MemberInfoResponse.of(members), accessToken,refreshToken, expTime);
 
     }
 
@@ -190,7 +198,7 @@ public class MemberServiceImpl implements MemberService {
 
         String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
-        TokenResponse tokenResponse = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime, loginId);
+        TokenResponse tokenResponse = tokenProvider.createTokenDTO(MemberInfoResponse.of(members), newAccessToken, newRefreshToken, expTime);
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
@@ -202,6 +210,7 @@ public class MemberServiceImpl implements MemberService {
         String isLogin = "true";
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
+
 //
         // 6. 저장소 정보 업데이트 (dirtyChecking으로 업데이트)
         refreshToken.updateValue(newRefreshToken);
@@ -225,6 +234,7 @@ public class MemberServiceImpl implements MemberService {
         String expTime = "expTime";
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
         CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
+        CookieUtil.addPublicCookie(response, "todayDiaryId", initValue, 0);
 
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         String loginId = authentication.getName();
@@ -275,24 +285,6 @@ public class MemberServiceImpl implements MemberService {
                 .map(MemberInfoResponse::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
     }
-
-
-    public MemberInfoResponse getMyInfoByLoginId(String loginId, HttpServletResponse response) {
-        // 로그인 id로 사용자 정보 불러오기
-        Members member = memberRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        // 오늘 날짜로 작성 된 일기가 있는지 확인
-        LocalDate today = LocalDate.now();
-        Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(member.getId(), today.atTime(9,0)).orElse(null);
-        // 만료 시간을 당일 23:59:59로 설정
-        long expTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
-                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
-
-        CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", expTime);
-        // 응답 생성(Header(쿠키 설정) + Body(사용자 정보))
-        return MemberInfoResponse.of(member);
-    }
-
 
     /**
      * DirtyChecking 을 통한 멤버 업데이트 ( Login ID는 업데이트 할 수 없다.)
