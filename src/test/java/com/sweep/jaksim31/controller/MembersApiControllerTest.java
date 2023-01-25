@@ -340,63 +340,6 @@ class MembersApiControllerTest {
         }
     }
 
-//    @Nested
-//    @DisplayName("GetMyInfoLoginId Controller")
-//    class GetMyInfoLoginId {
-//        @DisplayName("정상인 경우")
-//        @Test
-//        void getMyInfoByLoginId() throws Exception {
-//
-//            //given
-//            given(memberService.getMyInfoByLoginId(any(), any()))
-//                    .willReturn(MemberInfoResponse.builder()
-//                            .loginId("loginId")
-//                            .userId("userId")
-//                            .username("username")
-//                            .profileImage("profileImage")
-//                            .diaryTotal(10)
-//                            .build());
-//
-//            //when
-//            mockMvc.perform(get("/v0/members/")
-//                            .with(csrf()) //403 에러 방지
-//                            .param("loginId", "loginId"))
-////                        .contentType(MediaType.APPLICATION_JSON))
-//                    //then
-//                    .andExpect(status().isOk())
-//                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-//                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
-//                    .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
-//                    .andExpect(jsonPath("$.username", Matchers.is("username")))
-//                    .andExpect(jsonPath("$.profileImage", Matchers.is("profileImage")))
-//                    .andExpect(jsonPath("$.diaryTotal", Matchers.is(10)))
-//                    .andExpect(jsonPath("$.recentDiaries", Matchers.nullValue()))
-//                    .andDo(MockMvcResultHandlers.print(System.out));
-//        }
-//
-//        @DisplayName("해당 유저가 없는 경우")
-//        @Test
-//        void invalidGetMyInfoByLoginId() throws Exception {
-//
-//            given(memberService.getMyInfoByLoginId(any(), any()))
-//                    .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
-//
-//            //when
-//            mockMvc.perform(get("/v0/members")
-//                            .with(csrf()) //403 에러 방지
-//                            .param("loginId", "loginId"))
-//
-//                    //then
-//                    .andExpect(status().is4xxClientError())
-//                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-//                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getErrorCode())))
-//                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
-//                    .andDo(MockMvcResultHandlers.print(System.out));
-//
-//        }
-//    }
-
-
     @Nested
     @DisplayName("GetMyInfoByUserId Controller")
     class GetMyInfoByUserId {
