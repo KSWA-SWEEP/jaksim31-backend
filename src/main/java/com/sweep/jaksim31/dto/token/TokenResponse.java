@@ -1,5 +1,7 @@
 package com.sweep.jaksim31.dto.token;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import lombok.*;
 
 /**
@@ -20,7 +22,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TokenResponse {
-    private String loginId;
+    @JsonProperty("memberInfo")
+    private MemberInfoResponse memberInfoResponse;
     private String grantType;
     private String accessToken;
     private String refreshToken;

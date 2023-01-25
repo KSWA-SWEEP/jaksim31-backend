@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.auth;
 
+import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.exception.type.AuthorityExceptionType;
@@ -134,12 +135,12 @@ public class TokenProvider {
 //                .grantType(BEARER_TYPE)
 //                .build();
 //    }
-    public TokenResponse createTokenDTO(String accessToken, String refreshToken, String expTime, String loginId) {
+    public TokenResponse createTokenDTO(MemberInfoResponse memberInfoResponse, String accessToken, String refreshToken, String expTime) {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expTime(expTime)
-                .loginId(loginId)
+                .memberInfoResponse(memberInfoResponse)
                 .grantType(BEARER_TYPE)
                 .build();
     }

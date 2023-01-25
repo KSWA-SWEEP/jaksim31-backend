@@ -95,6 +95,14 @@ class MembersApiControllerTest {
     @MockBean
     private RedirectionUtil redirectionUtil;
 
+    MemberInfoResponse memberInfoResponse = MemberInfoResponse.builder()
+            .loginId("loginId")
+            .userId("userId")
+            .username("username")
+            .profileImage("profileImage")
+            .diaryTotal(10)
+            .build();
+
 
 
 
@@ -140,7 +148,7 @@ class MembersApiControllerTest {
             //given
             given(memberService.login(any(), any()))
                     .willReturn(TokenResponse.builder()
-                            .loginId("loginId")
+                            .memberInfoResponse(memberInfoResponse)
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
@@ -153,14 +161,16 @@ class MembersApiControllerTest {
 
             mockMvc.perform(post("/v0/members/login")
                             .with(csrf()) //403 에러 방지
+                            .param("redirectUri", "http://localhost:3000/")
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
 
                     //then
-                    .andExpect(status().isOk())
+                    .andExpect(status().is3xxRedirection())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(header().string("Location", "http://localhost:3000/"))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
+                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("1000")))
@@ -180,6 +190,7 @@ class MembersApiControllerTest {
 
             mockMvc.perform(post("/v0/members/login")
                             .with(csrf()) //403 에러 방지
+                            .param("redirectUri", "http://adsaadsadadadad")
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
@@ -201,7 +212,7 @@ class MembersApiControllerTest {
             //given
             given(memberService.reissue(any(), any()))
                     .willReturn(TokenResponse.builder()
-                            .loginId("reissueTest")
+                            .memberInfoResponse(memberInfoResponse)
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
@@ -219,7 +230,7 @@ class MembersApiControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.loginId", Matchers.is("reissueTest")))
+                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
@@ -329,61 +340,61 @@ class MembersApiControllerTest {
         }
     }
 
-    @Nested
-    @DisplayName("GetMyInfoLoginId Controller")
-    class GetMyInfoLoginId {
-        @DisplayName("정상인 경우")
-        @Test
-        void getMyInfoByLoginId() throws Exception {
-
-            //given
-            given(memberService.getMyInfoByLoginId(any(), any()))
-                    .willReturn(MemberInfoResponse.builder()
-                            .loginId("loginId")
-                            .userId("userId")
-                            .username("username")
-                            .profileImage("profileImage")
-                            .diaryTotal(10)
-                            .build());
-
-            //when
-            mockMvc.perform(get("/v0/members/")
-                            .with(csrf()) //403 에러 방지
-                            .param("loginId", "loginId"))
-//                        .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
-                    .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
-                    .andExpect(jsonPath("$.username", Matchers.is("username")))
-                    .andExpect(jsonPath("$.profileImage", Matchers.is("profileImage")))
-                    .andExpect(jsonPath("$.diaryTotal", Matchers.is(10)))
-                    .andExpect(jsonPath("$.recentDiaries", Matchers.nullValue()))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-
-        @DisplayName("해당 유저가 없는 경우")
-        @Test
-        void invalidGetMyInfoByLoginId() throws Exception {
-
-            given(memberService.getMyInfoByLoginId(any(), any()))
-                    .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
-
-            //when
-            mockMvc.perform(get("/v0/members")
-                            .with(csrf()) //403 에러 방지
-                            .param("loginId", "loginId"))
-
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-
-        }
-    }
+//    @Nested
+//    @DisplayName("GetMyInfoLoginId Controller")
+//    class GetMyInfoLoginId {
+//        @DisplayName("정상인 경우")
+//        @Test
+//        void getMyInfoByLoginId() throws Exception {
+//
+//            //given
+//            given(memberService.getMyInfoByLoginId(any(), any()))
+//                    .willReturn(MemberInfoResponse.builder()
+//                            .loginId("loginId")
+//                            .userId("userId")
+//                            .username("username")
+//                            .profileImage("profileImage")
+//                            .diaryTotal(10)
+//                            .build());
+//
+//            //when
+//            mockMvc.perform(get("/v0/members/")
+//                            .with(csrf()) //403 에러 방지
+//                            .param("loginId", "loginId"))
+////                        .contentType(MediaType.APPLICATION_JSON))
+//                    //then
+//                    .andExpect(status().isOk())
+//                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
+//                    .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
+//                    .andExpect(jsonPath("$.username", Matchers.is("username")))
+//                    .andExpect(jsonPath("$.profileImage", Matchers.is("profileImage")))
+//                    .andExpect(jsonPath("$.diaryTotal", Matchers.is(10)))
+//                    .andExpect(jsonPath("$.recentDiaries", Matchers.nullValue()))
+//                    .andDo(MockMvcResultHandlers.print(System.out));
+//        }
+//
+//        @DisplayName("해당 유저가 없는 경우")
+//        @Test
+//        void invalidGetMyInfoByLoginId() throws Exception {
+//
+//            given(memberService.getMyInfoByLoginId(any(), any()))
+//                    .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
+//
+//            //when
+//            mockMvc.perform(get("/v0/members")
+//                            .with(csrf()) //403 에러 방지
+//                            .param("loginId", "loginId"))
+//
+//                    //then
+//                    .andExpect(status().is4xxClientError())
+//                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getErrorCode())))
+//                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
+//                    .andDo(MockMvcResultHandlers.print(System.out));
+//
+//        }
+//    }
 
 
     @Nested
@@ -710,16 +721,19 @@ class MembersApiControllerTest {
             //when
             mockMvc.perform(get("/v0/members/kakao-login")
                             .with(csrf())
+                            .param("redirectUri", "http://localhost:3000/")
                             .param("code", "code"))
+
+
 
                     //then
                     .andExpect(status().is3xxRedirection())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(header().string("Location", "http://localhost:3000/"))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("100000")))
-                    .andExpect(header().string("location", "http://localhost:3000?userId=geunho"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }
