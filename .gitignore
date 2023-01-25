@@ -42,7 +42,9 @@ src/test/resources/application.yml
 
 ### log files ###
 was-logs
-./docker-data
-./docker-data/**
+/docker-data
+/docker-data/mongo
+/docker-data/redis
+/docker-data/**
 .logs
 

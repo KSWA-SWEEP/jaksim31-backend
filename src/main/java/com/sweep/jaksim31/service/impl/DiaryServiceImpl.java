@@ -260,7 +260,7 @@ public class DiaryServiceImpl implements DiaryService {
         memberRepository.save(user);
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(userId+"Page");
+        cacheAdapter.findAndDelete(userId +"Page");
         return diary.getId();
     }
 
