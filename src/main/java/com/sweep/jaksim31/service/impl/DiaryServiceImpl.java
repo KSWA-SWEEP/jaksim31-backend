@@ -49,7 +49,6 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -79,6 +78,7 @@ import java.util.stream.Collectors;
  *                      김주현             일기 삭제 및 생성 시 사용자 정보의 totalDiary 값 업데이트
  *                      김주현             사용자 일기 조회 및 검색 시 page 정보가 input으로 들어오지 않았을 때 default(page=0, size=user.diaryTotal)
  * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
+ *                      김주현             findDiaries 수정(날짜 검색 오류 수정 및 키워드 검색 추가)
  */
 /* TODO
     * 일기 조건 조회 MongoTemplate 사용해서 수정하기
@@ -184,10 +184,6 @@ public class DiaryServiceImpl implements DiaryService {
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
                 throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
-        // 날짜가 유효하지 않을 때(미래)
-        if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
-            throw new BizException(DiaryExceptionType.WRONG_DATE);
-        }
         // 사용자 정보의 total diary 정보 업데이트
         user.setDiaryTotal(user.getDiaryTotal()+1);
         memberRepository.save(user);
@@ -313,19 +309,24 @@ public class DiaryServiceImpl implements DiaryService {
                 .with(pageable)
                 .skip(pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
+        // userId 조건 설정
         query.addCriteria(Criteria.where("userId").is(userId));
 
-        for(String i : params.keySet()){
-            if(i.equals("startDate")){
-                query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)));
-            }else if(i.equals("endDate")){
-                query.addCriteria(Criteria.where("date").lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
-            }else if(i.equals("page") || i.equals("sort") || i.equals("size"))
-                continue;
-            else{
-                query.addCriteria(Criteria.where(i).is(params.get(i).toString()));
-            }
+        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
+        if(!params.containsKey("startDate"))
+            params.put("startDate","1990-01-01");
+        if(!params.containsKey("endDate"))
+            params.put("endDate", LocalDate.now().toString());
+        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)).lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
+        // 검색어 조건 설정
+        if(params.containsKey("searchWord")) {
+            query.addCriteria(Criteria.where("content").regex(params.get("searchWord").toString()));
         }
+        // 감정 조건 설정
+        if(params.containsKey("emotion")) {
+            query.addCriteria(Criteria.where("emotion").is(params.get("emotion").toString()));
+        }
+
         List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
                 .stream()
                 .map(DiaryInfoResponse::of)
