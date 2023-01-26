@@ -90,6 +90,7 @@ public class MembersApiController {
         // Redirect 주소 설정
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(new URI(redirectUri));
+        httpHeaders.set("Access-Control-Allow-Origin", "*");
 
         return new ResponseEntity<>(memberServiceImpl.login(loginRequest, response), httpHeaders, HttpStatus.SEE_OTHER);
     }

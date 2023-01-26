@@ -17,14 +17,29 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  */
 
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry){
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000", "https://jaksim31.xyz", "http://jaksim31.xyz")
+        registry.addMapping("localhost:3000")
+                .allowedOrigins("*")
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 }
+
+
+
+//@Configuration
+//public class WebConfig implements WebMvcConfigurer {
+//    @Override
+//    public void addCorsMappings(CorsRegistry registry){
+//        registry.addMapping("/**")
+//                .allowedOrigins("http://localhost:3000", "https://jaksim31.xyz", "http://jaksim31.xyz")
+//                .allowedMethods("*")
+//                .allowedHeaders("*")
+//                .allowCredentials(true);
+//    }
+//}
