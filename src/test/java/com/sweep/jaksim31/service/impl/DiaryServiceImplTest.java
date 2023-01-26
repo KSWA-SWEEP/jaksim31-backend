@@ -523,7 +523,7 @@ public class DiaryServiceImplTest {
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
             Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "date"));
-            Page<Object> page = new PageImpl(diaryInfoResponses, pageable, 1);
+            Page<DiaryInfoResponse> page = new PageImpl(diaryInfoResponses, pageable, 1);
 
             given(memberRepository.findById(userId))
                     .willReturn(Optional.of(Members.builder()
@@ -531,10 +531,10 @@ public class DiaryServiceImplTest {
                             .build()));
 
             given(cacheAdapter.get(any()))
-                    .willReturn(new RestPage<>(diaryInfoResponses, 0, 9,Sort.by(Sort.Direction.DESC, "date"), 0));
+                    .willReturn(new RestPage<>(page));
 
             //when
-            Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
+            RestPage<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
             // then
             assert expected != null;
