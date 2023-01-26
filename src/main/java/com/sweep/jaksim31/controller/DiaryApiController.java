@@ -45,6 +45,7 @@ import java.util.Map;
  * 2023-01-20           김주현             findDiary input 값에 userId 추가
  *                      김주현             일기 삭제 api path 및 input 값에 userId 추가
  * 2023-01-21           김주현             Validation 추가
+ * 2023-01-26           김주현             사용자 일기 조회 조건에 searchWord(검색어) 추가
 */
 /* TODO
     * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
@@ -103,7 +104,7 @@ public class DiaryApiController {
     @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
     public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
-        if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate")){
+        if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate") || params.containsKey("searchWord")){
             // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
             return ResponseEntity.ok(diaryService.findDiaries(userId, params));
         }else
