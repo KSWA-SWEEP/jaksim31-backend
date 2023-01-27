@@ -27,5 +27,15 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
+
+    # Maven Package Caching     
+    - name: Cache Maven packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    # Build 
     - name: Build with Maven
       run: mvn -B package -D skipTests=true --file pom.xml 
