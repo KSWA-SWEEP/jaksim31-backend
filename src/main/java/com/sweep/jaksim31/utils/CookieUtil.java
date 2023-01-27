@@ -19,6 +19,7 @@ import java.util.Optional;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
+ * 2023-01-27           김주현             path 추가
  */
 
 public class CookieUtil {
@@ -41,6 +42,7 @@ public class CookieUtil {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .maxAge(maxAge)
+                .path("/")
                 .build();
 
 
@@ -62,6 +64,7 @@ public class CookieUtil {
     public static void addPublicCookie(HttpServletResponse response, String name, String value, int maxAge) {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
                 .build();
 
 

@@ -67,6 +67,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-17           방근호             최초 생성
+ * 2023-01-27           김주현             로그인 응답 코드 변경에 따른 test코드 수정
  */
 
 @WebMvcTest(controllers = MembersApiController.class)
@@ -148,7 +149,6 @@ class MembersApiControllerTest {
             //given
             given(memberService.login(any(), any()))
                     .willReturn(TokenResponse.builder()
-                            .memberInfoResponse(memberInfoResponse)
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
@@ -161,16 +161,13 @@ class MembersApiControllerTest {
 
             mockMvc.perform(post("/v0/members/login")
                             .with(csrf()) //403 에러 방지
-                            .param("redirectUri", "http://localhost:3000/")
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
 
                     //then
-                    .andExpect(status().is3xxRedirection())
+                    .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(header().string("Location", "http://localhost:3000/"))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("1000")))
@@ -212,7 +209,6 @@ class MembersApiControllerTest {
             //given
             given(memberService.reissue(any(), any()))
                     .willReturn(TokenResponse.builder()
-                            .memberInfoResponse(memberInfoResponse)
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
@@ -230,7 +226,6 @@ class MembersApiControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
@@ -600,8 +595,7 @@ class MembersApiControllerTest {
 
             mockMvc.perform(post("/v0/members/logout")
                             .with(csrf()))
-
-                    .andExpect(status().is3xxRedirection())
+                    .andExpect(status().isOk())
                     .andExpect(content().string("로그아웃 되었습니다."))
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andDo(MockMvcResultHandlers.print(System.out));

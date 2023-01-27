@@ -14,6 +14,7 @@ import lombok.*;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-13           방근호             최초 생성
+ * 2023-01-27           김주현             MemberInfoResponse 제거
  *
  */
 
@@ -22,8 +23,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TokenResponse {
-    @JsonProperty("memberInfo")
-    private MemberInfoResponse memberInfoResponse;
     private String grantType;
     private String accessToken;
     private String refreshToken;

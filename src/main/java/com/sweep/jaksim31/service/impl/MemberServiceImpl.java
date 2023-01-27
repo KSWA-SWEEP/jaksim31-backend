@@ -69,6 +69,7 @@ import java.util.TimeZone;
  * 2023-01-23           방근호          ResponseEntity Wrapper class 제거
  * 2023-01-25           방근호          getMyInfoByLoginId 수정
  * 2023-01-25           방근호          getMyInfoByLoginId 제거
+ * 2023-01-27           김주현          로그인/로그아웃 시 userId 쿠키 설정 및 refresh token은 addSecureCookie로 전달
  */
 
 @Slf4j
@@ -117,7 +118,7 @@ public class MemberServiceImpl implements MemberService {
         int cookieMaxAge = (int) rtkLive / 60;
 
 //        CookieUtil.addCookie(response, "access_token", accessToken, cookieMaxAge);
-        CookieUtil.addCookie(response, "refresh_token", refreshToken, cookieMaxAge);
+        CookieUtil.addSecureCookie(response, "refresh_token", refreshToken, cookieMaxAge);
 
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
         String isLogin = "true";
@@ -128,6 +129,7 @@ public class MemberServiceImpl implements MemberService {
         String expTime = sdf.format(newExpTime);
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
         CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
+        CookieUtil.addPublicCookie(response, "userId", members.getId(), cookieMaxAge);
 
         // db에 있을 경우 지워준다.
         if(refreshTokenRepository.findByLoginId(loginId).isPresent())
@@ -149,7 +151,7 @@ public class MemberServiceImpl implements MemberService {
 
         CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return tokenProvider.createTokenDTO(MemberInfoResponse.of(members), accessToken,refreshToken, expTime);
+        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
 
     }
 
@@ -198,7 +200,7 @@ public class MemberServiceImpl implements MemberService {
 
         String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
-        TokenResponse tokenResponse = tokenProvider.createTokenDTO(MemberInfoResponse.of(members), newAccessToken, newRefreshToken, expTime);
+        TokenResponse tokenResponse = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime);
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
@@ -235,6 +237,7 @@ public class MemberServiceImpl implements MemberService {
         CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
         CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
         CookieUtil.addPublicCookie(response, "todayDiaryId", initValue, 0);
+        CookieUtil.addPublicCookie(response, "userId", initValue, 0);
 
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         String loginId = authentication.getName();
