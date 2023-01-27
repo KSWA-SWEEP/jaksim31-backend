@@ -31,7 +31,7 @@ public class MemberUpdatePasswordRequestValidator implements Validator {
             return;
         }
         MemberUpdatePasswordRequest request = MemberUpdatePasswordRequest.class.cast(target);
-        if(Objects.isNull(request.getNewPassword()))
+        if(Objects.isNull(request.getNewPassword())|| request.getNewPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_NEW_PASSWORD);
 
     }

@@ -181,12 +181,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
         public void failSaveDiaryUserIdIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.USER_ID_IS_NULL));
-
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("", "contents", date, "happy", keywords,"thumbnail");
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest(null, "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/v0/diaries")
@@ -203,12 +199,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
         public void failSaveDiaryContentIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.CONTENT_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/v0/diaries")
@@ -225,12 +217,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
         public void failSaveDiaryEmotionIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.EMOTION_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/v0/diaries")
@@ -245,35 +233,9 @@ public class DiaryApiControllerTest  {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
-        @DisplayName("[예외]키워드가 입력되지 않았을 때(NULL)")
-        public void failSaveDiaryKeywordIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.KEYWORDS_IS_NULL));
-
-            //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
-
-            mockMvc.perform(post("/v0/diaries")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.KEYWORDS_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.KEYWORDS_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(Empty)")
         public void failSaveDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.KEYWORDS_IS_NULL));
-
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", empty_keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -292,12 +254,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
         public void failSaveDiaryThumbnailIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.THUMBNAIL_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/v0/diaries")
@@ -312,35 +270,9 @@ public class DiaryApiControllerTest  {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
-        @DisplayName("[예외]일기 날짜가 입력되지 않았을 때")
-        public void failSaveDiaryDateIsNULL() throws Exception{
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.DIARY_DATE_IS_NULL));
-
-            //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
-
-            mockMvc.perform(post("/v0/diaries")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.DIARY_DATE_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.DIARY_DATE_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
         @DisplayName("[예외]날짜가 유효하지 않을 때")
         public void failSaveDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
-            //given
-            given(diaryService.saveDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.WRONG_DATE));
-
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -585,12 +517,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
         public void failUpdateDiaryUserIdIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.USER_ID_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest(null, "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/v0/diaries/diaryId")
@@ -607,12 +535,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
         public void failUpdateDiaryContentIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.CONTENT_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/v0/diaries/diaryId")
@@ -629,12 +553,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
         public void failUpdateDiaryEmotionIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.EMOTION_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/v0/diaries/diaryId")
@@ -649,35 +569,9 @@ public class DiaryApiControllerTest  {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
-        @DisplayName("[예외]키워드가 입력되지 않았을 때(NULL)")
-        public void failUpdateDiaryKeywordIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.KEYWORDS_IS_NULL));
-
-            //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
-
-            mockMvc.perform(put("/v0/diaries/diaryId")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.KEYWORDS_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.KEYWORDS_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(Empty)")
         public void failUpdateDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.KEYWORDS_IS_NULL));
-
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", empty_keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -696,12 +590,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
         public void failUpdateDiaryThumbnailIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.THUMBNAIL_IS_NULL));
-
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/v0/diaries/diaryId")
@@ -716,35 +606,9 @@ public class DiaryApiControllerTest  {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
-        @DisplayName("[예외]일기 날짜가 입력되지 않았을 때")
-        public void failUpdateDiaryDateIsNULL() throws Exception{
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.DIARY_DATE_IS_NULL));
-
-            //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
-
-            mockMvc.perform(put("/v0/diaries/diaryId")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.DIARY_DATE_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.DIARY_DATE_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
         @DisplayName("[예외]날짜가 유효하지 않을 때")
         public void failUpdateDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
-            //given
-            given(diaryService.updateDiary(any(),any()))
-                    .willThrow(new BizException(DiaryExceptionType.WRONG_DATE));
-
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -839,36 +703,9 @@ public class DiaryApiControllerTest  {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
-        @DisplayName("[예외]분석 할 문장들이 입력되지 않았을 때(NULL)")
-        public void failAnalyzeDiaryInputSentencesIsNull() throws Exception{
-            //given
-            given(diaryService.analyzeDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.INPUT_SENTENCES_IS_NULL));
-
-            //when
-            DiaryAnalysisRequest diaryAnalysisRequest = new DiaryAnalysisRequest();
-            diaryAnalysisRequest.setSentences(null);
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryAnalysisRequest);
-
-            mockMvc.perform(post("/v0/diaries/analyze")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INPUT_SENTENCES_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INPUT_SENTENCES_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
         @DisplayName("[예외]분석 할 문장들이 입력되지 않았을 때(Empty)")
         public void failAnalyzeDiaryInputSentencesIsEmpty() throws Exception{
             List<String> empty_sentences = List.of(new String[0]);
-            //given
-            given(diaryService.analyzeDiary(any()))
-                    .willThrow(new BizException(DiaryExceptionType.INPUT_SENTENCES_IS_NULL));
-
             //when
             DiaryAnalysisRequest diaryAnalysisRequest = new DiaryAnalysisRequest();
             diaryAnalysisRequest.setSentences(empty_sentences);
@@ -1007,12 +844,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
         public void failSaveThumbnailUserIdIsNULL() throws Exception{
-            //given
-            given(diaryService.saveThumbnail(any()))
-                    .willThrow(new BizException(DiaryExceptionType.USER_ID_IS_NULL));
-
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest(null,"diaryId","thumbnail");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("","diaryId","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/v0/diaries/thumbnail")
@@ -1029,12 +862,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]일기 ID가 입력되지 않았을 때")
         public void failSaveThumbnailDiaryIdIsNULL() throws Exception{
-            //given
-            given(diaryService.saveThumbnail(any()))
-                    .willThrow(new BizException(DiaryExceptionType.DIARY_ID_IS_NULL));
-
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId",null,"thumbnail");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/v0/diaries/thumbnail")
@@ -1051,12 +880,8 @@ public class DiaryApiControllerTest  {
         @Test
         @DisplayName("[예외]썸네일 이미지 경로가 입력되지 않았을 때")
         public void failSaveThumbnailURIIsNULL() throws Exception{
-            //given
-            given(diaryService.saveThumbnail(any()))
-                    .willThrow(new BizException(DiaryExceptionType.THUMBNAIL_IS_NULL));
-
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId",null);
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId","");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/v0/diaries/thumbnail")

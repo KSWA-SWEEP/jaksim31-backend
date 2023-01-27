@@ -103,12 +103,9 @@ class MembersApiControllerTest {
             .diaryTotal(10)
             .build();
 
-
-
-
     @Nested
     @DisplayName("SignUp Controller")
-    class SingnUp {
+    class SignUp {
         @Test
         @DisplayName("정상인 경우")
         public void singup() throws Exception {
@@ -137,6 +134,68 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.username", Matchers.is("geunho")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @Test
+        @DisplayName("사용자 아이디를 입력하지 않은 경우")
+        public void invalidSingupNotFoundLoginId() throws Exception {
+            //when
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest("", "password", "geunho", "profileImage");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
+
+            mockMvc.perform(post("/v0/members/register")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+        @Test
+        @DisplayName("비밀번호를 입력하지 않은 경우")
+        public void invalidSingupNotFoundPassword() throws Exception {
+            //when
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "", "geunho", "profileImage");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
+
+            mockMvc.perform(post("/v0/members/register")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+        @Test
+        @DisplayName("사용자 이름울 입력하지 않은 경우")
+        public void invalidSingupNotFoundUsername() throws Exception {
+            //when
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "", "profileImage");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
+
+            mockMvc.perform(post("/v0/members/register")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USERNAME.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USERNAME.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+
     }
 
     @Nested
@@ -200,6 +259,44 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @Test
+        @DisplayName("로그인 ID를 입력하지 않은 경우")
+        void invalidLoginNotFoundLoginId() throws Exception {
+            // when
+            LoginRequest loginRequest = new LoginRequest("", "password");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
+
+            mockMvc.perform(post("/v0/members/login")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @Test
+        @DisplayName("비밀번호를 입력하지 않은 경우")
+        void invalidLoginNotFoundPassword() throws Exception {
+            // when
+            LoginRequest loginRequest = new LoginRequest("loginId", "");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
+
+            mockMvc.perform(post("/v0/members/login")
+                            .with(csrf()) //403 에러 방지
+                            .param("redirectUri", "http://adsaadsadadadad")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
     }
 
 
@@ -234,6 +331,58 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+        }
+        @Test
+        @DisplayName("정상인 경우(refresh token만 있는 경우)")
+        void reissueRefreshTokenOnly() throws Exception {
+            //given
+            given(memberService.reissue(any(), any()))
+                    .willReturn(TokenResponse.builder()
+                            .memberInfoResponse(memberInfoResponse)
+                            .grantType("USER_ROLE")
+                            .accessToken("accessToken")
+                            .refreshToken("refreshToken")
+                            .expTime("2000")
+                            .build());
+
+            //when
+            TokenRequest tokenRequest = new TokenRequest("", "refreshToken");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
+
+            mockMvc.perform(post("/v0/members/geunho/reissue")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
+                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
+                    .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
+                    .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
+                    .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+        }
+
+        @Test
+        @DisplayName("토큰 값이 비어있는 경우")
+        void invalidReissueEmptyToken() throws Exception {
+            //when
+            TokenRequest tokenRequest = new TokenRequest("", "");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
+
+            mockMvc.perform(post("/v0/members/geunho/reissue")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
@@ -286,6 +435,25 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @Test
+        @DisplayName("로그인 아이디를 입력하지 않은 경우")
+        void invalidIsMemberNotFoundLoginId() throws Exception {
+            //when
+            MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
+
+            mockMvc.perform(post("/v0/members")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_LOGIN_ID.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
     }
 
 
@@ -335,6 +503,26 @@ class MembersApiControllerTest {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getErrorCode())))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+        }
+
+        @DisplayName("새로운 비밀번호가 입력되지 않은 경우")
+        @Test
+        void invalidChangePwNotFoundNewPassword() throws Exception {
+            //when
+            MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
+
+            mockMvc.perform(put("/v0/members/string/password")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_NEW_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_NEW_PASSWORD.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
@@ -391,6 +579,7 @@ class MembersApiControllerTest {
         }
     }
 
+    // TODO Validator 확정 되면 테스트코드 추가
     @DisplayName("UpdateMember Controller")
     @Nested
     class UpdateMember {
@@ -468,7 +657,6 @@ class MembersApiControllerTest {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
-
         @DisplayName("해당 유저 정보가 없는 경우")
         @Test
         void invalidRemove2xx() throws Exception {
@@ -492,7 +680,6 @@ class MembersApiControllerTest {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
-
         @DisplayName("비밀번호가 불일치할 경우")
         @Test
         void invalidRemove4xx() throws Exception {
@@ -512,6 +699,42 @@ class MembersApiControllerTest {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getMessage())))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @DisplayName("사용자 아이디가 입력되지 않은 경우")
+        @Test
+        void invalidRemoveMemberNotFoundUserId() throws Exception {
+            //when
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("", "geunho");
+            String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
+
+            mockMvc.perform(delete("/v0/members/geunho")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonString))
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_USER_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_USER_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @DisplayName("비밀번호가 입력되지 않은 경우")
+        @Test
+        void invalidRemoveMemberNotFoundPassword() throws Exception {
+            //when
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "");
+            String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
+
+            mockMvc.perform(delete("/v0/members/geunho")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonString))
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getErrorCode())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }
@@ -541,6 +764,23 @@ class MembersApiControllerTest {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
+        @DisplayName("비밀번호를 입력하지 않은 경우")
+        @Test
+        void invalidPasswordIsMyPasswordNotFoundPassword() throws Exception {
+            MemberCheckPasswordRequest memberRemoveRequest = new MemberCheckPasswordRequest("");
+            String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
+
+            mockMvc.perform(post("/v0/members/geunho/password")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonString))
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
 
         @DisplayName("해당 유저 정보가 없는 경우")
         @Test
@@ -564,7 +804,6 @@ class MembersApiControllerTest {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
-
         @DisplayName("비밀번호가 불일치할 경우")
         @Test
         void invalidPasswordIsMyPassword() throws Exception {
@@ -586,6 +825,7 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getErrorCode())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
     }
 
     @Nested

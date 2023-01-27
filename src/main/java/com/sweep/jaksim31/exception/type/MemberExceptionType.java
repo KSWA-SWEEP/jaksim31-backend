@@ -24,6 +24,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     NOT_FOUND_AUTHENTICATION("NOT_FOUND_AUTHENTICATION","인증 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
     DUPLICATE_USER("DUPLICATE_USER","이미 존재하는 사용자입니다.", HttpStatus.BAD_REQUEST),
     WRONG_PASSWORD("WRONG_PASSWORD","비밀번호를 잘못 입력하였습니다.", HttpStatus.UNAUTHORIZED),
+    NOT_FOUND_USER_ID("NOT_FOUND_USER_ID","사용자 아이디가 비어있습니다.",HttpStatus.BAD_REQUEST),
     NOT_FOUND_LOGIN_ID("NOT_FOUND_LOGIN_ID","로그인 아이디를 입력해주세요",HttpStatus.BAD_REQUEST),
     NOT_FOUND_PASSWORD("NOT_FOUND_PASSWORD","비밀번호를 입력해주세요",HttpStatus.BAD_REQUEST),
     NOT_FOUND_USERNAME("NOT_FOUND_USERNAME","사용자 이름을 입력해주세요",HttpStatus.BAD_REQUEST),

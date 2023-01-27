@@ -35,19 +35,19 @@ public class DiarySaveRequestValidator implements Validator {
         }
         DiarySaveRequest request = DiarySaveRequest.class.cast(target);
 
-        if(Objects.isNull(request.getUserId()))
+        if(Objects.isNull(request.getUserId()) || request.getUserId().length() == 0)
             throw new BizException(DiaryExceptionType.USER_ID_IS_NULL);
-        if(Objects.isNull(request.getContent()))
+        if(Objects.isNull(request.getContent()) || request.getContent().length() == 0)
             throw new BizException(DiaryExceptionType.CONTENT_IS_NULL);
         if(Objects.isNull(request.getDate()))
             throw new BizException(DiaryExceptionType.DIARY_DATE_IS_NULL);
         if(request.getDate().compareTo(ChronoLocalDate.from(LocalDateTime.now())) > 0)
             throw new BizException(DiaryExceptionType.WRONG_DATE);
-        if(Objects.isNull(request.getEmotion()))
+        if(Objects.isNull(request.getEmotion()) || request.getEmotion().length() == 0)
             throw new BizException(DiaryExceptionType.EMOTION_IS_NULL);
         if(Objects.isNull(request.getKeywords()) || request.getKeywords().length == 0)
             throw new BizException(DiaryExceptionType.KEYWORDS_IS_NULL);
-        if(Objects.isNull(request.getUserId()))
+        if(Objects.isNull(request.getThumbnail()) || request.getThumbnail().length() == 0)
             throw new BizException(DiaryExceptionType.THUMBNAIL_IS_NULL);
 
     }

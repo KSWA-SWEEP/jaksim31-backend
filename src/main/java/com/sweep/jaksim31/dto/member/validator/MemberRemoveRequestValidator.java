@@ -31,9 +31,9 @@ public class MemberRemoveRequestValidator implements Validator {
             return;
         }
         MemberRemoveRequest request = MemberRemoveRequest.class.cast(target);
-        if(Objects.isNull(request.getUserId()))
-            throw new BizException(MemberExceptionType.NOT_FOUND_LOGIN_ID);
-        if(Objects.isNull(request.getPassword()))
+        if(Objects.isNull(request.getUserId())|| request.getUserId().length() == 0)
+            throw new BizException(MemberExceptionType.NOT_FOUND_USER_ID);
+        if(Objects.isNull(request.getPassword())|| request.getPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
     }
 }

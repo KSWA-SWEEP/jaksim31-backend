@@ -31,9 +31,9 @@ public class LoginRequestValidator implements Validator {
             return;
         }
         LoginRequest request = LoginRequest.class.cast(target);
-        if(Objects.isNull(request.getLoginId()))
+        if(Objects.isNull(request.getLoginId())|| request.getLoginId().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_LOGIN_ID);
-        if(Objects.isNull(request.getPassword()))
+        if(Objects.isNull(request.getPassword())|| request.getPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
 
     }
