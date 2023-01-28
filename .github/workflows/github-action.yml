@@ -18,11 +18,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_ID: ${{ secrets.DOCKER_ID }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
+    
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 11
@@ -49,6 +45,6 @@ jobs:
       uses: docker/login-action@v2.1.0
       with:
         # Username used to log against the Docker registry
-        username: $DOCKER_ID
+        username: r2god7k
         # Password or personal access token used to log against the Docker registry
-        password: $DOCKER_PASSWORD
+        password: 24382438ii!!
