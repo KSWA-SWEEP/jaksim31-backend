@@ -74,6 +74,9 @@ jobs:
           script: |
             ls -a
             sudo su
-            sudo chmod 666 /var/run/docker.sock
+            # sudo chmod 666 /var/run/docker.sock
+            sudo /usr/sbin/groupadd -f docker
+            sudo /usr/sbin/usermod -aG docker `user`
+            sudo chown root:docker /var/run/docker.sock
             docker pull r2god7k/jaksim31-backend:latest
     
