@@ -79,4 +79,5 @@ jobs:
             sudo /usr/sbin/usermod -aG docker `user`
             sudo chown root:docker /var/run/docker.sock
             docker pull r2god7k/jaksim31-backend:latest
-    
+            docker compose up -d
+            
