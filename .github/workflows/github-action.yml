@@ -64,7 +64,7 @@ jobs:
           cache-to: type=gha,mode=max
     
     # SSH Connect
-    - name: Deploy
+    - name: Deploy to VM
       uses: appleboy/ssh-action@master
       with:
           host: ${{ secrets.REMOTE_IP }}
@@ -79,5 +79,6 @@ jobs:
             sudo /usr/sbin/usermod -aG docker `user`
             sudo chown root:docker /var/run/docker.sock
             docker pull r2god7k/jaksim31-backend:latest
-            docker compose up -d
+            docker run -d -p 8085:8080 --name jaksim31-backend r2god7k/jaksim31-backend
+            docker image rm r2god7k/jaksim31-backend:latest
             
