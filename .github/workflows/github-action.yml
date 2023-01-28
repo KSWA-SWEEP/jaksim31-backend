@@ -15,14 +15,14 @@ on:
     branches: [ "main" ]
 
 jobs:
-  CI:
+  Initial-Setting:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
       with:
-        java-version: 1.8
+        java-version: '11'
         distribution: 'temurin'
         cache: maven
 
@@ -33,11 +33,17 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-        
+  
+  Build:
+    runs-on: ubuntu-latest
+    steps:
     # Build 
     - name: Build with Maven
       run: mvn -B package -D skipTests=true --file pom.xml 
-    
+  
+  Docker-Setting:
+    runs-on: ubuntu-latest
+    steps:
     # Docker Buildx Setting
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
@@ -51,6 +57,9 @@ jobs:
         # Password or personal access token used to log against the Docker registry
         password: ${{ secrets.DOCKER_PASSWORD }}
         
+  DockerBuild-Push:
+    runs-on: ubuntu-latest
+    steps:
     # Docker Build & Push    
     - name: Docker Build and push
       uses: docker/build-push-action@v2
@@ -62,7 +71,10 @@ jobs:
           tags: r2god7k/jaksim31-backend:latest
           cache-from: type=gha    # gha=Github Action Cache
           cache-to: type=gha,mode=max
-    
+  
+  SSH-Connect:
+    runs-on: ubuntu-latest
+    steps:
     # SSH Connect
     - name: Deploy to VM
       uses: appleboy/ssh-action@master
