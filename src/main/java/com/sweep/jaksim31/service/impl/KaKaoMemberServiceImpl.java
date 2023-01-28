@@ -145,7 +145,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
         long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
                 - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
-        CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
+        CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
         return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
 
