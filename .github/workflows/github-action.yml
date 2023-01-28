@@ -62,3 +62,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: r2god7k/jaksim31-backend:latest
+          cache-from: type=gha    # gha=Github Action Cache
+          cache-to: type=gha,mode=max
