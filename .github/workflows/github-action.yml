@@ -57,3 +57,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
+          tags: r2god7k/jaksim31-backend:latest
