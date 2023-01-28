@@ -31,7 +31,7 @@ public class MemberCheckPasswordRequestValidator implements Validator {
             return;
         }
         MemberCheckPasswordRequest request = MemberCheckPasswordRequest.class.cast(target);
-        if(Objects.isNull(request.getPassword()))
+        if(Objects.isNull(request.getPassword())|| request.getPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
 
     }

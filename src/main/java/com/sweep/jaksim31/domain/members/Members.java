@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  * 2023-01-11           김주현             field 수정
  * 2023-01-12           김주현             profilePhoto -> profileImage
  * 2023-01-19           방근호             updateTime 수정(9시간 추가)
+ * 2023-01-28           김주현             ""면 업데이트 하지 않도록 조건 추가
  */
 
 @Getter
@@ -96,8 +97,8 @@ public class Members {
 
     public void updateMember(MemberUpdateRequest dto) throws BizException {
 
-        if(dto.getUsername() != null) this.username = dto.getUsername();
-        if(dto.getProfileImage() != null) this.profileImage = dto.getProfileImage();
+        if(dto.getUsername() != null && !dto.getUsername().equals("")) this.username = dto.getUsername();
+        if(dto.getProfileImage() != null && !dto.getProfileImage().equals("")) this.profileImage = dto.getProfileImage();
 
         this.updateDate = Instant.now().plus(9, ChronoUnit.HOURS);
     }

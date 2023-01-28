@@ -31,7 +31,7 @@ public class MemberCheckLoginIdRequestValidator implements Validator {
             return;
         }
         MemberCheckLoginIdRequest request = MemberCheckLoginIdRequest.class.cast(target);
-        if(Objects.isNull(request.getLoginId()))
+        if(Objects.isNull(request.getLoginId()) || request.getLoginId().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_LOGIN_ID);
 
 

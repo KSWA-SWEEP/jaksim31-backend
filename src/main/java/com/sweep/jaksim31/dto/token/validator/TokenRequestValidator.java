@@ -34,6 +34,12 @@ public class TokenRequestValidator implements Validator {
         // 입력 된 토큰이 아무것도 없을 경우
         if(Objects.isNull(request.getAccessToken()) && Objects.isNull(request.getRefreshToken()))
             throw new BizException(JwtExceptionType.EMPTY_TOKEN);
+        else if(request.getAccessToken().length() == 0 && Objects.isNull(request.getRefreshToken()))
+            throw new BizException(JwtExceptionType.EMPTY_TOKEN);
+        else if(request.getAccessToken().length() == 0  && request.getRefreshToken().length() == 0)
+            throw new BizException(JwtExceptionType.EMPTY_TOKEN);
+        else if(Objects.isNull(request.getAccessToken()) && request.getRefreshToken().length() == 0)
+            throw new BizException(JwtExceptionType.EMPTY_TOKEN);
 
     }
 }

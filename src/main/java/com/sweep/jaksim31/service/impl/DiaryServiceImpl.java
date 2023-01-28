@@ -294,7 +294,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         Pageable pageable;
-        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=9) 세팅
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
         if(!params.containsKey("size"))
