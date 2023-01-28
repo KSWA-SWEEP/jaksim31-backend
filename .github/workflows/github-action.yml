@@ -72,5 +72,6 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           # port: ${{ secrets.REMOTE_SSH_PORT }}
           script: |
+            sudo su
             docker pull r2god7k/jaksim31-backend:latest
     
