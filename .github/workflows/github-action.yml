@@ -15,10 +15,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  CI:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 11
@@ -49,9 +47,9 @@ jobs:
       uses: docker/login-action@v2.1.0
       with:
         # Username used to log against the Docker registry
-        username: r2god7k
+        username: ${{ secrets.DOCKER_ID }}
         # Password or personal access token used to log against the Docker registry
-        password: 24382438ii!!
+        password: ${{ secrets.DOCKER_PASSWORD }}
         
     # Docker Build & Push    
     - name: Docker Build and push
