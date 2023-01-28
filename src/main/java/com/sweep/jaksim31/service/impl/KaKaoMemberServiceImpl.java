@@ -147,7 +147,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
 
         CookieUtil.addSecureCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return tokenProvider.createTokenDTO(MemberInfoResponse.of(members), accessToken,refreshToken, expTime);
+        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
 
     }
 

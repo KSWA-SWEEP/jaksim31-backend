@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
  * 2023-01-13           장건              카카오 로그인 추가
  * 2023-01-15           방근호             카카오 로그인 api 리팩토링 및 로그아웃 추가
  * 2023-01-25           방근호             getMyInfoByLoginId 제거
+ * 2023-01-27           김주현             자체 로그인, 로그아웃 응답 수정 redirect(3xx) => ok(200)
  */
 
 /* TODO
@@ -85,14 +86,8 @@ public class MembersApiController {
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(
             @Validated @RequestBody LoginRequest loginRequest,
-            HttpServletResponse response, @RequestParam("redirectUri") String redirectUri) throws URISyntaxException {
-
-        // Redirect 주소 설정
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setLocation(new URI(redirectUri));
-        httpHeaders.set("Access-Control-Allow-Origin", "*");
-
-        return new ResponseEntity<>(memberServiceImpl.login(loginRequest, response), httpHeaders, HttpStatus.SEE_OTHER);
+            HttpServletResponse response) throws URISyntaxException {
+        return ResponseEntity.ok(memberServiceImpl.login(loginRequest, response));
     }
 
     @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
@@ -166,11 +161,7 @@ public class MembersApiController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
 
-        URI redirectUri = new URI(logoutRedirectUrl);
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setLocation(redirectUri);
-
-        return new ResponseEntity<>(memberServiceImpl.logout(request, response), httpHeaders, HttpStatus.SEE_OTHER);
+        return ResponseEntity.ok(memberServiceImpl.logout(request, response));
     }
 
     // 아직 테스트 X -> 프론트 연결 후 테스트 진행

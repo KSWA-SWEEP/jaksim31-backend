@@ -135,12 +135,11 @@ public class TokenProvider {
 //                .grantType(BEARER_TYPE)
 //                .build();
 //    }
-    public TokenResponse createTokenDTO(MemberInfoResponse memberInfoResponse, String accessToken, String refreshToken, String expTime) {
+    public TokenResponse createTokenDTO(String accessToken, String refreshToken, String expTime) {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expTime(expTime)
-                .memberInfoResponse(memberInfoResponse)
                 .grantType(BEARER_TYPE)
                 .build();
     }
