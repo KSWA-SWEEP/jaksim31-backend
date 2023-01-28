@@ -195,7 +195,25 @@ class MembersApiControllerTest {
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
+        @Test
+        @DisplayName("프로필 이미지가 없는 경우")
+        public void invalidSingupNotFoundProfileImage() throws Exception {
+            //when
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "username", "");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
+            mockMvc.perform(post("/v0/members/register")
+                            .with(csrf()) //403 에러 방지
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
     }
 
     @Nested

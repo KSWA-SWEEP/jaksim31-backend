@@ -37,10 +37,7 @@ public class MemberSaveRequestValidator implements Validator {
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
         if(Objects.isNull(request.getUsername())|| request.getUsername().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_USERNAME);
-        // TODO 프로필 이미지가 필수인지 확인하고 활성화할지 비활할지 선택하기
-//        if(Objects.isNull(request.getProfileImage()))
-//            throw new BizException(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE);
-
-
+        if(Objects.isNull(request.getProfileImage()) || request.getProfileImage().length() == 0)
+            throw new BizException(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE);
     }
 }
