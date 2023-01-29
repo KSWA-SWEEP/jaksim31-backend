@@ -353,7 +353,6 @@ class MembersApiControllerTest {
             //given
             given(memberService.reissue(any(), any()))
                     .willReturn(TokenResponse.builder()
-                            .memberInfoResponse(memberInfoResponse)
                             .grantType("USER_ROLE")
                             .accessToken("accessToken")
                             .refreshToken("refreshToken")
@@ -372,7 +371,6 @@ class MembersApiControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.memberInfo.loginId", Matchers.is("loginId")))
                     .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
                     .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
                     .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
