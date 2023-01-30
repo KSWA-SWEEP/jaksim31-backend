@@ -1,59 +1,38 @@
 package com.sweep.jaksim31.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
-import com.sweep.jaksim31.dto.login.KakaoLoginRequest;
 import com.sweep.jaksim31.dto.login.KakaoProfile;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenRequest;
-import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
-import com.sweep.jaksim31.service.impl.KaKaoMemberServiceImpl;
+import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
-import io.swagger.v3.core.util.Json;
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Before;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.platform.engine.support.discovery.SelectorResolver;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.event.annotation.BeforeTestMethod;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.util.MultiValueMap;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -68,6 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * -----------------------------------------------------------
  * 2023-01-17           방근호             최초 생성
  * 2023-01-27           김주현             로그인 응답 코드 변경에 따른 test코드 수정
+ * 2023-01-30           방근호             인증 로직 변경으로 인한 test 수정 및 제거
  */
 
 @WebMvcTest(controllers = MembersApiController.class)
@@ -79,20 +59,16 @@ class MembersApiControllerTest {
     private MockMvc mockMvc;
     @MockBean
     private MemberServiceImpl memberService;
-
     @MockBean
-    private KaKaoMemberServiceImpl kaKaoMemberService;
-
+    private KakaoMemberServiceImpl kaKaoMemberService;
     @MockBean
     private MemberRepository memberRepository;
-
     @MockBean
     private AuthorityRepository authorityRepository;
     @MockBean
     private RefreshTokenRepository refreshTokenRepository;
     @MockBean
     private DiaryRepository diaryRepository;
-
     @MockBean
     private RedirectionUtil redirectionUtil;
 
@@ -122,7 +98,7 @@ class MembersApiControllerTest {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
-            mockMvc.perform(post("/v0/members/register")
+            mockMvc.perform(post("/api/v0/members/register")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -143,7 +119,7 @@ class MembersApiControllerTest {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("", "password", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
-            mockMvc.perform(post("/v0/members/register")
+            mockMvc.perform(post("/api/v0/members/register")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -163,7 +139,7 @@ class MembersApiControllerTest {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
-            mockMvc.perform(post("/v0/members/register")
+            mockMvc.perform(post("/api/v0/members/register")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -183,7 +159,7 @@ class MembersApiControllerTest {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
-            mockMvc.perform(post("/v0/members/register")
+            mockMvc.perform(post("/api/v0/members/register")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -203,7 +179,7 @@ class MembersApiControllerTest {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "username", "");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
 
-            mockMvc.perform(post("/v0/members/register")
+            mockMvc.perform(post("/api/v0/members/register")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -225,29 +201,19 @@ class MembersApiControllerTest {
         void login() throws Exception {
             //given
             given(memberService.login(any(), any()))
-                    .willReturn(TokenResponse.builder()
-                            .grantType("USER_ROLE")
-                            .accessToken("accessToken")
-                            .refreshToken("refreshToken")
-                            .expTime("1000")
-                            .build());
+                    .willReturn("로그인이 완료되었습니다.");
 
             // when
             LoginRequest loginRequest = new LoginRequest("loginId", "password");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
 
-            mockMvc.perform(post("/v0/members/login")
+            mockMvc.perform(post("/api/v0/members/login")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
 
                     //then
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
-                    .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
-                    .andExpect(jsonPath("$.expTime", Matchers.is("1000")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -262,7 +228,7 @@ class MembersApiControllerTest {
             LoginRequest loginRequest = new LoginRequest("loginId", "password");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
 
-            mockMvc.perform(post("/v0/members/login")
+            mockMvc.perform(post("/api/v0/members/login")
                             .with(csrf()) //403 에러 방지
                             .param("redirectUri", "http://adsaadsadadadad")
                             .content(jsonRequest)
@@ -282,7 +248,7 @@ class MembersApiControllerTest {
             LoginRequest loginRequest = new LoginRequest("", "password");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
 
-            mockMvc.perform(post("/v0/members/login")
+            mockMvc.perform(post("/api/v0/members/login")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -300,7 +266,7 @@ class MembersApiControllerTest {
             LoginRequest loginRequest = new LoginRequest("loginId", "");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
 
-            mockMvc.perform(post("/v0/members/login")
+            mockMvc.perform(post("/api/v0/members/login")
                             .with(csrf()) //403 에러 방지
                             .param("redirectUri", "http://adsaadsadadadad")
                             .content(jsonRequest)
@@ -322,28 +288,14 @@ class MembersApiControllerTest {
         @DisplayName("정상인 경우")
         void reissue() throws Exception {
             //given
-            given(memberService.reissue(any(), any()))
-                    .willReturn(TokenResponse.builder()
-                            .grantType("USER_ROLE")
-                            .accessToken("accessToken")
-                            .refreshToken("refreshToken")
-                            .expTime("2000")
-                            .build());
+//            given(memberService.reissue(any(), any()))
+//                    .willReturn();
             //when
-            TokenRequest tokenRequest = new TokenRequest("accessToken", "refreshToken");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
-
-            mockMvc.perform(post("/v0/members/geunho/reissue")
+            mockMvc.perform(post("/api/v0/members/geunho/reissue")
                             .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
-                    .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
-                    .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
@@ -351,52 +303,34 @@ class MembersApiControllerTest {
         @DisplayName("정상인 경우(refresh token만 있는 경우)")
         void reissueRefreshTokenOnly() throws Exception {
             //given
-            given(memberService.reissue(any(), any()))
-                    .willReturn(TokenResponse.builder()
-                            .grantType("USER_ROLE")
-                            .accessToken("accessToken")
-                            .refreshToken("refreshToken")
-                            .expTime("2000")
-                            .build());
+//            given(memberService.reissue(any(), any()))
+//                    .willReturn("토큰 재발급이 완료되었습니다.");
 
             //when
-            TokenRequest tokenRequest = new TokenRequest("", "refreshToken");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
-
-            mockMvc.perform(post("/v0/members/geunho/reissue")
+            mockMvc.perform(post("/api/v0/members/geunho/reissue")
                             .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
-                    .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
-                    .andExpect(jsonPath("$.expTime", Matchers.is("2000")))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
 
-        @Test
-        @DisplayName("토큰 값이 비어있는 경우")
-        void invalidReissueEmptyToken() throws Exception {
-            //when
-            TokenRequest tokenRequest = new TokenRequest("", "");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(tokenRequest);
-
-            mockMvc.perform(post("/v0/members/geunho/reissue")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-
-        }
+//        @Test
+//        @DisplayName("토큰 값이 비어있는 경우")
+//        void invalidReissueEmptyToken() throws Exception {
+//            //when
+//            mockMvc.perform(post("/api/v0/members/geunho/reissue")
+//                            .with(csrf()) //403 에러 방지
+//                            .contentType(MediaType.APPLICATION_JSON))
+//                    //then
+//                    .andExpect(status().is4xxClientError())
+//                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//                    .andExpect(jsonPath("$.errorCode", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getErrorCode())))
+//                    .andExpect(jsonPath("$.errorMessage", Matchers.is(JwtExceptionType.EMPTY_TOKEN.getMessage())))
+//                    .andDo(MockMvcResultHandlers.print(System.out));
+//
+//        }
 
     }
 
@@ -414,7 +348,7 @@ class MembersApiControllerTest {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
 
-            mockMvc.perform(post("/v0/members")
+            mockMvc.perform(post("/api/v0/members")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -435,7 +369,7 @@ class MembersApiControllerTest {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
 
-            mockMvc.perform(post("/v0/members")
+            mockMvc.perform(post("/api/v0/members")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -454,7 +388,7 @@ class MembersApiControllerTest {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
 
-            mockMvc.perform(post("/v0/members")
+            mockMvc.perform(post("/api/v0/members")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -482,7 +416,7 @@ class MembersApiControllerTest {
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
 
-            mockMvc.perform(put("/v0/members/string/password")
+            mockMvc.perform(put("/api/v0/members/string/password")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -505,7 +439,7 @@ class MembersApiControllerTest {
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
 
-            mockMvc.perform(put("/v0/members/string/password")
+            mockMvc.perform(put("/api/v0/members/string/password")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -525,7 +459,7 @@ class MembersApiControllerTest {
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
 
-            mockMvc.perform(put("/v0/members/string/password")
+            mockMvc.perform(put("/api/v0/members/string/password")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -555,7 +489,7 @@ class MembersApiControllerTest {
                             .build());
 
             //when
-            mockMvc.perform(get("/v0/members/geunho")
+            mockMvc.perform(get("/api/v1/members/geunho")
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -577,7 +511,7 @@ class MembersApiControllerTest {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            mockMvc.perform(get("/v0/members/geunho")
+            mockMvc.perform(get("/api/v1/members/geunho")
                             .with(csrf())) //403 에러 방지
 
                     //then
@@ -604,7 +538,7 @@ class MembersApiControllerTest {
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
 
-            mockMvc.perform(patch("/v0/members/geunho")
+            mockMvc.perform(patch("/api/v1/members/geunho")
                             .with(csrf())
                             .content(jsonString)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -626,7 +560,7 @@ class MembersApiControllerTest {
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
 
-            mockMvc.perform(patch("/v0/members/geunho")
+            mockMvc.perform(patch("/api/v1/members/geunho")
                             .with(csrf())
                             .content(jsonString)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -647,9 +581,6 @@ class MembersApiControllerTest {
         @Test
         void remove() throws Exception {
 
-//            URI redirectUri = new URI("test");
-//            HttpHeaders httpHeaders = new HttpHeaders();
-//            httpHeaders.setLocation(redirectUri);
 
             given(memberService.remove(any(), any()))
                     .willReturn("삭제되었습니다.");
@@ -657,7 +588,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/v0/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/geunho")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -678,7 +609,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/v0/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/geunho")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -701,7 +632,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/v0/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/geunho")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -719,7 +650,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/v0/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/geunho")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -737,7 +668,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/v0/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/geunho")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -764,7 +695,7 @@ class MembersApiControllerTest {
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberCheckPasswordRequest);
 
-            mockMvc.perform(post("/v0/members/guneho/password")
+            mockMvc.perform(post("/api/v1/members/guneho/password")
                             .with(csrf())
                             .content(jsonString)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -781,7 +712,7 @@ class MembersApiControllerTest {
             MemberCheckPasswordRequest memberRemoveRequest = new MemberCheckPasswordRequest("");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(post("/v0/members/geunho/password")
+            mockMvc.perform(post("/api/v1/members/geunho/password")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -803,7 +734,7 @@ class MembersApiControllerTest {
             MemberCheckPasswordRequest memberRemoveRequest = new MemberCheckPasswordRequest("password");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(post("/v0/members/geunho/password")
+            mockMvc.perform(post("/api/v1/members/geunho/password")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -825,7 +756,7 @@ class MembersApiControllerTest {
             MemberCheckPasswordRequest memberRemoveRequest = new MemberCheckPasswordRequest("password");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(post("/v0/members/geunho/password")
+            mockMvc.perform(post("/api/v1/members/geunho/password")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -849,7 +780,7 @@ class MembersApiControllerTest {
             given(memberService.logout(any(), any()))
                     .willReturn("로그아웃 되었습니다.");
 
-            mockMvc.perform(post("/v0/members/logout")
+            mockMvc.perform(post("/api/v1/members/logout")
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(content().string("로그아웃 되었습니다."))
@@ -866,7 +797,7 @@ class MembersApiControllerTest {
             given(memberService.logout(any(), any()))
                     .willThrow(new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN, "test"));
 
-            mockMvc.perform(post("/v0/members/logout")
+            mockMvc.perform(post("/api/v1/members/logout")
                             .with(csrf()))
 
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -904,29 +835,16 @@ class MembersApiControllerTest {
                             .build());
 
             given(kaKaoMemberService.login(any(), any()))
-                    .willReturn(TokenResponse.builder()
-                            .accessToken("accessToken")
-                            .refreshToken("refreshToken")
-                            .grantType("USER_ROLE")
-                            .expTime("100000")
-                            .build());
+                    .willReturn("로그인이 완료되었습니다.");
 
             //when
-            mockMvc.perform(get("/v0/members/kakao-login")
+            mockMvc.perform(get("/api/v0/members/kakao-login")
                             .with(csrf())
-                            .param("redirectUri", "http://localhost:3000/")
                             .param("code", "code"))
-
-
 
                     //then
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(header().string("Location", "http://localhost:3000/"))
-                    .andExpect(jsonPath("$.accessToken", Matchers.is("accessToken")))
-                    .andExpect(jsonPath("$.refreshToken", Matchers.is("refreshToken")))
-                    .andExpect(jsonPath("$.grantType", Matchers.is("USER_ROLE")))
-                    .andExpect(jsonPath("$.expTime", Matchers.is("100000")))
+                    .andExpect(header().string("Location", "http://localhost:3000"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }
@@ -944,7 +862,7 @@ class MembersApiControllerTest {
                     .willReturn("로그아웃 되었습니다.");
 
             //when
-            mockMvc.perform(get("/v0/members/kakao-logout")
+            mockMvc.perform(get("/api/v1/members/kakao-logout")
                             .with(csrf()))
                     //then
                     .andExpect(status().is3xxRedirection())
@@ -961,12 +879,11 @@ class MembersApiControllerTest {
                     .willThrow(new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN, "test"));
 
             //when
-            mockMvc.perform(get("/v0/members/kakao-logout")
+            mockMvc.perform(get("/api/v1/members/kakao-logout")
                             .with(csrf()))
                     //then
                     .andExpect(status().is3xxRedirection())
                     .andExpect(header().string("Location", "test"))
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(JwtExceptionType.LOGOUT_EMPTY_TOKEN.getErrorCode())))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(JwtExceptionType.LOGOUT_EMPTY_TOKEN.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));

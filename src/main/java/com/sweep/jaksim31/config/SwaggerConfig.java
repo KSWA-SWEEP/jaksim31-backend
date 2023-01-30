@@ -37,33 +37,9 @@ public class SwaggerConfig {
     public GroupedOpenApi NonSecurityGroupOpenApi() {
         return GroupedOpenApi
                 .builder()
-                .group("Non Security Open Api")
-                .pathsToMatch("/v0/**")
-                .addOpenApiCustomiser(buildSecurityOpenApi())
+                .group("Jaksim31 Open Api")
+                .pathsToMatch("/**")
                 .build();
-    }
-
-    @Bean
-    public GroupedOpenApi SecurityGroupOpenApi() {
-        return GroupedOpenApi
-                .builder()
-                .group("Security Open Api")
-                .pathsToExclude("/v1/**", "/v2/**")
-                .addOpenApiCustomiser(buildSecurityOpenApi())
-                .build();
-    }
-
-    public OpenApiCustomiser buildSecurityOpenApi() {
-        SecurityScheme securityScheme = new SecurityScheme()
-                .name("Authorization")
-                .type(SecurityScheme.Type.HTTP)
-                .in(SecurityScheme.In.HEADER)
-                .bearerFormat("JWT")
-                .scheme("bearer");
-
-        return OpenApi -> OpenApi
-                .addSecurityItem(new SecurityRequirement().addList("jwt token"))
-                .getComponents().addSecuritySchemes("jwt token", securityScheme);
     }
 }
 

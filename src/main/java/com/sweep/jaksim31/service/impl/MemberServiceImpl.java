@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.service.impl;
 
+import com.sweep.jaksim31.adapter.cache.RefreshTokenCacheAdapter;
 import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
@@ -11,41 +12,34 @@ import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.dto.token.TokenRequest;
-import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
-import com.sweep.jaksim31.utils.DateTimeUtils;
-import com.sweep.jaksim31.utils.HeaderUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.TimeZone;
 
 /**
  * packageName :  com.sweep.jaksim31.service.impl
@@ -70,6 +64,7 @@ import java.util.TimeZone;
  * 2023-01-25           방근호          getMyInfoByLoginId 수정
  * 2023-01-25           방근호          getMyInfoByLoginId 제거
  * 2023-01-27           김주현          로그인/로그아웃 시 userId 쿠키 설정 및 refresh token은 addSecureCookie로 전달
+ * 2023-01-30           방근호             인증 로직 변경으로 인한 쿠기 설정 추가
  */
 
 @Slf4j
@@ -90,9 +85,8 @@ public class MemberServiceImpl implements MemberService {
     private long accExpTime;
     private final DiaryRepository diaryRepository;
     private final RedirectionUtil redirectionUtil;
+    private final RefreshTokenCacheAdapter refreshTokenCacheAdapter;
 
-//    @Value("${home.url}")
-//    private String homeUrl;
 
     @Transactional
     public MemberSaveResponse signup(MemberSaveRequest memberRequestDto) {
@@ -105,43 +99,34 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
     @Transactional
-    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) {
-        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
+    public String login(LoginRequest loginRequest, HttpServletResponse response) {
 
+        // 회원 인증
+        CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken = new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
         String loginId = authenticate.getName();
         Members members = customUserDetailsService.getMember(loginId);
 
+        // 토큰 생성
         String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
-        int cookieMaxAge = (int) rtkLive / 60;
-
-//        CookieUtil.addCookie(response, "access_token", accessToken, cookieMaxAge);
-        CookieUtil.addSecureCookie(response, "refresh_token", refreshToken, cookieMaxAge);
+        // 쿠키에 토큰 정보 및 인증 정보 저장
+        CookieUtil.addSecureCookie(response, "atk", accessToken, (int) rtkLive / 60);
+        CookieUtil.addSecureCookie(response, "rtk", refreshToken, (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
 
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        String isLogin = "true";
-        Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
-        SimpleDateFormat sdf;
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-        String expTime = sdf.format(newExpTime);
-        CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
-        CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-        CookieUtil.addPublicCookie(response, "userId", members.getId(), cookieMaxAge);
+//        Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
+//        SimpleDateFormat sdf;
+//        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+//        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+//        String expTime = sdf.format(newExpTime);
+//        CookieUtil.addPublicCookie(response, "expTime", expTime, (int) accExpTime / 60);
 
-        // db에 있을 경우 지워준다.
-        if(refreshTokenRepository.findByLoginId(loginId).isPresent())
-            refreshTokenRepository.deleteByLoginId(loginId);
-
-        //db에 token 저장
-        refreshTokenRepository.save(
-                RefreshToken.builder()
-                        .loginId(loginId)
-                        .value(refreshToken)
-                        .build()
-        );
+        // 레디스에 캐싱
+        refreshTokenCacheAdapter.put(loginId, refreshToken, Duration.ofSeconds((int) rtkLive / 60));
 
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
@@ -151,16 +136,24 @@ public class MemberServiceImpl implements MemberService {
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
+        return "로그인이 완료되었습니다.";
 
     }
 
+    /* TODO
+        Redis 추가
+     */
     @Transactional
-    public TokenResponse reissue(TokenRequest tokenRequest,
+    public HttpServletResponse reissue(HttpServletRequest request,
                                      HttpServletResponse response) {
 
+        // cookie에서 refresh token 추출
+        Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("rtk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
 
-        String originRefreshToken = tokenRequest.getRefreshToken();
+        String originRefreshToken = refreshTokenCookie.getValue();
 
         // refreshToken 검증
         int refreshTokenFlag = tokenProvider.validateToken(originRefreshToken);
@@ -175,78 +168,68 @@ public class MemberServiceImpl implements MemberService {
 
         // 2. Access Token 에서 Member LoginId 가져오기
         Authentication authentication = tokenProvider.getAuthentication(originRefreshToken);
-//        Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         log.debug("Authentication = {}", authentication);
 
+        // 캐시에 리프레시 토큰이 있는지 확인
+        RefreshToken cachedRefreshToken = RefreshToken.builder()
+                .loginId(authentication.getName())
+                .value(refreshTokenCacheAdapter.get(authentication.getName()))
+                .build();
 
-        // DB에서 Member LoginId 를 기반으로 Refresh Token 값 가져옴
-        RefreshToken refreshToken = refreshTokenRepository.findByLoginId(authentication.getName())
-                .orElseThrow(() -> new BizException(MemberExceptionType.LOGOUT_MEMBER)); // 로그 아웃된 사용자
 
-        // Refresh Token 일치하는지 검사
-        if (!refreshToken.getValue().equals(originRefreshToken)) {
-            throw new BizException(JwtExceptionType.BAD_TOKEN);
+        // 캐시에 리프레시 토큰이 없는 경우 DB에서 가져 옴
+        if (Objects.isNull(cachedRefreshToken.getValue())) {
+            throw new BizException(MemberExceptionType.LOGOUT_MEMBER);
+        } else {
+            if (!cachedRefreshToken.getValue().equals(originRefreshToken)) {
+                throw new BizException(JwtExceptionType.BAD_TOKEN);
+            }
         }
-
-        Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
-        SimpleDateFormat sdf;
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-        String expTime = sdf.format(newExpTime);
 
         // 5. 새로운 토큰 생성
         String loginId = tokenProvider.getMemberLoginIdByToken(originRefreshToken);
         Members members = customUserDetailsService.getMember(loginId);
-
         String newAccessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
-        TokenResponse tokenResponse = tokenProvider.createTokenDTO(newAccessToken, newRefreshToken, expTime);
+
+        // 저장소 정보 업데이트
+        refreshTokenCacheAdapter.put(authentication.getName(), newRefreshToken, Duration.ofSeconds(rtkLive / 60));
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
 
-        int cookieMaxAge = (int) rtkLive / 60;
-        CookieUtil.addCookie(response, "refresh_token", newRefreshToken, cookieMaxAge);
-
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        String isLogin = "true";
-        CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
-        CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-
-//
-        // 6. 저장소 정보 업데이트 (dirtyChecking으로 업데이트)
-        refreshToken.updateValue(newRefreshToken);
+        CookieUtil.addSecureCookie(response, "atk", newAccessToken, (int) rtkLive / 60);
+        CookieUtil.addSecureCookie(response, "rtk", newRefreshToken, (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
 
         // 토큰 발급
-//        return ApiResponse.success("token", newAccessToken);
-        return tokenResponse;
+        return response;
     }
     @Override
     @Transactional
     public String logout(HttpServletRequest request, HttpServletResponse response){
 
-        String originAccessToken = HeaderUtil.getAccessToken(request);
+        Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("atk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
 
-        // 쿠키에서 삭제 작업
-        String initValue = "";
-        CookieUtil.addCookie(response, "refresh_token", initValue, 0);
+        String originAccessToken = refreshTokenCookie.getValue();
+
+        // 쿠키에서 토큰 삭제 작업
+        CookieUtil.addSecureCookie(response, "atk","", 0);
+        CookieUtil.addSecureCookie(response, "rtk", "", 0);
 
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        String isLogin = "false";
-        String expTime = "expTime";
-        CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
-        CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
-        CookieUtil.addPublicCookie(response, "todayDiaryId", initValue, 0);
-        CookieUtil.addPublicCookie(response, "userId", initValue, 0);
+        CookieUtil.addPublicCookie(response, "isLogin", "false", 0);
+        CookieUtil.addPublicCookie(response, "todayDiaryId", "", 0);
+        CookieUtil.addPublicCookie(response, "userId", "", 0);
 
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
-        String loginId = authentication.getName();
 
-        refreshTokenRepository
-                .findByLoginId(loginId)
-                .orElseThrow(()->new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN));
-
-        refreshTokenRepository.deleteByLoginId(loginId);
+        // 저장소에서 토큰 삭제
+        refreshTokenCacheAdapter.delete(authentication.getName());
 
         return "로그아웃 되었습니다.";
     }
@@ -342,6 +325,9 @@ public class MemberServiceImpl implements MemberService {
         // 멤버 엔티티의 delYn을 Yes로 변경 후 삭제 처리
         entity.remove('Y');
         memberRepository.save(entity);
+
+        // 저장소에서 토큰 삭제
+        refreshTokenCacheAdapter.delete(dto.getUserId());
 
         return "정상적으로 회원탈퇴 작업이 처리되었습니다.";
     }

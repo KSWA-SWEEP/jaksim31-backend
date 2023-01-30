@@ -100,7 +100,7 @@ public class DiaryApiControllerNullTest  {
             //when
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -118,7 +118,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -136,7 +136,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -154,7 +154,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", null,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -172,7 +172,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -190,7 +190,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(post("/v0/diaries")
+            mockMvc.perform(post("/api/v1/diaries")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -215,7 +215,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest(null, "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -233,7 +233,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -251,7 +251,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -269,7 +269,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", null,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -287,7 +287,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -305,7 +305,7 @@ public class DiaryApiControllerNullTest  {
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/v0/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/diaryId")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -329,7 +329,7 @@ public class DiaryApiControllerNullTest  {
             diaryAnalysisRequest.setSentences(null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryAnalysisRequest);
 
-            mockMvc.perform(post("/v0/diaries/analyze")
+            mockMvc.perform(post("/api/v1/diaries/analyze")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -352,7 +352,7 @@ public class DiaryApiControllerNullTest  {
             DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest(null,"diaryId","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
-            mockMvc.perform(put("/v0/diaries/thumbnail")
+            mockMvc.perform(put("/api/v1/diaries/thumbnail")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -370,7 +370,7 @@ public class DiaryApiControllerNullTest  {
             DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId",null,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
-            mockMvc.perform(put("/v0/diaries/thumbnail")
+            mockMvc.perform(put("/api/v1/diaries/thumbnail")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -388,7 +388,7 @@ public class DiaryApiControllerNullTest  {
             DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId",null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
-            mockMvc.perform(put("/v0/diaries/thumbnail")
+            mockMvc.perform(put("/api/v1/diaries/thumbnail")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))

@@ -42,7 +42,7 @@ public class KakaoProfile {
     }
 
     @Data
-    public class KakaoAccount { //(2)
+    public static class KakaoAccount { //(2)
         public Boolean profile_nickname_needs_agreement;
         public Boolean profile_image_needs_agreement;
         public Profile profile;
@@ -53,7 +53,7 @@ public class KakaoProfile {
         public String email;
 
         @Data
-        public class Profile {
+        public static class Profile {
             public String nickname;
             public String thumbnail_image_url;
             public String profile_image_url; // 이미지 경로 필드2

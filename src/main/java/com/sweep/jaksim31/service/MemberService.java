@@ -1,8 +1,6 @@
 package com.sweep.jaksim31.service;
 
 import com.sweep.jaksim31.dto.login.LoginRequest;
-import com.sweep.jaksim31.dto.token.TokenResponse;
-import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +22,6 @@ import java.net.URISyntaxException;
 
 public interface MemberService {
 //    ResponseEntity<MemberSaveResponse> signup(MemberSaveRequest memberRequestDto);
-    TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException;
+    String login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException;
     String logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException;
 }

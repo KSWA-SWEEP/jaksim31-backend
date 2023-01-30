@@ -1,11 +1,14 @@
 package com.sweep.jaksim31.utils;
 
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.util.SerializationUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -20,6 +23,7 @@ import java.util.Optional;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-27           김주현             path 추가
+ * 2023-01-30           방근호             getAccessToken, getRefreshToken 추가
  */
 
 public class CookieUtil {
@@ -84,6 +88,26 @@ public class CookieUtil {
                 }
             }
         }
+    }
+
+    public static String getAccessToken(HttpServletRequest request) {
+
+        Cookie accessTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("atk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+
+        return accessTokenCookie.getValue();
+    }
+
+    public static String getRefreshToken(HttpServletRequest request) {
+
+        Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("rtk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+
+        return refreshTokenCookie.getValue();
     }
 
     public static String serialize(Object obj) {

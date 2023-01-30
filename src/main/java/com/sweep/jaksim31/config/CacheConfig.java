@@ -70,7 +70,18 @@ public class CacheConfig {
         return redisTemplate;
     }
 
-//     jackson LocalDateTime mapper
+    @Bean
+    public RedisTemplate<String, String> refreshTokenCacheRedisTemplate() {
+        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(basicCacheRedisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new StringRedisSerializer());
+
+        return redisTemplate;
+    }
+
+
+    //     jackson LocalDateTime mapper
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
