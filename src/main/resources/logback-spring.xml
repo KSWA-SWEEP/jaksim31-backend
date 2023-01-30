@@ -16,7 +16,7 @@
             <!-- 일자별 로그파일 최대 보관주기(일) -->
             <maxHistory>60</maxHistory>
             <!-- 파일 쓰기가 종료된 log 파일명의 패턴을 지정, (.gz,.zip 등을 넣으면 자동 일자별 로그파일 압축) -->
-            <fileNamePattern>.logs/logback.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>./logs/logback.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- 파일당 최고 용량 -->
                 <maxFileSize>100MB</maxFileSize>
@@ -41,7 +41,7 @@
             <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative][%thread] %-5level %logger{35} - %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>./was-logs/info.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>./logs/info.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
@@ -61,7 +61,7 @@
             <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative][%thread] %-5level %logger{35} - %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>./was-logs/warn.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>./logs/warn.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
@@ -80,7 +80,7 @@
             <pattern>[%d{yyyy-MM-dd HH:mm:ss}:%-3relative][%thread] %-5level %logger{35} - %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>./was-logs/error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>./logs/error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
@@ -96,20 +96,5 @@
         <appender-ref ref="ERROR_LOG"/>
     </root>
 
-<!--    <logger name="LogController" additivity="false">-->
-<!--        <level value = "DEBUG" />-->
-<!--        <appender-ref ref="STDOUT" />-->
-<!--        <appender-ref ref="ROLLING"/>-->
-<!--        <appender-ref ref="INFO_LOG" />-->
-<!--        <appender-ref ref="WARN_LOG" />-->
-<!--    </logger>-->
-
-<!--    <logger name="org.hibernate.SQL" additivity="false">-->
-<!--        <level value = "DEBUG" />-->
-<!--        <appender-ref ref="STDOUT" />-->
-<!--        <appender-ref ref="ROLLING"/>-->
-<!--        <appender-ref ref="WARN_LOG" />-->
-<!--        <appender-ref ref="INFO_LOG" />-->
-<!--    </logger>-->
 
 </configuration>

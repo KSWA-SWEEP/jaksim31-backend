@@ -35,9 +35,9 @@ build/
 .DS_Store
 /logs
 applicaion.yml
-src/main/resources/application.yml
+src/main/resources/local/application.yml
 src/main/resources/application-dev.yml
-src/main/resources/application-test.yml
+src/main/resources/test/application.yml
 src/test/resources/application.yml
 
 ### log files ###

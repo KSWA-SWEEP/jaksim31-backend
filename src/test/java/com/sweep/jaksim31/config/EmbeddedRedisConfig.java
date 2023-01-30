@@ -1,8 +1,9 @@
 package com.sweep.jaksim31.config;
 
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.util.StringUtils;
 import redis.embedded.RedisServer;
@@ -14,8 +15,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 @Slf4j
-@Profile("local") // profile이 local일때만 활성화
-@Configuration
+//@Profile("local") // profile이 local일때만 활성화
+@TestConfiguration
 public class EmbeddedRedisConfig {
 
     @Value("${spring.redis.port}")
@@ -54,6 +55,7 @@ public class EmbeddedRedisConfig {
                 return port;
             }
         }
+
         throw new IllegalArgumentException("Not Found Available port: 10000 ~ 65535");
     }
 
