@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.service.impl;
 
+import com.sweep.jaksim31.adapter.cache.RefreshTokenCacheAdapter;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
@@ -59,11 +60,15 @@ class MemberServiceImplTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private RedirectionUtil redirectionUtil;
+    @Mock
+    private RefreshTokenCacheAdapter refreshTokenCacheAdapter;
     private static MockedStatic<MemberSaveResponse> memberSaveResponse;
     private static MockedStatic<MemberInfoResponse> memberInfoResponse;
     private static MockedStatic<CookieUtil> cookieUtil;
     private static MemberSaveRequest memberSaveRequest;
     private  static String fakeMemberId;
+
+
 
 
     @BeforeAll
@@ -457,6 +462,9 @@ class MemberServiceImplTest {
             given(memberRepository.save(any()))
                     .willReturn(members);
 
+            // 아무것도 안하게 하겠음
+            doNothing().when(refreshTokenCacheAdapter).delete(any());
+
             // when
             String res = memberService.remove(userId, memberRemoveRequest);
 
@@ -465,6 +473,7 @@ class MemberServiceImplTest {
             verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
+            verify(refreshTokenCacheAdapter, times(1)).delete(any());
 
         }
 

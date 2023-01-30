@@ -3,7 +3,7 @@ package com.sweep.jaksim31.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.adapter.RestPage;
-import com.sweep.jaksim31.adapter.cache.CacheAdapter;
+import com.sweep.jaksim31.adapter.cache.DiaryCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
 import com.sweep.jaksim31.domain.members.Members;
@@ -106,7 +106,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
     private final MongoTemplate mongoTemplate;
-    private final CacheAdapter cacheAdapter;
+    private final DiaryCacheAdapter diaryCacheAdapter;
 
     @Override
     // 전체 일기 조회
@@ -147,7 +147,7 @@ public class DiaryServiceImpl implements DiaryService {
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
 
         // 캐싱된 값이 있는지 확인
-        RestPage<DiaryInfoResponse> cacheDiaryPage = cacheAdapter.get(userId+pageable);
+        RestPage<DiaryInfoResponse> cacheDiaryPage = diaryCacheAdapter.get(userId+pageable);
 
         if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
 
@@ -170,7 +170,7 @@ public class DiaryServiceImpl implements DiaryService {
                 () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
         );
         // 캐시에 저장
-        cacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
+        diaryCacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
 
         return new RestPage<>(diaryPage);
     }
@@ -200,7 +200,7 @@ public class DiaryServiceImpl implements DiaryService {
         diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
 
         return DiaryResponse.of(diaryRepository.save(diary));
     }
@@ -228,7 +228,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
 
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
         return DiaryResponse.of(diaryRepository.save(updatedDiary));
@@ -260,7 +260,7 @@ public class DiaryServiceImpl implements DiaryService {
         memberRepository.save(user);
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(userId +"Page");
+        diaryCacheAdapter.findAndDelete(userId +"Page");
         return diary.getId();
     }
 

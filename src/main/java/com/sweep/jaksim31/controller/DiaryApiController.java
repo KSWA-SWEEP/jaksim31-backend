@@ -56,7 +56,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "일기", description = "일기 관련 api 입니다.")
-@RequestMapping(path = "/v0/diaries")
+@RequestMapping(path = "/api/v1/diaries")
 public class DiaryApiController {
     private final DiaryServiceImpl diaryService;
     @InitBinder

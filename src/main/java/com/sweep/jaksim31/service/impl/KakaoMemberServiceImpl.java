@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.service.impl;
 
+import com.sweep.jaksim31.adapter.cache.RefreshTokenCacheAdapter;
 import com.sweep.jaksim31.auth.CustomLoginIdPasswordAuthToken;
 import com.sweep.jaksim31.auth.CustomUserDetailsService;
 import com.sweep.jaksim31.auth.TokenProvider;
@@ -12,22 +13,17 @@ import com.sweep.jaksim31.dto.login.KakaoOAuth;
 import com.sweep.jaksim31.dto.login.KakaoProfile;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
-import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
-import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
-import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
-import com.sweep.jaksim31.utils.HeaderUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,17 +32,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.TimeZone;
 
 /**
  * packageName :  com.sweep.jaksim31.service.impl
@@ -61,12 +56,13 @@ import java.util.TimeZone;
  * 2023-01-12            장건        Kakao 로그인 /회원가입 연동 완료
  * 2023-01-13            장건                주석 정리 완료
  * 2023-01-15            방근호            회원가입/로그인 통합 및 리팩토링
+ * 2023-01-30           방근호             인증 로직 변경으로 인한 쿠기 설정 추가
  */
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KaKaoMemberServiceImpl implements MemberService {
+public class KakaoMemberServiceImpl implements MemberService {
 
     private final AuthenticationManager authenticationManager;
     private final MemberRepository memberRepository;
@@ -82,16 +78,16 @@ public class KaKaoMemberServiceImpl implements MemberService {
     private final DiaryRepository diaryRepository;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
-
     @Value("${jwt.access-token-expire-time}")
     private long atkLive;
-    @Value("${jwt.access-token-expire-time}")
-    private long accExpTime;
+
+    private final RefreshTokenCacheAdapter refreshTokenCacheAdapter;
+
 
 
     @Override
     @Transactional
-    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
+    public String login(LoginRequest loginRequest, HttpServletResponse response) throws URISyntaxException {
 
         // 회원이 아닐 경우 회원 생성
         if (!memberRepository.existsByLoginId(loginRequest.getLoginId())) {
@@ -113,31 +109,14 @@ public class KaKaoMemberServiceImpl implements MemberService {
         String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
         String refreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
+        // 쿠키 설정
+        CookieUtil.addSecureCookie(response, "rtk", refreshToken, (int) rtkLive / 60);
+        CookieUtil.addSecureCookie(response, "atk", accessToken, (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
 
-        int cookieMaxAge = (int) rtkLive / 60;
-
-        CookieUtil.addCookie(response, "refresh_token", refreshToken, cookieMaxAge);
-        // 추후 설정시간 변경 해야 함.
-        // Redirection 시 데이터를 넘겨줄 수 없기 때문에, 쿠키 또는 헤더로 전달 해야 함.
-        CookieUtil.addCookie(response, "access_token", accessToken, cookieMaxAge);
-
-        // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        String isLogin = "true";
-        Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
-        SimpleDateFormat sdf;
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-        String expTime = sdf.format(newExpTime);
-        CookieUtil.addPublicCookie(response, "isLogin", isLogin, cookieMaxAge);
-        CookieUtil.addPublicCookie(response, "expTime", expTime, cookieMaxAge);
-
-        //db에 token 저장
-        refreshTokenRepository.save(
-                RefreshToken.builder()
-                        .loginId(loginId)
-                        .value(refreshToken)
-                        .build()
-        );
+        // 저장소 정보 업데이트
+        refreshTokenCacheAdapter.put(authenticate.getName(), refreshToken, Duration.ofSeconds(rtkLive / 60));
 
         LocalDate today = LocalDate.now();
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
@@ -147,7 +126,7 @@ public class KaKaoMemberServiceImpl implements MemberService {
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return tokenProvider.createTokenDTO(accessToken,refreshToken, expTime);
+        return "로그인이 완료되었습니다.";
 
     }
 
@@ -155,7 +134,13 @@ public class KaKaoMemberServiceImpl implements MemberService {
     @Transactional
     public String logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
 
-        String originAccessToken = HeaderUtil.getAccessToken(request);
+        Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("atk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+
+        String originAccessToken = refreshTokenCookie.getValue();
+
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
         String loginId = authentication.getName();
 
@@ -165,20 +150,17 @@ public class KaKaoMemberServiceImpl implements MemberService {
         System.out.println(res.getStatusCode());
 
         // 쿠키에 있는 토큰 정보 삭제
-        CookieUtil.addCookie(response, "refresh_token", "", 0);
+        // 쿠키에서 토큰 삭제 작업
+        CookieUtil.addSecureCookie(response, "atk","", 0);
+        CookieUtil.addSecureCookie(response, "rtk", "", 0);
 
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        String isLogin = "false";
-        String expTime = "expTime";
-        CookieUtil.addPublicCookie(response, "isLogin", isLogin, 0);
-        CookieUtil.addPublicCookie(response, "expTime", expTime, 0);
-        CookieUtil.addSecureCookie(response, "todayDiaryId", "", 0);
+        CookieUtil.addPublicCookie(response, "isLogin", "false", 0);
+        CookieUtil.addPublicCookie(response, "todayDiaryId", "", 0);
+        CookieUtil.addPublicCookie(response, "userId", "", 0);
 
-        refreshTokenRepository
-                .findByLoginId(loginId)
-                .orElseThrow(()->new BizException(JwtExceptionType.LOGOUT_EMPTY_TOKEN, redirectionUtil.getHomeUrl()));
-
-        refreshTokenRepository.deleteByLoginId(loginId);
+        // 저장소에서 토큰 삭제
+        refreshTokenCacheAdapter.delete(authentication.getName());
 
         return "로그아웃 되었습니다.";
     }

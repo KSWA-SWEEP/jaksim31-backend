@@ -4,8 +4,11 @@ import com.sweep.jaksim31.auth.JwtAccessDeniedHandler;
 import com.sweep.jaksim31.auth.JwtAuthenticationEntryPoint;
 import com.sweep.jaksim31.auth.JwtFilter;
 import com.sweep.jaksim31.auth.TokenProvider;
+import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -26,6 +29,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-13           방근호             최초 생성
+ * 2023-01-30           방근호             memberService 추가 -> 순환참조 에러 수정
  *
  */
 
@@ -35,9 +39,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableGlobalMethodSecurity(prePostEnabled = true) // @PreAuthorize 사용을 위함
 public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 보안 관련된 설정을 커스터마이징 할 수 있음
     private final TokenProvider tokenProvider;
+
+    private MemberServiceImpl memberService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    @Autowired
+    public void setMemberService(MemberServiceImpl memberService) {
+        this.memberService = memberService;
+    }
+
+    public MemberServiceImpl getMemberService() {
+        return this.memberService;
+    }
 
     /*
      * AuthenticationManager를 주입받기 위해서 빈으로 등록한다.
@@ -57,14 +71,10 @@ public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 �
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors()
-                .and()
-                .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .accessDeniedHandler(jwtAccessDeniedHandler)
 
                 .and()
                 .authorizeRequests()
-                .antMatchers("/v0/**", "/swagger-ui/**").permitAll()
+                .antMatchers("/api/**", "/swagger-ui/**").permitAll()
                 .anyRequest().authenticated()
 
                 .and()
@@ -78,8 +88,10 @@ public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 �
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
                 .and()
-                .addFilterBefore(new JwtFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
-
+                .addFilterBefore(new JwtFilter(tokenProvider, getMemberService()), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling()
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(jwtAccessDeniedHandler);
         return http.build();
     }
 }
