@@ -291,7 +291,7 @@ class MembersApiControllerTest {
 //            given(memberService.reissue(any(), any()))
 //                    .willReturn();
             //when
-            mockMvc.perform(post("/api/v0/members/geunho/reissue")
+            mockMvc.perform(post("/api/v1/members/geunho/reissue")
                             .with(csrf()) //403 에러 방지
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
