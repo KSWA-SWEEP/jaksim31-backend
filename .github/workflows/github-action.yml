@@ -81,6 +81,6 @@ jobs:
             sudo /usr/sbin/usermod -aG docker `user`
             sudo chown root:docker /var/run/docker.sock
             docker pull r2god7k/jaksim31-backend:latest
-            docker run -d -p 8085:8080 --name jaksim31-backend r2god7k/jaksim31-backend
+            docker run -d -p 8085:8080 --name jaksim31-backend r2god7k/jaksim31-backend:latest
             docker image rm r2god7k/jaksim31-backend:latest
             
