@@ -208,7 +208,7 @@ class MemberApiControllerNullTest {
         @DisplayName("토큰 값이 비어있는 경우")
         void invalidReissueEmptyToken() throws Exception {
             //when
-            mockMvc.perform(post("/api/v0/members/geunho/reissue")
+            mockMvc.perform(post("/api/v1/members/geunho/reissue")
                             .with(csrf()) //403 에러 방지
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
