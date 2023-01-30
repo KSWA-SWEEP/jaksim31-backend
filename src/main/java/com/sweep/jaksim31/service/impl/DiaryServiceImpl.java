@@ -134,8 +134,12 @@ public class DiaryServiceImpl implements DiaryService {
         // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
-        if(!params.containsKey("size"))
-            params.put("size", user.getDiaryTotal()+"");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
@@ -297,8 +301,12 @@ public class DiaryServiceImpl implements DiaryService {
         // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
-        if(!params.containsKey("size"))
-            params.put("size", user.getDiaryTotal()+"");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
