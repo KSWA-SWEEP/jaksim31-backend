@@ -37,8 +37,8 @@ build/
 applicaion.yml
 src/main/resources/local/application.yml
 src/main/resources/application-dev.yml
-src/main/resources/test/application.yml
-src/test/resources/application.yml
+src/main/resources/
+src/test/resources/
 
 ### log files ###
 was-logs
