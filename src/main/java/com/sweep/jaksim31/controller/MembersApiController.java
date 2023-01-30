@@ -110,7 +110,7 @@ public class MembersApiController {
     }
 
     @Operation(summary = "토큰 재발급", description = "리프레쉬 토큰으로 토큰을 재발급 합니다.")
-    @PostMapping("/v0/members/{userId}/reissue")
+    @PostMapping("/v1/members/{userId}/reissue")
     public ResponseEntity<String> reissue(@PathVariable("userId") String userId, HttpServletRequest request,
                             HttpServletResponse response
     ) {
