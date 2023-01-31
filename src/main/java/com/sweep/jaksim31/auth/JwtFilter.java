@@ -2,11 +2,9 @@ package com.sweep.jaksim31.auth;
 
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.exception.type.JwtExceptionType;
-import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
-import lombok.RequiredArgsConstructor;
+import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -19,8 +17,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Member;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * packageName :  com.sweep.jaksim31.auth
@@ -33,14 +31,12 @@ import java.util.Arrays;
  * -----------------------------------------------------------
  * 2023-01-13           방근호             최초 생성
  * 2023-01-30           방근호             인증로직 수정, 토큰 기간 만료 시 자동 reissue
- *
+ * 2023-01-31           방근호,김주현       Error 시 Cookie 삭제
  */
 
 @Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
     private final TokenProvider tokenProvider;
 
     private final MemberServiceImpl memberService;
@@ -67,27 +63,30 @@ public class JwtFilter extends OncePerRequestFilter {
                 log.debug("flag = {}",flag);
                 // 토큰 유효함
                 if(flag == 1) {
-                    log.info("token 만료 X");
                     filterChain.doFilter(request, response);
 
                 }else if(flag == 2) { // 토큰 만료
-                    log.info("token 만료");
                     filterChain.doFilter(request, memberService.reissue(request, response));
                 }else { //잘못된 토큰
+                    CookieUtil.resetDefaultCookies(response);
+
                     response.setContentType("application/json");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setCharacterEncoding("UTF-8");
                     PrintWriter out = response.getWriter();
                     log.debug("doFilterInternal Exception CALL!");
-                    out.println("{\"error\": \"BAD_TOKEN\", \"message\" : \"잘못된 토큰 값입니다.\"}");
+                    out.println("{\"errorCode\": \"BAD_TOKEN\", \"message\" : \"잘못된 토큰 값입니다.\"}");
                 }
             }
             else {
+                CookieUtil.resetDefaultCookies(response);
+
                 response.setContentType("application/json");
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setCharacterEncoding("UTF-8");
+
                 PrintWriter out = response.getWriter();
-                out.println("{\"error\": \"EMPTY_TOKEN\", \"message\" : \"토큰 값이 비어있습니다.\"}");
+                out.println("{\"errorCode\": \"EMPTY_TOKEN\", \"message\" : \"토큰 값이 비어있습니다.\"}");
             }
         }
     }
@@ -108,7 +107,9 @@ public class JwtFilter extends OncePerRequestFilter {
         Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
                 .filter(req -> req.getName().equals("atk"))
                 .findAny()
-                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+                .orElse(null);
+
+        if(Objects.isNull(refreshTokenCookie)) return "";
 
         return refreshTokenCookie.getValue();
     }

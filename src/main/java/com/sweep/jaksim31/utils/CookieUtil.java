@@ -8,9 +8,7 @@ import org.springframework.util.SerializationUtils;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * packageName :  com.sweep.jaksim31.utils
@@ -24,6 +22,7 @@ import java.util.Optional;
  * 2023-01-09           방근호             최초 생성
  * 2023-01-27           김주현             path 추가
  * 2023-01-30           방근호             getAccessToken, getRefreshToken 추가
+ * 2023-01-31           방근호,김주현       Default Cookie reset 추가
  */
 
 public class CookieUtil {
@@ -57,7 +56,7 @@ public class CookieUtil {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .maxAge(maxAge)
-//                .httpOnly(true)
+                .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .build();
@@ -73,6 +72,31 @@ public class CookieUtil {
 
 
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public static void resetCookie(HttpServletResponse response, String name, String value) {
+
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+    }
+    public static void resetDefaultCookies(HttpServletResponse response) {
+        Map<String,String> cookies = new HashMap<>();
+        cookies.put("atk", "");
+        cookies.put("rtk", "");
+        cookies.put("isLogin", "false");
+        cookies.put("todayDiaryId", "");
+        cookies.put("userId", "");
+        for(String i : cookies.keySet()){
+            ResponseCookie cookie = ResponseCookie.from(i, cookies.get(i))
+                    .path("/")
+                    .maxAge(0)
+                    .build();
+            response.addHeader("Set-Cookie", cookie.toString());
+        }
     }
 
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
