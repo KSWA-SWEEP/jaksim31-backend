@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.service.impl;
 
 import com.sweep.jaksim31.adapter.cache.RefreshTokenCacheAdapter;
+import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
@@ -60,6 +61,8 @@ class MemberServiceImplTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private RedirectionUtil redirectionUtil;
+    @Mock
+    private TokenProvider tokenProvider;
     @Mock
     private RefreshTokenCacheAdapter refreshTokenCacheAdapter;
     private static MockedStatic<MemberSaveResponse> memberSaveResponse;
@@ -248,8 +251,11 @@ class MemberServiceImplTest {
             given(MemberInfoResponse.of(members))
                     .willReturn(memberInfoResponse1);
 
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn(memberInfoResponse1.getLoginId());
+
             //when
-            MemberInfoResponse res = memberService.getMyInfo(userId);
+            MemberInfoResponse res = memberService.getMyInfo(userId,any());
             //then
             verify(memberRepository).findById(userId);
             assert res != null;
@@ -266,9 +272,31 @@ class MemberServiceImplTest {
                     .willReturn(Optional.empty());
 
             //when & then
-            assertThrows(BizException.class, () -> memberService.getMyInfo(userId));
+            assertThrows(BizException.class, () -> memberService.getMyInfo(userId,any()));
             verify(memberRepository, times(1)).findById(userId);
 
+        }
+
+        @Test
+        @DisplayName("실패한 경우 - 본인을 조회한 것이 아닌 경우")
+        void invalidGetMyInfoForbidden() {
+            String userId = "63c4f6cbeb0a310a89188df6";
+            Members members = memberSaveRequest.toMember(passwordEncoder, false);
+            MemberInfoResponse memberInfoResponse1 = new MemberInfoResponse(userId, "loginId", "username", "profileImage", null, 10);
+            //given
+
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(members));
+
+            given(MemberInfoResponse.of(members))
+                    .willReturn(memberInfoResponse1);
+
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn("wrongUserId");
+
+            //when & then
+            assertThrows(BizException.class, () -> memberService.getMyInfo(userId,any()));
+            verify(memberRepository, times(1)).findById(userId);
         }
     }
 //    @Nested
@@ -341,8 +369,11 @@ class MemberServiceImplTest {
             given(memberRepository.save(members))
                     .willReturn(members);
 
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn(members.getLoginId());
+
             //when
-            String res = memberService.updateMemberInfo(userId, memberUpdateRequest);
+            String res = memberService.updateMemberInfo(userId, memberUpdateRequest, any());
 
             //then
             assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
@@ -361,7 +392,29 @@ class MemberServiceImplTest {
                     .willReturn(Optional.empty());
 
             //when & then
-            assertThrows(BizException.class, ()-> memberService.updateMemberInfo(userId, memberUpdateRequest));
+            assertThrows(BizException.class, ()-> memberService.updateMemberInfo(userId, memberUpdateRequest,any()));
+            verify(memberRepository, times(1)).findById(userId);
+            verify(memberRepository, never()).save(members);
+        }
+        @DisplayName("실패한 경우 - 본인 정보 변경이 아닌 경우")
+        @Test
+        void failForbidden() {
+            //given
+            String userId = "63c4f6cbeb0a310a89188df6";
+            given(passwordEncoder.encode(any()))
+                    .willReturn("password");
+
+            Members members = memberSaveRequest.toMember(passwordEncoder, false);
+            MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("username", "profileImage");
+
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(members));
+
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn("wrongUserId");
+
+            //when & then
+            assertThrows(BizException.class, ()-> memberService.updateMemberInfo(userId, memberUpdateRequest,any()));
             verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, never()).save(members);
         }

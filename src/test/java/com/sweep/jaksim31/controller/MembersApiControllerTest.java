@@ -479,7 +479,7 @@ class MembersApiControllerTest {
         @DisplayName("정상인 경우")
         @Test
         void getMyInfoByUserId() throws Exception {
-            given(memberService.getMyInfo(any()))
+            given(memberService.getMyInfo(any(), any()))
                     .willReturn(MemberInfoResponse.builder()
                             .loginId("loginId")
                             .userId("userId")
@@ -507,7 +507,7 @@ class MembersApiControllerTest {
         @Test
         void invalidGetMyInfoByUserId() throws Exception {
 
-            given(memberService.getMyInfo(any()))
+            given(memberService.getMyInfo(any(),any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
@@ -531,7 +531,7 @@ class MembersApiControllerTest {
         @DisplayName("정상인 경우")
         @Test
         void updateMember() throws Exception {
-            given(memberService.updateMemberInfo(any(), any()))
+            given(memberService.updateMemberInfo(any(), any(), any()))
                     .willReturn("회원 정보가 변경 되었습니다.");
 
             //when
@@ -553,7 +553,7 @@ class MembersApiControllerTest {
         @DisplayName("해당 유저가 없는 경우")
         @Test
         void invalidUpdateMember() throws Exception {
-            given(memberService.updateMemberInfo(any(), any()))
+            given(memberService.updateMemberInfo(any(), any(), any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
