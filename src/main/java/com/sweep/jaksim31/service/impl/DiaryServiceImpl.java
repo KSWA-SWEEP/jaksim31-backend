@@ -81,7 +81,6 @@ import java.util.stream.Collectors;
  *                      김주현             findDiaries 수정(날짜 검색 오류 수정 및 키워드 검색 추가)
  */
 /* TODO
-    * 일기 조건 조회 MongoTemplate 사용해서 수정하기
     * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
     * 오늘 일기 삭제 시 set-cookie 다시 설정
     * 캐시 테스트 코드 작성
@@ -213,13 +212,18 @@ public class DiaryServiceImpl implements DiaryService {
     )
     public DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
         // 일기를 찾을 수 없을 때
-        diaryRepository
+        Diary diary = diaryRepository
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
         memberRepository
                 .findById(diarySaveRequest.getUserId())
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+
+        // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
+        // TODO Test 코드 짜기
+        if(!diary.getUserId().equals(diarySaveRequest.getUserId()))
+            throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");

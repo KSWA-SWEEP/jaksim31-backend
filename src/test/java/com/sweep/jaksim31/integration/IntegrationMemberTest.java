@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
-class IntegrationTest {
+class IntegrationMemberTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -106,7 +106,6 @@ class IntegrationTest {
                     .andExpect(jsonPath("$.userId", Matchers.is(notNullValue())))
                     .andDo(MockMvcResultHandlers.print(System.out))
                     .andReturn();
-            System.out.println("####### " + mvcResult.getResponse().getContentAsString());
             JSONParser parser = new JSONParser();
             JSONObject jsonObject = (JSONObject) parser.parse(mvcResult.getResponse().getContentAsString());
 
@@ -332,6 +331,9 @@ class IntegrationTest {
                             .servletPath("/api/v1/members/"+loginId+"/password"))
                     //then
                     .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -380,42 +382,6 @@ class IntegrationTest {
 
             atkCookie = new Cookie("atk", response.getCookie("atk").getValue());
             rtkCookie = new Cookie("rtk", response.getCookie("rtk").getValue());
-        }
-    }
-
-    @Nested
-    @DisplayName("통합 테스트 02. 로그인 - DiaryService - 회원탈퇴")
-    @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class) // 메소드 순서 지정
-    class diaryTest{
-        @Test
-        @DisplayName("[정상] 4-1.로그인")
-        @Order(1)
-        public void logIn() throws Exception {
-            LoginRequest loginRequest = new LoginRequest(loginId, password);
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
-            // when
-            MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/login")
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v0/members/login"))
-                    //then
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andDo(MockMvcResultHandlers.print(System.out))
-                    .andReturn();
-
-            // Cookie 설정 확인
-            MockHttpServletResponse response = mvcResult.getResponse();
-            assertEquals(response.getCookie("isLogin").getValue(),"true");
-            assertNotNull(response.getCookie("atk").getValue());
-            assertNotNull(response.getCookie("rtk").getValue());
-
-            // 다음 테스트를 위한 static value 설정
-            userId = mvcResult.getResponse().getCookie("userId").getValue();
-            refreshToken = mvcResult.getResponse().getCookie("rtk").getValue();
-            accessToken = mvcResult.getResponse().getCookie("atk").getValue();
-            atkCookie = new Cookie("atk", accessToken);
-            rtkCookie = new Cookie("rtk", refreshToken);
         }
     }
 }
