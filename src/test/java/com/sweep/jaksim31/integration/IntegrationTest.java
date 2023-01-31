@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.login.LoginRequest;
-import com.sweep.jaksim31.dto.member.MemberCheckLoginIdRequest;
-import com.sweep.jaksim31.dto.member.MemberSaveRequest;
-import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
+import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
@@ -74,7 +72,6 @@ class IntegrationTest {
     @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class) // 메소드 순서 지정
     class userTest{
 
-
         @Test
         @DisplayName("[정상] 1.가입 확인_회원 가입 전")
         @Order(1)
@@ -138,25 +135,7 @@ class IntegrationTest {
         }
 
         @Test
-        @DisplayName("[예외] 4-1.로그인_비밀번호가 불일치할 경우")
-        @Order(4)
-        public void invalidLogin() throws Exception {
-            LoginRequest loginRequest = new LoginRequest(loginId, "wrongPassword");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
-            // when
-            mockMvc.perform(post("/api/v0/members/login")
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v0/members/login"))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
-        @DisplayName("[정상] 4.로그인")
+        @DisplayName("[정상] 4-1.로그인")
         @Order(4)
         public void logIn() throws Exception {
             LoginRequest loginRequest = new LoginRequest(loginId, password);
@@ -184,6 +163,24 @@ class IntegrationTest {
             accessToken = mvcResult.getResponse().getCookie("atk").getValue();
             atkCookie = new Cookie("atk", accessToken);
             rtkCookie = new Cookie("rtk", refreshToken);
+        }
+        @Test
+        @DisplayName("[예외] 4-2.로그인_비밀번호가 불일치할 경우")
+        @Order(4)
+        public void invalidLogin() throws Exception {
+            LoginRequest loginRequest = new LoginRequest(loginId, "wrongPassword");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
+            // when
+            mockMvc.perform(post("/api/v0/members/login")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v0/members/login"))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
         }
 
         @Test
@@ -285,8 +282,81 @@ class IntegrationTest {
         }
 
         @Test
-        @DisplayName("[정상] last. 로그아웃")
+        @DisplayName("[정상] 7-1. 비밀번호 변경_CheckPW")
+        @Order(7)
+        public void changePassword_checkPassword() throws Exception {
+            MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest(password);
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
+
+            // when
+            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+                            .content(jsonRequest)
+                            .cookie(atkCookie,rtkCookie)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                    //then
+                    .andExpect(status().isOk())
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @Test
+        @DisplayName("[정상] 7-2. 비밀번호 변경_ChangePW")
         @Order(8)
+        public void changePassword_changePassword() throws Exception {
+            String newPassword = "newPassword";
+            MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest(newPassword);
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
+
+            // when
+            mockMvc.perform(put("/api/v0/members/"+loginId+"/password")
+                            .content(jsonRequest)
+                            .cookie(atkCookie,rtkCookie)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v0/members/"+loginId+"/password"))
+                    //then
+                    .andExpect(status().isOk())
+                    .andDo(MockMvcResultHandlers.print(System.out));
+            password = newPassword;
+        }
+        @Test
+        @DisplayName("[예외] 7-3. 비밀번호 변경_CheckPW with BeforePW")
+        @Order(9)
+        public void changePassword_beforePassword() throws Exception {
+            MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest("password");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
+
+            // when
+            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+                            .content(jsonRequest)
+                            .cookie(atkCookie,rtkCookie)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+        @Test
+        @DisplayName("[정상] 7-4. 비밀번호 변경_CheckPW with AfterPW")
+        @Order(9)
+        public void changePassword_afterPassword() throws Exception {
+            MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest(password);
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
+
+            // when
+            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+                            .content(jsonRequest)
+                            .cookie(atkCookie,rtkCookie)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                    //then
+                    .andExpect(status().isOk())
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+
+        @Test
+        @DisplayName("[정상] last. 로그아웃")
+        @Order(10)
         public void logout() throws Exception {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("Authorization", "Bearer "+refreshToken);
@@ -307,6 +377,45 @@ class IntegrationTest {
             assertEquals(response.getCookie("rtk").getValue(),"");
             assertEquals(response.getCookie("todayDiaryId").getValue(),"");
             assertEquals(response.getCookie("userId").getValue(),"");
+
+            atkCookie = new Cookie("atk", response.getCookie("atk").getValue());
+            rtkCookie = new Cookie("rtk", response.getCookie("rtk").getValue());
+        }
+    }
+
+    @Nested
+    @DisplayName("통합 테스트 02. 로그인 - DiaryService - 회원탈퇴")
+    @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class) // 메소드 순서 지정
+    class diaryTest{
+        @Test
+        @DisplayName("[정상] 4-1.로그인")
+        @Order(1)
+        public void logIn() throws Exception {
+            LoginRequest loginRequest = new LoginRequest(loginId, password);
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
+            // when
+            MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/login")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v0/members/login"))
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andDo(MockMvcResultHandlers.print(System.out))
+                    .andReturn();
+
+            // Cookie 설정 확인
+            MockHttpServletResponse response = mvcResult.getResponse();
+            assertEquals(response.getCookie("isLogin").getValue(),"true");
+            assertNotNull(response.getCookie("atk").getValue());
+            assertNotNull(response.getCookie("rtk").getValue());
+
+            // 다음 테스트를 위한 static value 설정
+            userId = mvcResult.getResponse().getCookie("userId").getValue();
+            refreshToken = mvcResult.getResponse().getCookie("rtk").getValue();
+            accessToken = mvcResult.getResponse().getCookie("atk").getValue();
+            atkCookie = new Cookie("atk", accessToken);
+            rtkCookie = new Cookie("rtk", refreshToken);
         }
     }
 }

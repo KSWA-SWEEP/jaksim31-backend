@@ -141,12 +141,14 @@ public class MembersApiController {
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/v1/members/{userId}")
-    public ResponseEntity<String> remove(@PathVariable("userId") String userId, @Validated @RequestBody MemberRemoveRequest dto) throws URISyntaxException {
+    public ResponseEntity<String> remove(@PathVariable("userId") String userId,
+                                         @Validated @RequestBody MemberRemoveRequest dto,
+                                         HttpServletResponse response) throws URISyntaxException {
         URI redirectUri = new URI(logoutRedirectUrl);
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(redirectUri);
 
-        return new ResponseEntity<>(memberServiceImpl.remove(userId, dto), httpHeaders, HttpStatus.SEE_OTHER);
+        return new ResponseEntity<>(memberServiceImpl.remove(userId, dto, response), httpHeaders, HttpStatus.SEE_OTHER);
     }
 
     @Operation(summary = "내 비밀번호 검증(확인)", description = "이메일과 비밀번호 입력 시 비밀번호가 맞는지 확인")

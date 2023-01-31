@@ -151,13 +151,7 @@ public class KakaoMemberServiceImpl implements MemberService {
 
         // 쿠키에 있는 토큰 정보 삭제
         // 쿠키에서 토큰 삭제 작업
-        CookieUtil.addSecureCookie(response, "atk","", 0);
-        CookieUtil.addSecureCookie(response, "rtk", "", 0);
-
-        // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        CookieUtil.addPublicCookie(response, "isLogin", "false", 0);
-        CookieUtil.addPublicCookie(response, "todayDiaryId", "", 0);
-        CookieUtil.addPublicCookie(response, "userId", "", 0);
+        CookieUtil.resetDefaultCookies(response);
 
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(authentication.getName());

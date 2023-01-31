@@ -28,6 +28,8 @@ public enum JwtExceptionType implements BaseExceptionType {
     BAD_TOKEN("BAD_TOKEN","잘못된 토큰 값입니다.",HttpStatus.FORBIDDEN),
     EMPTY_TOKEN("EMPTY_TOKEN","토큰 값이 비어있습니다.",HttpStatus.FORBIDDEN),
     LOGOUT_EMPTY_TOKEN("LOGOUT_EMPTY_TOKEN","이미 로그아웃된 사용자입니다.",HttpStatus.SEE_OTHER),
+    AUTH_FORBIDDEN("AUTH_FORBIDDEN","권한이 없습니다.",HttpStatus.FORBIDDEN),
+    NO_AUTHORIZATION("NO_AUTHORIZATION","인증정보가 없습니다.",HttpStatus.UNAUTHORIZED),
     ;
 
     private final String errorCode;

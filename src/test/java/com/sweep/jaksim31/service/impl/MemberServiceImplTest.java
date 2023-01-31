@@ -466,7 +466,7 @@ class MemberServiceImplTest {
             doNothing().when(refreshTokenCacheAdapter).delete(any());
 
             // when
-            String res = memberService.remove(userId, memberRemoveRequest);
+            String res = memberService.remove(userId, memberRemoveRequest,any());
 
             //then
             assertEquals(res, "정상적으로 회원탈퇴 작업이 처리되었습니다.");
@@ -487,7 +487,7 @@ class MemberServiceImplTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest(userId, "password");
 
             //when & then
-            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest));
+            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest,any()));
         }
 
         @Test
@@ -511,7 +511,7 @@ class MemberServiceImplTest {
                     .willReturn(false);
 
             // when & then
-            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest));
+            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest,any()));
             verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());

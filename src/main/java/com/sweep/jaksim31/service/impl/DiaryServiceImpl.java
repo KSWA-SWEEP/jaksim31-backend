@@ -193,12 +193,6 @@ public class DiaryServiceImpl implements DiaryService {
         memberRepository.save(user);
 
         Diary diary = diarySaveRequest.toEntity();
-        // 썸네일 URL 추가
-        // TODO
-        //  * 썸네일 저장 부분 고려해보기. 아직 미완.
-        //  * 최근 일기 저장(recentDiaries) 고려해보기. 만약 한다고 하면 구현 필요.
-        diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
-
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
 

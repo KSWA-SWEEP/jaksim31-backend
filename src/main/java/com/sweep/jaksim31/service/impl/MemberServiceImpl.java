@@ -64,7 +64,8 @@ import java.util.Objects;
  * 2023-01-25           방근호          getMyInfoByLoginId 수정
  * 2023-01-25           방근호          getMyInfoByLoginId 제거
  * 2023-01-27           김주현          로그인/로그아웃 시 userId 쿠키 설정 및 refresh token은 addSecureCookie로 전달
- * 2023-01-30           방근호             인증 로직 변경으로 인한 쿠기 설정 추가
+ * 2023-01-30           방근호          인증 로직 변경으로 인한 쿠기 설정 추가
+ * 2023-01-31           방근호,김주현    로그아웃 시 Cookie 삭제
  */
 
 @Slf4j
@@ -116,14 +117,6 @@ public class MemberServiceImpl implements MemberService {
         CookieUtil.addSecureCookie(response, "rtk", refreshToken, (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
-
-        // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-//        Date newExpTime = new Date(System.currentTimeMillis() + accExpTime);
-//        SimpleDateFormat sdf;
-//        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-//        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-//        String expTime = sdf.format(newExpTime);
-//        CookieUtil.addPublicCookie(response, "expTime", expTime, (int) accExpTime / 60);
 
         // 레디스에 캐싱
         refreshTokenCacheAdapter.put(loginId, refreshToken, Duration.ofSeconds((int) rtkLive / 60));
@@ -218,13 +211,7 @@ public class MemberServiceImpl implements MemberService {
         String originAccessToken = refreshTokenCookie.getValue();
 
         // 쿠키에서 토큰 삭제 작업
-        CookieUtil.addSecureCookie(response, "atk","", 0);
-        CookieUtil.addSecureCookie(response, "rtk", "", 0);
-
-        // 로그인 여부 및 토큰 만료 시간 Cookie 설정
-        CookieUtil.addPublicCookie(response, "isLogin", "false", 0);
-        CookieUtil.addPublicCookie(response, "todayDiaryId", "", 0);
-        CookieUtil.addPublicCookie(response, "userId", "", 0);
+        CookieUtil.resetDefaultCookies(response);
 
         Authentication authentication = tokenProvider.getAuthentication(originAccessToken);
 
@@ -311,7 +298,7 @@ public class MemberServiceImpl implements MemberService {
             key = "#userId"
     )
     @Transactional
-    public String remove(String userId, MemberRemoveRequest dto) throws URISyntaxException {
+    public String remove(String userId, MemberRemoveRequest dto, HttpServletResponse response) throws URISyntaxException {
         // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
         Members entity = memberRepository
                 .findById(userId)
@@ -328,6 +315,8 @@ public class MemberServiceImpl implements MemberService {
 
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(dto.getUserId());
+        // 쿠키 삭제
+        CookieUtil.resetDefaultCookies(response);
 
         return "정상적으로 회원탈퇴 작업이 처리되었습니다.";
     }
