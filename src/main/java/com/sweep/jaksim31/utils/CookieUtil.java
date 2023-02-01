@@ -90,6 +90,7 @@ public class CookieUtil {
         cookies.put("isLogin", "false");
         cookies.put("todayDiaryId", "");
         cookies.put("userId", "");
+        cookies.put("isSocial", "");
         for(String i : cookies.keySet()){
             ResponseCookie cookie = ResponseCookie.from(i, cookies.get(i))
                     .path("/")
