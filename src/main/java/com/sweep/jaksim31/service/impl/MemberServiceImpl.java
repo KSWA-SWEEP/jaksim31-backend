@@ -116,6 +116,7 @@ public class MemberServiceImpl implements MemberService {
         CookieUtil.addSecureCookie(response, "rtk", refreshToken, (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isSocial", members.getIsSocial().toString(), (int) rtkLive / 60);
 
         // 레디스에 캐싱
         refreshTokenCacheAdapter.put(loginId, refreshToken, Duration.ofSeconds((int) rtkLive / 60));
@@ -243,10 +244,10 @@ public class MemberServiceImpl implements MemberService {
      * @param userId 회원 아이디
      * @return MemberInfoResponse
      */
-    @Cacheable(
-            value = "memberCache",
-            key = "#userId"
-    )
+//    @Cacheable(
+//            value = "memberCache",
+//            key = "#userId"
+//    )
     @Transactional(readOnly = true)
     public MemberInfoResponse getMyInfo(String userId, HttpServletRequest request) {
         MemberInfoResponse members = memberRepository.findById(userId)

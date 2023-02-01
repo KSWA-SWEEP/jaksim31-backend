@@ -114,6 +114,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         CookieUtil.addSecureCookie(response, "atk", accessToken, (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isSocial", members.getIsSocial().toString(), (int) rtkLive / 60);
 
         // 저장소 정보 업데이트
         refreshTokenCacheAdapter.put(authenticate.getName(), refreshToken, Duration.ofSeconds(rtkLive / 60));
