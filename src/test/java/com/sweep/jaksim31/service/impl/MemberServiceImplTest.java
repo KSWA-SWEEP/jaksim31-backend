@@ -45,6 +45,7 @@ import static org.mockito.Mockito.*;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-17           방근호             최초 생성
+ * 2023-01-31           김주현             사용자 정보 조회, 수정 시 본인의 일기가 아니면 `NP_PERMISSION` test 추가
  */
 
 @ExtendWith(MockitoExtension.class)

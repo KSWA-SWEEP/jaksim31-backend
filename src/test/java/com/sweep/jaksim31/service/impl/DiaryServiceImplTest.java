@@ -138,12 +138,15 @@ public class DiaryServiceImplTest {
             Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
             assert updatedDiary != null;
             DiaryResponse diaryResponse = new DiaryResponse(diaryId, userId, "testContext", diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
+            DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse();
+            diaryInfoResponse.setDiaryId("differentDiaryId");
+            Members members = Members.builder().recentDiary(diaryInfoResponse).build();
             // 일기가 존재하고
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(updatedDiary));
             // 사용자가 존재할 때
             given(memberRepository.findById(userId))
-                    .willReturn(Optional.of(Members.builder().build()));
+                    .willReturn(Optional.of(members));
             // 일기 저장 시 Diary 리턴
             given(diaryRepository.save(any()))
                     .willReturn(updatedDiary);
@@ -213,7 +216,9 @@ public class DiaryServiceImplTest {
         void removeDiary(){
             // given
             Diary diary = new Diary(diaryId, diarySaveRequest);
-            Members user = Members.builder().diaryTotal(5).build();
+            DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse();
+            diaryInfoResponse.setDiaryId("differentDiaryId");
+            Members user = Members.builder().diaryTotal(5).recentDiary(diaryInfoResponse).build();
             // 삭제하려고 하는 일기가 존재함
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(diary));

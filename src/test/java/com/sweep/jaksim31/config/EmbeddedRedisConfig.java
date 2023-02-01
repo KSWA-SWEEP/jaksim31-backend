@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 @Slf4j
-@Configuration
+@Profile("local")
+@TestConfiguration
 public class EmbeddedRedisConfig {
 
     @Value("${spring.redis.port}")

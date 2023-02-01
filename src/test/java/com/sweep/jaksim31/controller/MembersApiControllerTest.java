@@ -48,6 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 2023-01-17           방근호             최초 생성
  * 2023-01-27           김주현             로그인 응답 코드 변경에 따른 test코드 수정
  * 2023-01-30           방근호             인증 로직 변경으로 인한 test 수정 및 제거
+ * 2023-01-31           김주현             사용자 정보 조회, 수정 service 수정으로 인한 테스트 코드 수정
  */
 
 @WebMvcTest(controllers = MembersApiController.class)

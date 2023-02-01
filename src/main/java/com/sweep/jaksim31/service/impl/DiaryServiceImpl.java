@@ -82,7 +82,6 @@ import java.util.stream.Collectors;
  */
 /* TODO
     * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
-    * 오늘 일기 삭제 시 set-cookie 다시 설정
     * 캐시 테스트 코드 작성
 */
 @Slf4j
@@ -187,15 +186,28 @@ public class DiaryServiceImpl implements DiaryService {
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
                 throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
-        // 사용자 정보의 total diary 정보 업데이트
-        user.setDiaryTotal(user.getDiaryTotal()+1);
-        memberRepository.save(user);
 
         Diary diary = diarySaveRequest.toEntity();
+        Diary savedDiary = diaryRepository.save(diary);
+        // 사용자 정보의 total diary 정보 업데이트
+        user.setDiaryTotal(user.getDiaryTotal()+1);
+        // 사용자 정보의 recentDiary 정보 업데이트
+        DiaryInfoResponse diaryInfoResponse = user.getRecentDiary();
+        if(Objects.isNull(diaryInfoResponse) || Objects.isNull(diaryInfoResponse.getDiaryId())) {
+            diaryInfoResponse = DiaryInfoResponse.of(savedDiary);
+        }
+        else if(diary.getDate().isAfter(diaryInfoResponse.getDiaryDate().atTime(9,0))) {
+            diaryInfoResponse = DiaryInfoResponse.of(savedDiary);
+        }
+
+        user.setRecentDiary(diaryInfoResponse);
+
+        memberRepository.save(user);
+
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
 
-        return DiaryResponse.of(diaryRepository.save(diary));
+        return DiaryResponse.of(savedDiary);
     }
 
     /**
@@ -216,9 +228,9 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
-        memberRepository
-                .findById(diarySaveRequest.getUserId())
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        Members members = memberRepository
+                    .findById(diarySaveRequest.getUserId())
+                    .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
         // TODO Test 코드 짜기
@@ -227,8 +239,13 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
-
+        System.out.println("#######recent diary is "+members.getRecentDiary().toString());
+        // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
+        if(members.getRecentDiary().getDiaryId().equals(diaryId)){
+            members.setRecentDiary(DiaryInfoResponse.of(updatedDiary));
+            memberRepository.save(members);
+        }
         return DiaryResponse.of(diaryRepository.save(updatedDiary));
     }
 
@@ -250,12 +267,22 @@ public class DiaryServiceImpl implements DiaryService {
             throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
         // 사용자 정보의 total diary 정보 업데이트
-        Members user = memberRepository.findById(userId)
+        Members members = memberRepository.findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        user.setDiaryTotal(user.getDiaryTotal()-1);
-
+        members.setDiaryTotal(members.getDiaryTotal()-1);
+        // 다이어리 삭제
         diaryRepository.delete(diary);
-        memberRepository.save(user);
+
+        // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
+        if(members.getRecentDiary().getDiaryId().equals(diaryId)){
+            System.out.println("#######recent diary is "+members.getRecentDiary().toString());
+            Map<String, String> params = new HashMap<>();
+            params.put("size", "1");
+            Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
+            members.setRecentDiary(page.getContent().get(0));
+        }
+        // 사용자 정보 저장
+        memberRepository.save(members);
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(userId +"Page");
