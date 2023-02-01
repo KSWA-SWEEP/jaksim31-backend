@@ -29,6 +29,7 @@ public enum DiaryExceptionType implements BaseExceptionType {
     // 삭제 메소드 수행 시 존재 하지 않을 경우 200 응답
     DELETE_NOT_FOUND_DIARY("ALREADY_NOT_EXIST_DIARY", "존재하지 않는 일기입니다.", HttpStatus.OK),
     // Validation Exception type
+    INVALID_ID("INVALID_ID", "잘못 된 ID 값입니다.",HttpStatus.BAD_REQUEST),
     USER_ID_IS_NULL("USER_ID_IS_NULL", "사용자 ID가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
     DIARY_ID_IS_NULL("DIARY_ID_IS_NULL", "Diary ID가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
     CONTENT_IS_NULL("CONTENT_IS_NULL", "일기 내용이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),

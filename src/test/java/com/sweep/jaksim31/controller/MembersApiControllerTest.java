@@ -49,6 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 2023-01-27           김주현             로그인 응답 코드 변경에 따른 test코드 수정
  * 2023-01-30           방근호             인증 로직 변경으로 인한 test 수정 및 제거
  * 2023-01-31           김주현             사용자 정보 조회, 수정 service 수정으로 인한 테스트 코드 수정
+ * 2023-02-01           김주현             PathValue validation 추가로 인한 test 수정
  */
 
 @WebMvcTest(controllers = MembersApiController.class)
@@ -292,7 +293,7 @@ class MembersApiControllerTest {
 //            given(memberService.reissue(any(), any()))
 //                    .willReturn();
             //when
-            mockMvc.perform(post("/api/v1/members/geunho/reissue")
+            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
                             .with(csrf()) //403 에러 방지
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
@@ -308,7 +309,7 @@ class MembersApiControllerTest {
 //                    .willReturn("토큰 재발급이 완료되었습니다.");
 
             //when
-            mockMvc.perform(post("/api/v1/members/geunho/reissue")
+            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
                             .with(csrf()) //403 에러 방지
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
@@ -321,7 +322,7 @@ class MembersApiControllerTest {
 //        @DisplayName("토큰 값이 비어있는 경우")
 //        void invalidReissueEmptyToken() throws Exception {
 //            //when
-//            mockMvc.perform(post("/api/v0/members/geunho/reissue")
+//            mockMvc.perform(post("/api/v0/members/testobjectidtestobject12/reissue")
 //                            .with(csrf()) //403 에러 방지
 //                            .contentType(MediaType.APPLICATION_JSON))
 //                    //then
@@ -490,7 +491,7 @@ class MembersApiControllerTest {
                             .build());
 
             //when
-            mockMvc.perform(get("/api/v1/members/geunho")
+            mockMvc.perform(get("/api/v1/members/testobjectidtestobject12")
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -499,7 +500,7 @@ class MembersApiControllerTest {
                     .andExpect(jsonPath("$.username", Matchers.is("username")))
                     .andExpect(jsonPath("$.profileImage", Matchers.is("profileImage")))
                     .andExpect(jsonPath("$.diaryTotal", Matchers.is(10)))
-                    .andExpect(jsonPath("$.recentDiaries", Matchers.nullValue()))
+                    .andExpect(jsonPath("$.recentDiary", Matchers.nullValue()))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
@@ -512,7 +513,7 @@ class MembersApiControllerTest {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            mockMvc.perform(get("/api/v1/members/geunho")
+            mockMvc.perform(get("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())) //403 에러 방지
 
                     //then
@@ -539,7 +540,7 @@ class MembersApiControllerTest {
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
 
-            mockMvc.perform(patch("/api/v1/members/geunho")
+            mockMvc.perform(patch("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .content(jsonString)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -561,7 +562,7 @@ class MembersApiControllerTest {
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
 
-            mockMvc.perform(patch("/api/v1/members/geunho")
+            mockMvc.perform(patch("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .content(jsonString)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -586,10 +587,10 @@ class MembersApiControllerTest {
             given(memberService.remove(any(), any(), any(), any()))
                     .willReturn("삭제되었습니다.");
 
-            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/api/v1/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -607,10 +608,10 @@ class MembersApiControllerTest {
             given(memberService.remove(any(), any(), any(), any()))
                     .willThrow(new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, "test"));
 
-            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/api/v1/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -630,10 +631,10 @@ class MembersApiControllerTest {
             given(memberService.remove(any(), any(), any(), any()))
                     .willThrow(new BizException(MemberExceptionType.WRONG_PASSWORD));
 
-            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "geunho");
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/api/v1/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -651,7 +652,7 @@ class MembersApiControllerTest {
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/api/v1/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -666,10 +667,10 @@ class MembersApiControllerTest {
         @Test
         void invalidRemoveMemberNotFoundPassword() throws Exception {
             //when
-            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("geunho", "");
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
 
-            mockMvc.perform(delete("/api/v1/members/geunho")
+            mockMvc.perform(delete("/api/v1/members/testobjectidtestobject12")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonString))
@@ -845,7 +846,7 @@ class MembersApiControllerTest {
 
                     //then
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(header().string("Location", "http://localhost:3000"))
+                    .andExpect(header().string("Location", "http://localhost:3000/diary/dashboard"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }

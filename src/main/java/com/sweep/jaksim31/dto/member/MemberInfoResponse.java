@@ -32,7 +32,7 @@ public class MemberInfoResponse {
     private String loginId;
     private String username;
     private String profileImage;
-    private DiaryInfoResponse recentDiaries;
+    private DiaryInfoResponse recentDiary;
     private int diaryTotal;
 
     public static MemberInfoResponse of(Members members) {

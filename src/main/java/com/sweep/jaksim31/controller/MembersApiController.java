@@ -5,6 +5,8 @@ import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.login.validator.LoginRequestValidator;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.member.validator.*;
+import com.sweep.jaksim31.exception.handler.ErrorResponse;
+import com.sweep.jaksim31.exception.type.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,11 +18,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.ConstraintViolationException;
+import javax.validation.constraints.Pattern;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -40,6 +45,7 @@ import java.net.URISyntaxException;
  * 2023-01-25           방근호             getMyInfoByLoginId 제거
  * 2023-01-27           김주현             자체 로그인, 로그아웃 응답 수정 redirect(3xx) => ok(200)
  * 2023-01-30           방근호             인증 로직으로 인한 메소드 수정
+ * 2023-02-01           김주현             PathValue(ObjectId_userId) validation 추가
  */
 
 /* TODO
@@ -52,7 +58,9 @@ import java.net.URISyntaxException;
 @RequiredArgsConstructor
 @Tag(name = "멤버", description = "멤버 관련 api 입니다.")
 @RequestMapping("/api")
+@Validated
 public class MembersApiController {
+    private final String idPattern = "^[a-zA-Z0-9]{24}$";
     private final MemberServiceImpl memberServiceImpl;
     private final KakaoMemberServiceImpl kaKaoMemberService;
     @Value("${kakao.auth.login-redirect-url}")
@@ -111,8 +119,8 @@ public class MembersApiController {
 
     @Operation(summary = "토큰 재발급", description = "리프레쉬 토큰으로 토큰을 재발급 합니다.")
     @PostMapping("/v1/members/{userId}/reissue")
-    public ResponseEntity<String> reissue(@PathVariable("userId") String userId, HttpServletRequest request,
-                            HttpServletResponse response
+    public ResponseEntity<String> reissue(@Pattern(regexp = idPattern) @PathVariable("userId") String userId, HttpServletRequest request,
+                                          HttpServletResponse response
     ) {
         memberServiceImpl.reissue(request, response);
         return ResponseEntity.ok("토큰이 재발급 되었습니다.");
@@ -129,21 +137,21 @@ public class MembersApiController {
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/v1/members/{userId}")
-    public ResponseEntity<MemberInfoResponse> getMyInfo(@PathVariable("userId") String userId,
+    public ResponseEntity<MemberInfoResponse> getMyInfo(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
                                                         HttpServletRequest request) {
         return ResponseEntity.ok(memberServiceImpl.getMyInfo(userId,request));
     }
 
     @Operation(summary = "유저 정보 업데이트 요청", description = "유저 정보 업데이트를 요청합니다.")
     @PatchMapping("/v1/members/{userId}")
-    public ResponseEntity<String> updateMember(@PathVariable("userId") String userId,
+    public ResponseEntity<String> updateMember(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
                                                @Validated @RequestBody MemberUpdateRequest dto, HttpServletRequest request) {
         return ResponseEntity.ok(memberServiceImpl.updateMemberInfo(userId, dto,request));
     }
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/v1/members/{userId}")
-    public ResponseEntity<String> remove(@PathVariable("userId") String userId,
+    public ResponseEntity<String> remove(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
                                          @Validated @RequestBody MemberRemoveRequest dto,
                                          HttpServletResponse response,
                                          HttpServletRequest request) throws URISyntaxException {
@@ -177,4 +185,12 @@ public class MembersApiController {
         return new ResponseEntity<>(kaKaoMemberService.logout(request, response), httpHeaders, HttpStatus.SEE_OTHER);
     }
 
+    //Validator Exception Handler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
+    protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
+//        log.error("MethodArgumentNotValidException", e);
+        ErrorResponse errorResponse = new ErrorResponse(DiaryExceptionType.INVALID_ID.getErrorCode(), DiaryExceptionType.INVALID_ID.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
 }
