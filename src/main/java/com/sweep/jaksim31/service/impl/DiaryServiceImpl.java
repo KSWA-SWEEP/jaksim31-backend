@@ -6,20 +6,20 @@ import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
+import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiaryRepository;
+import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
-import com.sweep.jaksim31.domain.diary.Diary;
-import com.sweep.jaksim31.domain.diary.DiaryRepository;
-import com.sweep.jaksim31.domain.members.MemberRepository;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.exception.type.DiaryExceptionType;
 import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.exception.type.ThirdPartyExceptionType;
 import com.sweep.jaksim31.service.DiaryService;
-import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -79,6 +79,7 @@ import java.util.stream.Collectors;
  *                      김주현             사용자 일기 조회 및 검색 시 page 정보가 input으로 들어오지 않았을 때 default(page=0, size=user.diaryTotal)
  * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
  *                      김주현             findDiaries 수정(날짜 검색 오류 수정 및 키워드 검색 추가)
+ * 2023-02-01           김주현             마지막 남은 일기 삭제 시 recentDiary 설정 오류 수정
  */
 /* TODO
     * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
@@ -270,20 +271,25 @@ public class DiaryServiceImpl implements DiaryService {
         Members members = memberRepository.findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         members.setDiaryTotal(members.getDiaryTotal()-1);
-        // 다이어리 삭제
-        diaryRepository.delete(diary);
 
         // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
         if(members.getRecentDiary().getDiaryId().equals(diaryId)){
             System.out.println("#######recent diary is "+members.getRecentDiary().toString());
             Map<String, String> params = new HashMap<>();
             params.put("size", "1");
+            params.put("page", "1");
             Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
-            members.setRecentDiary(page.getContent().get(0));
+            if(page.getContent().isEmpty()) {
+//                System.out.println("########### Empty");
+                members.setRecentDiary(new DiaryInfoResponse());
+            }
+            else
+                members.setRecentDiary(page.getContent().get(0));
         }
         // 사용자 정보 저장
         memberRepository.save(members);
-
+        // 다이어리 삭제
+        diaryRepository.delete(diary);
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(userId +"Page");
         return diary.getId();

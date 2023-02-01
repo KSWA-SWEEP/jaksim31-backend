@@ -62,6 +62,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *                      김주현             일기 삭제 service 수정으로 인한 test 코드 수정
  * 2023-01-27           김주현             validator 테스트 코드 추가
  *                                       중복 코드 제거
+ * 2023-02-01           김주현             PathValue validation 추가로 인한 test 수정
  */
 
 @WebMvcTest(controllers = DiaryApiController.class)
@@ -104,7 +105,7 @@ public class DiaryApiControllerTest  {
             //given
             given(diaryService.saveDiary(any()))
                     .willReturn(DiaryResponse.builder()
-                            .userId("63c0cb6f30dc3d547e3b88bb")
+                            .userId("testobjectidtestobject12")
                             .content("contents")
                             .diaryDate(date)
                             .modifyDate(LocalDate.now())
@@ -114,7 +115,7 @@ public class DiaryApiControllerTest  {
                             .build());
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -125,7 +126,7 @@ public class DiaryApiControllerTest  {
                     //then
                     .andExpect(status().isCreated())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is("63c0cb6f30dc3d547e3b88bb")))
+                    .andExpect(jsonPath("$.userId", Matchers.is("testobjectidtestobject12")))
                     .andExpect(jsonPath("$.content", Matchers.is("contents")))
                     .andExpect(jsonPath("$.diaryDate", Matchers.is(date.toString())))
                     .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().toString())))
@@ -142,7 +143,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -164,7 +165,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.DUPLICATE_DIARY));
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -200,7 +201,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
         public void failSaveDiaryContentIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -218,7 +219,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
         public void failSaveDiaryEmotionIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -237,7 +238,7 @@ public class DiaryApiControllerTest  {
         public void failSaveDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", empty_keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", empty_keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -255,7 +256,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
         public void failSaveDiaryThumbnailIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -274,7 +275,7 @@ public class DiaryApiControllerTest  {
         public void failSaveDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(post("/api/v1/diaries")
@@ -299,7 +300,7 @@ public class DiaryApiControllerTest  {
         public void findDiary() throws Exception{
             DiaryResponse diary = DiaryResponse.builder()
                     .diaryId("diaryId")
-                    .userId("userId")
+                    .userId("testobjectidtestobject12")
                     .diaryDate(date)
                     .modifyDate(LocalDate.now())
                     .emotion("happy")
@@ -311,14 +312,14 @@ public class DiaryApiControllerTest  {
                     .willReturn(diary);
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/diaryId")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                     )
 
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
+                    .andExpect(jsonPath("$.userId", Matchers.is("testobjectidtestobject12")))
                     .andExpect(jsonPath("$.diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.emotion", Matchers.is("happy")))
@@ -334,7 +335,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/diaryId")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -353,7 +354,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.NO_PERMISSION));
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/diaryId")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -375,7 +376,7 @@ public class DiaryApiControllerTest  {
         public void findUserDiaries() throws Exception{
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
                     .diaryId("diaryId")
-                    .userId("userId")
+                    .userId("testobjectidtestobject12")
                     .diaryDate(date)
                     .modifyDate(LocalDate.now())
                     .emotion("happy")
@@ -389,7 +390,7 @@ public class DiaryApiControllerTest  {
                     .willReturn(new RestPage<>(page));
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                             .queryParam("page", String.valueOf(0))
                     )
@@ -397,7 +398,7 @@ public class DiaryApiControllerTest  {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("userId")))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("testobjectidtestobject12")))
                     .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
                     .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
@@ -414,7 +415,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                             .queryParam("page", String.valueOf(0))
                     )
@@ -439,7 +440,7 @@ public class DiaryApiControllerTest  {
             //given
             given(diaryService.updateDiary(any(), any()))
                     .willReturn(
-                            DiaryResponse.of(new Diary("diaryId", DiarySaveRequest.builder().userId("userId")
+                            DiaryResponse.of(new Diary("testobjectidtestobject12", DiarySaveRequest.builder().userId("testobjectidtestobject12")
                                     .content("contents")
                                     .date(date)
                                     .emotion("happy")
@@ -448,10 +449,10 @@ public class DiaryApiControllerTest  {
                                     .build())));
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("userId", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/api/v1/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -459,8 +460,8 @@ public class DiaryApiControllerTest  {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.diaryId", Matchers.is("diaryId")))
-                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
+                    .andExpect(jsonPath("$.diaryId", Matchers.is("testobjectidtestobject12")))
+                    .andExpect(jsonPath("$.userId", Matchers.is("testobjectidtestobject12")))
                     .andExpect(jsonPath("$.content", Matchers.is("contents")))
                     .andExpect(jsonPath("$.diaryDate", Matchers.is(date.toString())))
                     .andExpect(jsonPath("$.modifyDate", Matchers.is(LocalDate.now().toString())))
@@ -477,10 +478,10 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("userId", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/api/v1/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/testobjectidtestobject12")
                     .with(csrf()) //403 에러 방지
                     .content(jsonRequest)
                     .contentType(MediaType.APPLICATION_JSON))
@@ -500,10 +501,10 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.NOT_FOUND_DIARY));;
 
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("userId", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
-            mockMvc.perform(put("/api/v1/diaries/diaryId")
+            mockMvc.perform(put("/api/v1/diaries/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -536,7 +537,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
         public void failUpdateDiaryContentIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/api/v1/diaries/diaryId")
@@ -554,7 +555,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
         public void failUpdateDiaryEmotionIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/api/v1/diaries/diaryId")
@@ -573,7 +574,7 @@ public class DiaryApiControllerTest  {
         public void failUpdateDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", empty_keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", empty_keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/api/v1/diaries/diaryId")
@@ -591,7 +592,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
         public void failUpdateDiaryThumbnailIsNULL() throws Exception{
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/api/v1/diaries/diaryId")
@@ -610,7 +611,7 @@ public class DiaryApiControllerTest  {
         public void failUpdateDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
             //when
-            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,"thumbnail");
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
 
             mockMvc.perform(put("/api/v1/diaries/diaryId")
@@ -636,7 +637,7 @@ public class DiaryApiControllerTest  {
                     .willReturn("diaryId");
 
             //when
-            mockMvc.perform(delete("/api/v1/diaries/userId/diaryId")
+            mockMvc.perform(delete("/api/v1/diaries/testobjectidtestobject12/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -654,7 +655,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
 
             //when
-            mockMvc.perform(delete("/api/v1/diaries/userId/diaryId")
+            mockMvc.perform(delete("/api/v1/diaries/testobjectidtestobject12/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
                     )
 
@@ -802,10 +803,10 @@ public class DiaryApiControllerTest  {
             DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
             //given
             given(diaryService.saveThumbnail(any()))
-                    .willReturn("downloadUrl/userId/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
+                    .willReturn("downloadUrl/testobjectidtestobject12/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
 
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId","thumbnail");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("testobjectidtestobject12","diaryId","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/api/v1/diaries/thumbnail")
@@ -815,7 +816,7 @@ public class DiaryApiControllerTest  {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("downloadUrl/userId/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png"))
+                    .andExpect(content().string("downloadUrl/testobjectidtestobject12/"+ DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
         @Test
@@ -827,7 +828,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(ThirdPartyExceptionType.NOT_UPLOAD_IMAGE));
 
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId","thumbnail");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("testobjectidtestobject12","diaryId","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/api/v1/diaries/thumbnail")
@@ -863,7 +864,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]일기 ID가 입력되지 않았을 때")
         public void failSaveThumbnailDiaryIdIsNULL() throws Exception{
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","","thumbnail");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("testobjectidtestobject12","","thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/api/v1/diaries/thumbnail")
@@ -881,7 +882,7 @@ public class DiaryApiControllerTest  {
         @DisplayName("[예외]썸네일 이미지 경로가 입력되지 않았을 때")
         public void failSaveThumbnailURIIsNULL() throws Exception{
             //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId","");
+            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("testobjectidtestobject12","testobjectidtestobject12","");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
 
             mockMvc.perform(put("/api/v1/diaries/thumbnail")
@@ -913,7 +914,7 @@ public class DiaryApiControllerTest  {
                                     .build());
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/emotions")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/emotions")
                             .with(csrf())) //403 에러 방지
                     //then
                     .andExpect(status().isOk())
@@ -940,7 +941,7 @@ public class DiaryApiControllerTest  {
                             .build());
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/emotions?startDate=2023-01-01&endDate=2023-01-20")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/emotions?startDate=2023-01-01&endDate=2023-01-20")
                             .with(csrf())) //403 에러 방지
                     //then
                     .andExpect(status().isOk())
@@ -962,7 +963,7 @@ public class DiaryApiControllerTest  {
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
 
             //when
-            mockMvc.perform(get("/api/v1/diaries/userId/emotions?startDate=2023-01-01&endDate=2023-01-10")
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/emotions?startDate=2023-01-01&endDate=2023-01-10")
                             .with(csrf())) //403 에러 방지
                     //then
                     .andExpect(status().is4xxClientError())

@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-27              김주현             최초 생성
+ * 2023-02-01           김주현                PathValue validation 추가로 인한 test 수정
  */
 
 @WebMvcTest(controllers = MembersApiController.class)
@@ -208,7 +209,7 @@ class MemberApiControllerNullTest {
         @DisplayName("토큰 값이 비어있는 경우")
         void invalidReissueEmptyToken() throws Exception {
             //when
-            mockMvc.perform(post("/api/v1/members/geunho/reissue")
+            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
                             .with(csrf()) //403 에러 방지
                             .contentType(MediaType.APPLICATION_JSON))
                     //then
