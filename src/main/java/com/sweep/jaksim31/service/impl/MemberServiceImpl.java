@@ -253,10 +253,15 @@ public class MemberServiceImpl implements MemberService {
             key = "#userId"
     )
     @Transactional(readOnly = true)
-    public MemberInfoResponse getMyInfo(String userId) {
-        return memberRepository.findById(userId)
+    public MemberInfoResponse getMyInfo(String userId, HttpServletRequest request) {
+        MemberInfoResponse members = memberRepository.findById(userId)
                 .map(MemberInfoResponse::of)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        // 토큰의 id와 조회하려고 하는 id가 일치하지 않는 경우
+        if(!tokenProvider.getMemberLoginIdByToken(CookieUtil.getAccessToken(request)).equals(members.getLoginId()))
+            throw new BizException(MemberExceptionType.NO_PERMISSION);
+
+        return members;
     }
 
     /**
@@ -270,10 +275,13 @@ public class MemberServiceImpl implements MemberService {
             key = "#userId"
     )
     @Transactional
-    public String updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest) {
+    public String updateMemberInfo(String userId, MemberUpdateRequest memberUpdateRequest, HttpServletRequest request) {
         Members members = memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        // 토큰의 id와 정보를 변경하려고 하는 id가 일치하지 않는 경우
+        if(!tokenProvider.getMemberLoginIdByToken(CookieUtil.getAccessToken(request)).equals(members.getLoginId()))
+            throw new BizException(MemberExceptionType.NO_PERMISSION);
 
         members.updateMember( memberUpdateRequest);
         memberRepository.save(members);

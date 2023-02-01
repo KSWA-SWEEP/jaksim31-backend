@@ -129,14 +129,16 @@ public class MembersApiController {
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/v1/members/{userId}")
-    public ResponseEntity<MemberInfoResponse> getMyInfo(@PathVariable("userId") String userId, HttpServletResponse response) {
-        return ResponseEntity.ok(memberServiceImpl.getMyInfo(userId));
+    public ResponseEntity<MemberInfoResponse> getMyInfo(@PathVariable("userId") String userId,
+                                                        HttpServletRequest request) {
+        return ResponseEntity.ok(memberServiceImpl.getMyInfo(userId,request));
     }
 
     @Operation(summary = "유저 정보 업데이트 요청", description = "유저 정보 업데이트를 요청합니다.")
     @PatchMapping("/v1/members/{userId}")
-    public ResponseEntity<String> updateMember(@PathVariable("userId") String userId, @Validated @RequestBody MemberUpdateRequest dto) {
-        return ResponseEntity.ok(memberServiceImpl.updateMemberInfo(userId, dto));
+    public ResponseEntity<String> updateMember(@PathVariable("userId") String userId,
+                                               @Validated @RequestBody MemberUpdateRequest dto, HttpServletRequest request) {
+        return ResponseEntity.ok(memberServiceImpl.updateMemberInfo(userId, dto,request));
     }
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")

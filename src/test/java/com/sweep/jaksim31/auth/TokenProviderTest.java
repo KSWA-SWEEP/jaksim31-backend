@@ -1,6 +1,5 @@
 package com.sweep.jaksim31.auth;
 
-import com.sweep.jaksim31.auth.TokenProvider;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
 import com.sweep.jaksim31.exception.BizException;
@@ -8,10 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,12 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 @SpringBootTest    // 1
-@Nested
-@DisplayName("JWT 관련 테스트")
 class TokenProviderTest {
     @Autowired
     private TokenProvider jwtTokenProvider;
-
     @Value("${jwt.secret}")
     private String secretKey;	// 3
 

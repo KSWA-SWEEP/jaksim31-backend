@@ -31,6 +31,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     NOT_FOUND_PROFILE_IMAGE("NOT_FOUND_PROFILE_IMAGE","프로필 이미지를 찾을 수 없습니다.",HttpStatus.BAD_REQUEST),
     NOT_FOUND_NEW_PASSWORD("NOT_FOUND_NEW_PASSWORD","새로운 비밀번호를 입력해주세요",HttpStatus.BAD_REQUEST),
     LOGOUT_MEMBER("LOGOUT_MEMBER","로그아웃된 사용자입니다.",HttpStatus.BAD_REQUEST),
+    NO_PERMISSION("NO_PERMISSION", "권한이 없습니다.",HttpStatus.FORBIDDEN),
 
     SESSION_EXPIRED("SESSION_EXPIRED","세션이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     DELETE_NOT_FOUND_USER("ALREADY_NOT_EXIST_MEMBER", "존재하지 않는 사용자입니다.", HttpStatus.SEE_OTHER);

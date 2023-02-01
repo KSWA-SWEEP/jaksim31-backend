@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.domain.members;
 
+import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.util.ExecutionTimeTestExecutionListener;
 import org.junit.jupiter.api.*;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,7 +38,7 @@ class MemberRepositoryTest {
                 .delYn('N')
                 .isSocial(false)
                 .diaryTotal(0)
-                .recentDiaries(new ArrayList<>())
+                .recentDiary(new DiaryInfoResponse())
                 .profileImage("test-profileImage" + num)
                 .build();
     }

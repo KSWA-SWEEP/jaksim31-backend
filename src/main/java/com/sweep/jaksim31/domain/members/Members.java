@@ -1,23 +1,19 @@
 package com.sweep.jaksim31.domain.members;
 
-import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.auth.MemberAuth;
-import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
+import com.sweep.jaksim31.dto.member.MemberUpdateRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import lombok.*;
-
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +31,7 @@ import java.util.stream.Collectors;
  * 2023-01-12           김주현             profilePhoto -> profileImage
  * 2023-01-19           방근호             updateTime 수정(9시간 추가)
  * 2023-01-28           김주현             ""면 업데이트 하지 않도록 조건 추가
+ * 2023-01-31           김주현             recentDiaries -> recentDiary(DiaryInfoResponse)
  */
 
 @Getter
@@ -53,7 +50,7 @@ public class Members {
 
     private Boolean isSocial; // 소셜 로그인 사용자 여부
     private String profileImage;
-    private List<Diary> recentDiaries;
+    private DiaryInfoResponse recentDiary;
     private int diaryTotal; // 총 일기 수
     private char delYn;
     @CreatedDate
@@ -65,7 +62,7 @@ public class Members {
 
 
     @Builder
-    public Members(String username, String loginId, String password, Boolean isSocial, char delYn, List<Diary> recentDiaries,
+    public Members(String username, String loginId, String password, Boolean isSocial, char delYn, DiaryInfoResponse recentDiary,
                    String profileImage, int diaryTotal,  Instant register_date, Instant update_date) {
         this.username = username;
         this.loginId = loginId;
@@ -75,7 +72,7 @@ public class Members {
         this.updateDate = update_date;
         this.isSocial = isSocial;
         this.diaryTotal = diaryTotal;
-        this.recentDiaries = recentDiaries;
+        this.recentDiary = recentDiary;
         this.profileImage = profileImage;
         this.addAuthority(new Authority(username, MemberAuth.of("ROLE_USER")));
         System.out.println();

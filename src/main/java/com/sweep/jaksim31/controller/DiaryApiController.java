@@ -47,11 +47,7 @@ import java.util.Map;
  * 2023-01-21           김주현             Validation 추가
  * 2023-01-26           김주현             사용자 일기 조회 조건에 searchWord(검색어) 추가
 */
-/* TODO
-    * 일기 등록 시 최근 날짜의 일기인 경우 사용자 recent_diaries에 넣어주기 -> Members Entity 수정 후 진행해야함
-    * 삭제 시 사용자 정보의 최근 일기에 해당 일기가 있는지 확인하고 있으면 삭제
-    * 사용자 일기 검색 Paging 기능 추가 하기(전체 조회는 추가 완료. 조건 조회에 추가 필요)
-* */
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
