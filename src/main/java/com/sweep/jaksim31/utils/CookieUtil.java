@@ -1,7 +1,7 @@
 package com.sweep.jaksim31.utils;
 
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.JwtExceptionType;
+import com.sweep.jaksim31.enums.JwtExceptionType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.util.SerializationUtils;
 

@@ -1,11 +1,10 @@
-package com.sweep.jaksim31.exception.type;
+package com.sweep.jaksim31.enums;
 
-import com.sweep.jaksim31.exception.BaseExceptionType;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
- * packageName :  com.sweep.jaksim31.exception.type
+ * packageName :  com.sweep.jaksim31.enums
  * fileName : AuthorityExceptionType
  * author :  방근호
  * date : 2023-01-13

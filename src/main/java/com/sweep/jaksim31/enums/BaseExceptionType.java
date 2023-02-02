@@ -1,9 +1,9 @@
-package com.sweep.jaksim31.exception;
+package com.sweep.jaksim31.enums;
 
 import org.springframework.http.HttpStatus;
 
 /**
- * packageName :  com.sweep.jaksim31.exception
+ * packageName :  com.sweep.jaksim31.enums
  * fileName : BaseExceptionType
  * author :  방근호
  * date : 2023-01-13

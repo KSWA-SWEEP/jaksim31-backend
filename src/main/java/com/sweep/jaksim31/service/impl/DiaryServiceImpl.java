@@ -17,9 +17,9 @@ import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
-import com.sweep.jaksim31.exception.type.ThirdPartyExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
 import com.sweep.jaksim31.service.DiaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -197,10 +197,8 @@ public class DiaryServiceImpl implements DiaryService {
         user.setDiaryTotal(user.getDiaryTotal()+1);
         // 사용자 정보의 recentDiary 정보 업데이트
         DiaryInfoResponse diaryInfoResponse = user.getRecentDiary();
-        if(Objects.isNull(diaryInfoResponse) || Objects.isNull(diaryInfoResponse.getDiaryId())) {
-            diaryInfoResponse = DiaryInfoResponse.of(savedDiary);
-        }
-        else if(diary.getDate().isAfter(diaryInfoResponse.getDiaryDate().atTime(9,0))) {
+        if(Objects.isNull(diaryInfoResponse) || Objects.isNull(diaryInfoResponse.getDiaryId())
+         || diary.getDate().isAfter(diaryInfoResponse.getDiaryDate().atTime(9,0))) {
             diaryInfoResponse = DiaryInfoResponse.of(savedDiary);
         }
 

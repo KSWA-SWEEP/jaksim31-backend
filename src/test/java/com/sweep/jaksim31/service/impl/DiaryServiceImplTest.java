@@ -9,8 +9,8 @@ import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.bson.Document;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -245,7 +245,7 @@ public class DiaryServiceImplTest {
         }
         @Test
         @DisplayName("[예외]사용자의 일기가 아닐 경우")
-        void failUpdateDiaryNoPermission(){
+        void failRemoveDiaryNoPermission(){
             // given
             Diary diary = new Diary(diaryId, diarySaveRequest);
             Members user = Members.builder().diaryTotal(5).build();
@@ -263,7 +263,7 @@ public class DiaryServiceImplTest {
         }
         @Test
         @DisplayName("[예외]일기가 존재하지 않을 때")
-        void failUpdateDiaryNotFoundDiary(){
+        void failRemoveDiaryNotFoundDiary(){
             // given
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.empty());

@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.exception;
 
+import com.sweep.jaksim31.enums.BaseExceptionType;
 import lombok.Getter;
 
 /**
