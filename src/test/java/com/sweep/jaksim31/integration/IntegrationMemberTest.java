@@ -36,10 +36,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * packageName :  com.sweep.jaksim31.Integration
- * fileName : IntegrationTest
+ * fileName : IntegrationMemberTest
  * author :  김주현
  * date : 2023-01-28
- * description : 통합테스트
+ * description : Member service 통합테스트
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------

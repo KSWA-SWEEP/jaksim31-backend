@@ -6,7 +6,7 @@ import com.sweep.jaksim31.dto.login.validator.LoginRequestValidator;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.member.validator.*;
 import com.sweep.jaksim31.exception.handler.ErrorResponse;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
+import com.sweep.jaksim31.exception.type.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -189,7 +189,7 @@ public class MembersApiController {
     @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
     protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
 //        log.error("MethodArgumentNotValidException", e);
-        ErrorResponse errorResponse = new ErrorResponse(DiaryExceptionType.INVALID_ID.getErrorCode(), DiaryExceptionType.INVALID_ID.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(MemberExceptionType.INVALID_ID.getErrorCode(), MemberExceptionType.INVALID_ID.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }
