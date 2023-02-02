@@ -5,6 +5,8 @@ import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.dto.diary.validator.DiaryAnalysisRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiarySaveRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiaryThumbnailRequestValidator;
+import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.handler.ErrorResponse;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
@@ -78,23 +81,23 @@ public class DiaryApiController {
     // 일기 등록
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
-    public ResponseEntity<DiaryResponse> saveDiary(@Validated @RequestBody DiarySaveRequest diarySaveRequest){
-        return new ResponseEntity<>(diaryService.saveDiary(diarySaveRequest), HttpStatus.CREATED);
+    public ResponseEntity<?> saveDiary(HttpServletResponse response, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
+        return new ResponseEntity<>(diaryService.saveDiary(response, diarySaveRequest), SuccessResponseType.DIARY_SAVE_SUCCESS.getHttpStatus());
     }
 
     // 일기 수정
     @Operation(summary = "일기 수정", description = "일기를 수정합니다.")
     @PutMapping(value = "{diaryId}")
-    public ResponseEntity<DiaryResponse> updateDiary(@Pattern(regexp = idPattern, message = "잘못 된 ID 값입니다.") @PathVariable String diaryId, @Valid @RequestBody DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<?> updateDiary(@Pattern(regexp = idPattern, message = "잘못 된 ID 값입니다.") @PathVariable String diaryId, @Valid @RequestBody DiarySaveRequest diarySaveRequest){
         System.out.printf("Diary ID \"%s\" Update%n",diaryId);
-        return ResponseEntity.ok(diaryService.updateDiary(diaryId, diarySaveRequest));
+        return new ResponseEntity<>(diaryService.updateDiary(diaryId, diarySaveRequest), SuccessResponseType.DIARY_UPDATE_SUCCESS.getHttpStatus());
     }
 
     // 일기 삭제
     @Operation(summary = "일기 삭제", description = "일기를 삭제합니다.")
     @DeleteMapping(value="{userId}/{diaryId}")
-    public ResponseEntity<String> deleteDiary(@Pattern(regexp = idPattern)@PathVariable String userId, @Pattern(regexp = idPattern)@PathVariable String diaryId){
-        return ResponseEntity.ok(diaryService.remove(userId, diaryId));
+    public ResponseEntity<?> deleteDiary(HttpServletResponse response, @Pattern(regexp = idPattern)@PathVariable String userId, @Pattern(regexp = idPattern)@PathVariable String diaryId){
+        return new ResponseEntity<>(diaryService.remove(response, userId, diaryId), SuccessResponseType.DIARY_REMOVE_SUCCESS.getHttpStatus());
     }
 
     // 개별 일기 조회
@@ -122,12 +125,6 @@ public class DiaryApiController {
     public ResponseEntity<DiaryAnalysisResponse> analyzeDiary(@Validated @RequestBody DiaryAnalysisRequest diaryAnalysisRequest) throws ParseException, JsonProcessingException {
         return ResponseEntity.ok(diaryService.analyzeDiary(diaryAnalysisRequest));
     }
-
-    @Operation(summary = "썸네일 생성 및 교체", description = "사용자가 요청한 사진에 대한 URL을 이용하여 사진을 오브젝트 스토리지에 업로드 합니다.")
-    @PutMapping(value = "thumbnail")
-    public ResponseEntity<String> saveThumbnail(@Validated @RequestBody DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
-        return ResponseEntity.ok(diaryService.saveThumbnail(diaryThumbnailRequest));
-    }
     
     @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
     @GetMapping(value = "{userId}/emotions")
@@ -141,6 +138,6 @@ public class DiaryApiController {
     protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
 //        log.error("MethodArgumentNotValidException", e);
         ErrorResponse errorResponse = new ErrorResponse(DiaryExceptionType.INVALID_ID.getErrorCode(), DiaryExceptionType.INVALID_ID.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
     }
 }

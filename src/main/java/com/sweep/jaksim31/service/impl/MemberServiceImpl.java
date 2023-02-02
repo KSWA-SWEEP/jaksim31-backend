@@ -12,6 +12,7 @@ import com.sweep.jaksim31.domain.token.RefreshToken;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.JwtExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
@@ -89,13 +90,14 @@ public class MemberServiceImpl implements MemberService {
 
 
     @Transactional
-    public MemberSaveResponse signup(MemberSaveRequest memberRequestDto) {
+    public String signup(MemberSaveRequest memberRequestDto) {
 
         if(memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
            throw new BizException(MemberExceptionType.DUPLICATE_USER);
 
         Members members = memberRequestDto.toMember(passwordEncoder, false);
-        return MemberSaveResponse.of(memberRepository.save(members));
+        memberRepository.save(members);
+        return SuccessResponseType.SIGNUP_SUCCESS.getMessage();
     }
     @Override
     @Transactional
@@ -106,6 +108,8 @@ public class MemberServiceImpl implements MemberService {
         Authentication authenticate = authenticationManager.authenticate(customLoginIdPasswordAuthToken);
         String loginId = authenticate.getName();
         Members members = customUserDetailsService.getMember(loginId);
+        if(members.getDelYn()=='Y')
+            throw new BizException(MemberExceptionType.DELETED_USER);
 
         // 토큰 생성
         String accessToken = tokenProvider.createAccessToken(loginId, members.getAuthorities());
@@ -129,7 +133,7 @@ public class MemberServiceImpl implements MemberService {
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return "로그인이 완료되었습니다.";
+        return SuccessResponseType.LOGIN_SUCCESS.getMessage();
 
     }
 
@@ -218,7 +222,7 @@ public class MemberServiceImpl implements MemberService {
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(authentication.getName());
 
-        return "로그아웃 되었습니다.";
+        return SuccessResponseType.LOGOUT_SUCCESS.getMessage();
     }
 
     @Transactional
@@ -227,7 +231,7 @@ public class MemberServiceImpl implements MemberService {
         if (!memberRepository.existsByLoginId(memberRequestDto.getLoginId()))
             throw new BizException(MemberExceptionType.NOT_FOUND_USER);
 
-        return memberRequestDto.getLoginId() + " 해당 이메일은 가입하였습니다.";
+        return memberRequestDto.getLoginId() + SuccessResponseType.IS_MEMBER_SUCCESS.getMessage();
     }
 
     @Transactional
@@ -239,7 +243,7 @@ public class MemberServiceImpl implements MemberService {
         members.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         // 업데이트 한 정보 저장
         memberRepository.save(members);
-        return "회원 정보가 정상적으로 변경되었습니다.";
+        return SuccessResponseType.USER_UPDATE_SUCCESS.getMessage();
     }
 
 
@@ -285,7 +289,7 @@ public class MemberServiceImpl implements MemberService {
 
         members.updateMember( memberUpdateRequest);
         memberRepository.save(members);
-        return "회원 정보가 정상적으로 변경되었습니다.";
+        return SuccessResponseType.USER_UPDATE_SUCCESS.getMessage();
     }
 
     @Transactional
@@ -298,7 +302,7 @@ public class MemberServiceImpl implements MemberService {
         if (!passwordEncoder.matches(dto.getPassword(), members.getPassword()))
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
 
-        return "비밀번호가 일치합니다.";
+        return SuccessResponseType.CHECK_PW_SUCCESS.getMessage();
     }
 
     @CacheEvict(
@@ -326,6 +330,6 @@ public class MemberServiceImpl implements MemberService {
         // 쿠키 삭제
         CookieUtil.resetDefaultCookies(response);
 
-        return "정상적으로 회원탈퇴 작업이 처리되었습니다.";
+        return SuccessResponseType.USER_REMOVE_SUCCESS.getMessage();
     }
 }

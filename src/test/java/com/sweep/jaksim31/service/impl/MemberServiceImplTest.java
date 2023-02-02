@@ -6,6 +6,7 @@ import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.member.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.utils.CookieUtil;
@@ -108,13 +109,11 @@ class MemberServiceImplTest {
                     .willReturn(memberSaveResponse);
 
             //when
-            MemberSaveResponse expected = memberService.signup(memberSaveRequest);
+            String expected = memberService.signup(memberSaveRequest);
 
             //then
             assert expected != null;
-            assertEquals(expected.getLoginId(), memberSaveRequest.getLoginId());
-            assertEquals(expected.getUsername(), memberSaveRequest.getUsername());
-            assertEquals(expected.getProfileImage(), memberSaveRequest.getProfileImage());
+            assertEquals(expected, SuccessResponseType.SIGNUP_SUCCESS.getMessage());
             verify(memberRepository, times(1)).existsByLoginId(any());
 
         }
@@ -159,7 +158,7 @@ class MemberServiceImplTest {
             String res = memberService.isMember(memberCheckLoginIdRequest);
 
             //then
-            assertEquals(loginId+" 해당 이메일은 가입하였습니다.", res);
+            assertEquals(loginId+SuccessResponseType.IS_MEMBER_SUCCESS.getMessage(), res);
             verify(memberRepository, times(1)).existsByLoginId(loginId);
 
         }
@@ -201,7 +200,7 @@ class MemberServiceImplTest {
             String res = memberService.updatePassword(fakeMemberId, memberUpdatePasswordRequest);
 
             //then
-            assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(memberRepository, times(1)).save(members);
         }
@@ -370,7 +369,7 @@ class MemberServiceImplTest {
             String res = memberService.updateMemberInfo(userId, memberUpdateRequest, any());
 
             //then
-            assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, times(1)).save(members);
         }
@@ -440,7 +439,7 @@ class MemberServiceImplTest {
             String res = memberService.isMyPassword(fakeMemberId, memberCheckPasswordRequest);
 
             //then
-            assertEquals(res, "비밀번호가 일치합니다.");
+            assertEquals(res, SuccessResponseType.CHECK_PW_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
@@ -516,7 +515,7 @@ class MemberServiceImplTest {
             String res = memberService.remove(userId, memberRemoveRequest,any());
 
             //then
-            assertEquals(res, "정상적으로 회원탈퇴 작업이 처리되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_REMOVE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());

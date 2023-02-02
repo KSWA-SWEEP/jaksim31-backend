@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 public enum MemberExceptionType implements BaseExceptionType {
 
     NOT_FOUND_USER("NOT_FOUND_USER","사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    DELETED_USER("DELETED_USER","탈퇴한 사용자입니다.", HttpStatus.NOT_FOUND),
     NOT_FOUND_AUTHENTICATION("NOT_FOUND_AUTHENTICATION","인증 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
     DUPLICATE_USER("DUPLICATE_USER","이미 존재하는 사용자입니다.", HttpStatus.BAD_REQUEST),
     WRONG_PASSWORD("WRONG_PASSWORD","비밀번호를 잘못 입력하였습니다.", HttpStatus.UNAUTHORIZED),

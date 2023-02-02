@@ -2,6 +2,7 @@ package com.sweep.jaksim31.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.Authenticator;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
@@ -15,11 +16,13 @@ import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
 import com.sweep.jaksim31.service.DiaryService;
+import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -44,10 +47,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -180,7 +185,7 @@ public class DiaryServiceImpl implements DiaryService {
      * @return Diary
      */
     @Override
-    public DiaryResponse saveDiary(DiarySaveRequest diarySaveRequest){
+    public String saveDiary(HttpServletResponse response, DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -189,24 +194,34 @@ public class DiaryServiceImpl implements DiaryService {
                 throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
 
         Diary diary = diarySaveRequest.toEntity();
-        Diary savedDiary = diaryRepository.save(diary);
+        diaryRepository.save(diary);
         // 사용자 정보의 total diary 정보 업데이트
         user.setDiaryTotal(user.getDiaryTotal()+1);
         // 사용자 정보의 recentDiary 정보 업데이트
-        DiaryInfoResponse diaryInfoResponse = user.getRecentDiary();
-        if(Objects.isNull(diaryInfoResponse) || Objects.isNull(diaryInfoResponse.getDiaryId())
-         || diary.getDate().isAfter(diaryInfoResponse.getDiaryDate().atTime(9,0))) {
-            diaryInfoResponse = DiaryInfoResponse.of(savedDiary);
+        DiaryInfoResponse recentDiary = user.getRecentDiary();
+        if(Objects.isNull(recentDiary) || Objects.isNull(recentDiary.getDiaryId())
+         || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
+            recentDiary = DiaryInfoResponse.of(diary);
         }
 
-        user.setRecentDiary(diaryInfoResponse);
+        user.setRecentDiary(recentDiary);
 
         memberRepository.save(user);
+
+        // 오늘 일기일 경우, todayDiary Cookie 설정
+        LocalDate today = LocalDate.now();
+        if(diary.getDate().toLocalDate().equals(today)){
+            // 만료 시간을 당일 23:59:59로 설정
+            long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                    - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+
+            CookieUtil.addCookie(response, "todayDiaryId", diary.getId(), todayExpTime);
+        }
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
 
-        return DiaryResponse.of(savedDiary);
+        return SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage();
     }
 
     /**
@@ -221,7 +236,7 @@ public class DiaryServiceImpl implements DiaryService {
             value = "diaryCache",
             key = "#diaryId"
     )
-    public DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
+    public String updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
         // 일기를 찾을 수 없을 때
         Diary diary = diaryRepository
                 .findById(diaryId)
@@ -244,7 +259,8 @@ public class DiaryServiceImpl implements DiaryService {
             members.setRecentDiary(DiaryInfoResponse.of(updatedDiary));
             memberRepository.save(members);
         }
-        return DiaryResponse.of(diaryRepository.save(updatedDiary));
+        diaryRepository.save(updatedDiary);
+        return SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage();
     }
 
     @Override
@@ -253,8 +269,7 @@ public class DiaryServiceImpl implements DiaryService {
             key = "#diaryId"
     )
     // 일기 삭제
-    public String remove(String userId, String diaryId) {
-
+    public String remove(HttpServletResponse response, String userId, String diaryId) {
 
         Diary diary = diaryRepository
                 .findById(diaryId)
@@ -283,13 +298,24 @@ public class DiaryServiceImpl implements DiaryService {
             else
                 members.setRecentDiary(page.getContent().get(0));
         }
+
+        // 오늘 일기일 경우, todayDiary Cookie 설정
+        LocalDate today = LocalDate.now();
+        if(diary.getDate().toLocalDate().equals(today)){
+            // 만료 시간을 당일 23:59:59로 설정
+            long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                    - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+
+            CookieUtil.addCookie(response, "todayDiaryId", "", todayExpTime);
+        }
+
         // 사용자 정보 저장
         memberRepository.save(members);
         // 다이어리 삭제
         diaryRepository.delete(diary);
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(userId +"Page");
-        return diary.getId();
+        return SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage();
     }
 
     @Override

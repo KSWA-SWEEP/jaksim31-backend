@@ -7,6 +7,7 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
 import net.minidev.json.JSONObject;
@@ -105,17 +106,10 @@ class IntegrationMemberTest {
                             .servletPath("/api/v0/members/register"))
             //then
                     .andExpect(status().isCreated())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is(notNullValue())))
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.SIGNUP_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out))
                     .andReturn();
-            JSONParser parser = new JSONParser();
-            JSONObject jsonObject = (JSONObject) parser.parse(mvcResult.getResponse().getContentAsString());
-
-            Members members = memberRepository.findById(jsonObject.getAsString("userId")).get();
-            assertEquals(members.getLoginId(), loginId);
-            assertEquals(members.getUsername(), username);
-            assertEquals(members.getProfileImage(), profile);
         }
 
         @Test
@@ -132,7 +126,7 @@ class IntegrationMemberTest {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string(loginId+ " 해당 이메일은 가입하였습니다."))
+                    .andExpect(content().string(loginId+ SuccessResponseType.IS_MEMBER_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -180,8 +174,8 @@ class IntegrationMemberTest {
                     //then
                     .andExpect(status().is4xxClientError())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -335,8 +329,8 @@ class IntegrationMemberTest {
                     //then
                     .andExpect(status().is4xxClientError())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 

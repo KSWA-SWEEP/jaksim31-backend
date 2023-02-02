@@ -16,6 +16,7 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.JwtExceptionType;
 import com.sweep.jaksim31.service.MemberService;
@@ -127,7 +128,7 @@ public class KakaoMemberServiceImpl implements MemberService {
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return "로그인이 완료되었습니다.";
+        return SuccessResponseType.KAKAO_LOGIN_SUCCESS.getMessage();
 
     }
 
@@ -157,7 +158,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(authentication.getName());
 
-        return "로그아웃 되었습니다.";
+        return SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getMessage();
     }
 
         // 카카오 인증서버로 부터 Access Token 받아오는 함수
