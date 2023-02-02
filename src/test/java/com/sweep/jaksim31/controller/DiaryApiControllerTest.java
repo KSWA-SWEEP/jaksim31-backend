@@ -327,6 +327,34 @@ public class DiaryApiControllerTest  {
                     .andExpect(jsonPath("$.thumbnail", Matchers.is("thumbnail")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+        @DisplayName("[예외]사용자 ID가 유효한 값이 아닌 경우")
+        @Test
+        void failFindDiaryInvaliUserId() throws Exception {
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectid1234/testobjectidtestobject12")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+        @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")
+        @Test
+        void failFindDiaryInvaliDiaryId() throws Exception {
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12/testobjectid1234")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
         @Test
         @DisplayName("[예외]일기가 없는 경우")
         public void failFindDiaryNotFoundDiary() throws Exception{
@@ -470,6 +498,27 @@ public class DiaryApiControllerTest  {
                     .andExpect(jsonPath("$.thumbnail", Matchers.is("thumbnail")))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")
+        @Test
+        void failUpdateDiaryInvaliDiaryId() throws Exception {
+            //when
+            DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectid1234", "contents", date, "happy", keywords,"thumbnail");
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
+
+            //when
+            mockMvc.perform(put("/api/v1/diaries/testobjectid1234")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .with(csrf())) //403 에러 방지
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
         @Test
         @DisplayName("[예외]사용자를 찾을 수 없을 때")
         public void failUpdateDiaryNotFoundUser() throws Exception{
@@ -647,6 +696,36 @@ public class DiaryApiControllerTest  {
                     .andExpect(content().string("diaryId"))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @DisplayName("[예외]사용자 ID가 유효한 값이 아닌 경우")
+        @Test
+        void invalidRemoveInvaliUserId() throws Exception {
+            //when
+            mockMvc.perform(delete("/api/v1/diaries/testobjectid1234/testobjectidtestobject12")
+                            .with(csrf())) //403 에러 방지
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+
+        @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")
+        @Test
+        void invalidRemoveInvaliDiaryId() throws Exception {
+            //when
+            mockMvc.perform(delete("/api/v1/diaries/testobjectidtestobject12/testobjectid1234")
+                            .with(csrf())) //403 에러 방지
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
         @Test
         @DisplayName("[정상]일기 정보가 없을 때")
         public void removeDiaryNotFoundDiary() throws Exception{
@@ -923,6 +1002,21 @@ public class DiaryApiControllerTest  {
                     .andExpect(jsonPath("$.emotionStatics[0].countEmotion", Matchers.is(emotionStatics.get(0).getCountEmotion())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
+
+        @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")
+        @Test
+        void failEmotionStatisticsInvalidId() throws Exception {
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectid1234/emotions")
+                            .with(csrf())) //403 에러 방지
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
         @Test
         @DisplayName("[정상]감정 통계 완료(날짜 조건이 있을 때)")
         public void emotionStatisticsWithDate() throws Exception{

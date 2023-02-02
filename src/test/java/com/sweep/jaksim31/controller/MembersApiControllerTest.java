@@ -505,6 +505,19 @@ class MembersApiControllerTest {
 
         }
 
+        @DisplayName("User ID가 유효한 값이 아닌 경우")
+        @Test
+        void invalidGetMyInfoInvalidId() throws Exception {
+            mockMvc.perform(get("/api/v1/members/testobjectid1234")
+                            .with(csrf())) //403 에러 방지
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.INVALID_ID.getErrorCode())))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
         @DisplayName("해당 유저가 없는 경우")
         @Test
         void invalidGetMyInfoByUserId() throws Exception {
@@ -549,6 +562,25 @@ class MembersApiControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andExpect(content().string("회원 정보가 변경 되었습니다."))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+        @DisplayName("User ID가 유효한 값이 아닌 경우")
+        @Test
+        void invalidUpdateMemberInvalidId() throws Exception {
+            //when
+            MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
+            String jsonString = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
+
+            mockMvc.perform(patch("/api/v1/members/testobjectid1234")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonString))
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.INVALID_ID.getErrorCode())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -598,6 +630,25 @@ class MembersApiControllerTest {
                     .andExpect(status().is3xxRedirection())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andExpect(content().string("삭제되었습니다."))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+        }
+
+        @DisplayName("User ID가 유효한 값이 아닌 경우")
+        @Test
+        void invalidRemoveInvalidId() throws Exception {
+
+            MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectid1234", "geunho");
+            String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
+
+            mockMvc.perform(delete("/api/v1/members/testobjectid1234")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonString))
+
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.INVALID_ID.getMessage())))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.INVALID_ID.getErrorCode())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
