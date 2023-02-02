@@ -82,6 +82,8 @@ public class IntegrationDiaryCacheTest {
 
     @BeforeAll
     public void setUp() {
+        memberRepository.deleteAll();
+        diaryRepository.deleteAll();
         // 테스트용으로 member entity 생성 후 db에 저장
         members = new MemberSaveRequest(LOGIN_ID, PASSWORD, USERNAME, PROFILE_IMAGE)
                 .toMember(passwordEncoder, false);

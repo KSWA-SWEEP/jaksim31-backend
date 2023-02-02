@@ -88,6 +88,7 @@ public class IntegrationMemberCacheTest {
 
     @BeforeAll
     public void setUp() {
+        memberRepository.deleteAll();
         // 테스트용으로 member entity 생성 후 db에 저장
         members = new MemberSaveRequest(LOGIN_ID, PASSWORD, USERNAME, PROFILE_IMAGE)
                 .toMember(passwordEncoder, false);
@@ -254,7 +255,7 @@ public class IntegrationMemberCacheTest {
             //given
             LoginRequest loginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(PASSWORD).build();
             memberService.login(loginRequest, response);
-            Thread.sleep(300);
+            Thread.sleep(500);
 
             String oldToken = refreshTokenCacheAdapter.get(LOGIN_ID);
             request.setCookies(new Cookie("atk", accessToken), new Cookie("rtk", oldToken));

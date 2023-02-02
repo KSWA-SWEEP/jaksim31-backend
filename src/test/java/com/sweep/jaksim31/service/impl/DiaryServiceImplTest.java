@@ -2,6 +2,7 @@ package com.sweep.jaksim31.service.impl;
 
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
+import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
@@ -57,9 +58,10 @@ public class DiaryServiceImplTest {
     private DiaryRepository diaryRepository;
     @Mock
     private MongoTemplate mongoTemplate;
-
     @Mock
     private DiaryPagingCacheAdapter diaryCacheAdapter;
+    @Mock
+    private MemberCacheAdapter memberCacheAdapter;
 
     private static MockedStatic<DiaryResponse> diaryResponse;
     private static MockedStatic<DiaryInfoResponse> diaryInfoResponse;
@@ -156,7 +158,7 @@ public class DiaryServiceImplTest {
 
             // 아무것도 안하게 하겠음
             doNothing().when(diaryCacheAdapter).findAndDelete(any());
-
+            doNothing().when(memberCacheAdapter).delete(any());
 
             // when
             DiaryResponse expected = diaryService.updateDiary(diaryId, diarySaveRequest);
@@ -227,7 +229,7 @@ public class DiaryServiceImplTest {
 
             // 아무것도 안하게 하겠음
             doNothing().when(diaryCacheAdapter).findAndDelete(any());
-
+            doNothing().when(memberCacheAdapter).delete(any());
 
             // when
             String result = diaryService.remove(userId, diaryId);
