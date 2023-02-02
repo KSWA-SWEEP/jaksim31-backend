@@ -45,6 +45,13 @@ import static org.mockito.ArgumentMatchers.any;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
 public class IntegrationMemberCacheTest {
+    private static final String MEMBER_CACHE = "memberCache::";
+    private static final String LOGIN_ID = "loginId";
+    private static final String PASSWORD = "password";
+    private static final String INVALID_PASSWORD = "asdasdsadadad";
+    private static final String USERNAME = "username";
+    private static final String PROFILE_IMAGE = "profileImage";
+    private static final String INVALID_USER_ID = "adasdadasfa44";
 
     @Autowired
     private TokenProvider tokenProvider;
@@ -65,14 +72,8 @@ public class IntegrationMemberCacheTest {
     @Autowired
     private RefreshTokenCacheAdapter refreshTokenCacheAdapter;
 
-    private static final String memberCachePrefix = "memberCache::";
-    private static final String loginId = "loginId";
-    private static final String password = "password";
-    private static final String invalidPassword = "asdasdsadadad";
-    private static final String username = "username";
-    private static final String profile = "profileImage";
     private static String userId;
-    private static final String invalidUserId = "adasdadasfa44";
+
     private static String accessToken;
     private static String refreshToken;
     private static Members members;
@@ -88,22 +89,22 @@ public class IntegrationMemberCacheTest {
     @BeforeAll
     public void setUp() {
         // 테스트용으로 member entity 생성 후 db에 저장
-        members = new MemberSaveRequest(loginId, password, username, profile)
+        members = new MemberSaveRequest(LOGIN_ID, PASSWORD, USERNAME, PROFILE_IMAGE)
                 .toMember(passwordEncoder, false);
 
         memberRepository.save(members);
 
         // db에 저장된 데이터로 테스트용 데이터로 생성
-        userId = Objects.requireNonNull(memberRepository.findByLoginId(loginId).orElse(null)).getId();
+        userId = Objects.requireNonNull(memberRepository.findByLoginId(LOGIN_ID).orElse(null)).getId();
         memberUpdateRequest = new MemberUpdateRequest("newUsername", "newProfileImage");
-        memberInfoResponse = MemberInfoResponse.of(Objects.requireNonNull(memberRepository.findByLoginId(loginId).orElse(null)));
-        memberRemoveRequest = MemberRemoveRequest.builder().userId(userId).password(password).build();
+        memberInfoResponse = MemberInfoResponse.of(Objects.requireNonNull(memberRepository.findByLoginId(LOGIN_ID).orElse(null)));
+        memberRemoveRequest = MemberRemoveRequest.builder().userId(userId).password(PASSWORD).build();
 
         // 테스트용 token 생성
         Set<Authority> authoritySet = new HashSet<>();
-        authoritySet.add(new Authority(loginId, MemberAuth.of("ROLE_USER")));
-        accessToken = tokenProvider.createAccessToken(loginId, authoritySet);
-        refreshToken = tokenProvider.createRefreshToken(loginId, authoritySet);
+        authoritySet.add(new Authority(LOGIN_ID, MemberAuth.of("ROLE_USER")));
+        accessToken = tokenProvider.createAccessToken(LOGIN_ID, authoritySet);
+        refreshToken = tokenProvider.createRefreshToken(LOGIN_ID, authoritySet);
 
         // 테스트용 MockHttpServletRequest 설정
         request.setCookies(new Cookie("atk", accessToken), new Cookie("rtk", refreshToken));
@@ -121,7 +122,7 @@ public class IntegrationMemberCacheTest {
 
             // when
             MemberInfoResponse result = memberService.getMyInfo(userId, request);
-            MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + userId);
+            MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
 
             //then
             assertNotNull(cacheResult);
@@ -135,9 +136,9 @@ public class IntegrationMemberCacheTest {
         public void failGetMyInfoSearch() {
             // when
             try {
-                MemberInfoResponse result = memberService.getMyInfo(invalidUserId, request);
+                MemberInfoResponse result = memberService.getMyInfo(INVALID_USER_ID, request);
             } catch (BizException ex) {
-                MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + invalidUserId);
+                MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + INVALID_USER_ID);
                 //then
                 assertNull(cacheResult);
             }
@@ -149,7 +150,7 @@ public class IntegrationMemberCacheTest {
         public void updateUserInfo() {
             // when
             memberService.updateMemberInfo(userId, memberUpdateRequest, request);
-            MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + userId);
+            MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
 
             //then
             assertNull(cacheResult);
@@ -160,12 +161,12 @@ public class IntegrationMemberCacheTest {
         @Order(4)
         public void failUpdateUserInfo() {
             // given
-            memberCacheAdapter.put(memberCachePrefix + userId, memberInfoResponse);
+            memberCacheAdapter.put(MEMBER_CACHE + userId, memberInfoResponse);
             // when
             try {
-                memberService.updateMemberInfo(invalidUserId, memberUpdateRequest, request);
+                memberService.updateMemberInfo(INVALID_USER_ID, memberUpdateRequest, request);
             } catch (BizException ex) {
-                MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + userId);
+                MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
                 //then
                 assertEquals(cacheResult.getUserId(), userId);
             }
@@ -177,7 +178,7 @@ public class IntegrationMemberCacheTest {
         public void deleteUserInfo() throws URISyntaxException {
             // when
             memberService.remove(userId, memberRemoveRequest, response, request);
-            MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + userId);
+            MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
 
             //then
             assertNull(cacheResult);
@@ -188,12 +189,12 @@ public class IntegrationMemberCacheTest {
         @Order(6)
         public void failDeleteUserInfo() {
             // given
-            memberCacheAdapter.put(memberCachePrefix + userId, memberInfoResponse);
+            memberCacheAdapter.put(MEMBER_CACHE + userId, memberInfoResponse);
             // when
             try {
-                memberService.remove(invalidUserId, memberRemoveRequest, response, request);
+                memberService.remove(INVALID_USER_ID, memberRemoveRequest, response, request);
             } catch (BizException ex) {
-                MemberInfoResponse cacheResult = memberCacheAdapter.get(memberCachePrefix + userId);
+                MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
                 //then
                 assertEquals(cacheResult.getUserId(), userId);
             } catch (URISyntaxException e) {
@@ -213,11 +214,11 @@ public class IntegrationMemberCacheTest {
         public void successLogin() {
             // given
             memberRepository.save(members);
-            LoginRequest loginRequest = LoginRequest.builder().loginId(loginId).password(password).build();
+            LoginRequest loginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(PASSWORD).build();
 
             // when
             memberService.login(loginRequest, response);
-            String cacheResult = refreshTokenCacheAdapter.get(loginId);
+            String cacheResult = refreshTokenCacheAdapter.get(LOGIN_ID);
 
             //then
             assertNotNull(cacheResult);
@@ -228,14 +229,14 @@ public class IntegrationMemberCacheTest {
         @Order(2)
         public void failLogin() {
             //given
-            refreshTokenCacheAdapter.delete(loginId);
-            LoginRequest invalidLoginRequest = LoginRequest.builder().loginId(loginId).password(invalidPassword).build();
+            refreshTokenCacheAdapter.delete(LOGIN_ID);
+            LoginRequest invalidLoginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(INVALID_PASSWORD).build();
 
             // when
             try {
                 memberService.login(invalidLoginRequest, response);
             } catch (BizException ex) {
-                String cacheResult = refreshTokenCacheAdapter.get(loginId);
+                String cacheResult = refreshTokenCacheAdapter.get(LOGIN_ID);
                 //then
                 assertNull(cacheResult);
             }
@@ -251,18 +252,18 @@ public class IntegrationMemberCacheTest {
         public void successReissue() throws InterruptedException {
 
             //given
-            LoginRequest loginRequest = LoginRequest.builder().loginId(loginId).password(password).build();
+            LoginRequest loginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(PASSWORD).build();
             memberService.login(loginRequest, response);
             Thread.sleep(300);
 
-            String oldToken = refreshTokenCacheAdapter.get(loginId);
+            String oldToken = refreshTokenCacheAdapter.get(LOGIN_ID);
             request.setCookies(new Cookie("atk", accessToken), new Cookie("rtk", oldToken));
 
             // when
             memberService.reissue(request, response);
 
             // then
-            assertNotEquals(oldToken, refreshTokenCacheAdapter.get(loginId));
+            assertNotEquals(oldToken, refreshTokenCacheAdapter.get(LOGIN_ID));
         }
 
         @Test
@@ -271,7 +272,7 @@ public class IntegrationMemberCacheTest {
         public void successLogout() {
             // when
             memberService.logout(request, response);
-            String token = refreshTokenCacheAdapter.get(loginId);
+            String token = refreshTokenCacheAdapter.get(LOGIN_ID);
 
             // then
             assertNull(token);
