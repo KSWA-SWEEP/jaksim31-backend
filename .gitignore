@@ -44,4 +44,7 @@ src/test/resources/prod/application.yml
 
 ### log files ###
 .docker-data/
+docker-data
+logs
+
 

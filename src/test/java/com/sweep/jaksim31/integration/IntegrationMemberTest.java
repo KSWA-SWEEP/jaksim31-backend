@@ -53,6 +53,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
 class IntegrationMemberTest {
+    private static final String LOGIN_ID = "loginId";
+    private static  String username = "geunho";
+    private static String profileImage = "profileImage";
+    private static String password = "password";
+    private static String userId = "";
+    private static String accessToken = "";
+    private static String refreshToken = "";
+    private static Cookie atkCookie;
+    private static Cookie rtkCookie;
+
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -62,15 +72,7 @@ class IntegrationMemberTest {
     @Autowired
     private MemberRepository memberRepository;
 
-    private static String loginId = "loginId";
-    private static String password = "password";
-    private static String username = "geunho";
-    private static String profile = "profileImage";
-    private static String userId = "";
-    private static String accessToken = "";
-    private static String refreshToken = "";
-    private static Cookie atkCookie;
-    private static Cookie rtkCookie;
+
     @Nested
     @DisplayName("통합 테스트 01. 회원가입/로그인 - MemberService - 로그아웃")
     @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class) // 메소드 순서 지정
@@ -80,7 +82,7 @@ class IntegrationMemberTest {
         @DisplayName("[정상] 1.가입 확인_회원 가입 전")
         @Order(1)
         public void isMember() throws Exception {
-            MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(loginId);
+            MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(LOGIN_ID);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
             // when
             mockMvc.perform(post("/api/v0/members")
@@ -97,7 +99,7 @@ class IntegrationMemberTest {
         @DisplayName("[정상] 2.회원 가입")
         @Order(2)
         public void signUp() throws Exception {
-            MemberSaveRequest memberSaveRequest = new MemberSaveRequest(loginId, password, username, profile);
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest(LOGIN_ID, password, username, profileImage);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
             // when
             MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/register")
@@ -116,7 +118,7 @@ class IntegrationMemberTest {
         @DisplayName("[정상] 3.가입 확인_회원 가입 후")
         @Order(3)
         public void isMemberAfterSignUp() throws Exception {
-            MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(loginId);
+            MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(LOGIN_ID);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
             // when
             mockMvc.perform(post("/api/v0/members")
@@ -134,7 +136,7 @@ class IntegrationMemberTest {
         @DisplayName("[정상] 4-1.로그인")
         @Order(4)
         public void logIn() throws Exception {
-            LoginRequest loginRequest = new LoginRequest(loginId, password);
+            LoginRequest loginRequest = new LoginRequest(LOGIN_ID, password);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
             // when
             MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/login")
@@ -164,7 +166,7 @@ class IntegrationMemberTest {
         @DisplayName("[예외] 4-2.로그인_비밀번호가 불일치할 경우")
         @Order(4)
         public void invalidLogin() throws Exception {
-            LoginRequest loginRequest = new LoginRequest(loginId, "wrongPassword");
+            LoginRequest loginRequest = new LoginRequest(LOGIN_ID, "wrongPassword");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
             // when
             mockMvc.perform(post("/api/v0/members/login")
@@ -192,9 +194,9 @@ class IntegrationMemberTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.userId", Matchers.is(userId)))
-                    .andExpect(jsonPath("$.loginId", Matchers.is(loginId)))
+                    .andExpect(jsonPath("$.loginId", Matchers.is(LOGIN_ID)))
                     .andExpect(jsonPath("$.username", Matchers.is(username)))
-                    .andExpect(jsonPath("$.profileImage", Matchers.is(profile)))
+                    .andExpect(jsonPath("$.profileImage", Matchers.is(profileImage)))
                     .andExpect(jsonPath("$.diaryTotal", Matchers.is(0)))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
@@ -224,7 +226,7 @@ class IntegrationMemberTest {
             assertEquals(members.getUsername(), newUsername);
             assertEquals(members.getProfileImage(), newProfile);
             username = newUsername;
-            profile = newProfile;
+            profileImage = newProfile;
         }
 
         @Test
@@ -248,7 +250,7 @@ class IntegrationMemberTest {
             // DB 확인
             Members members = memberRepository.findById(userId).get();
             assertEquals(members.getUsername(), newUsername);
-            assertEquals(members.getProfileImage(), profile);
+            assertEquals(members.getProfileImage(), profileImage);
             username = newUsername;
         }
 
@@ -274,7 +276,7 @@ class IntegrationMemberTest {
             Members members = memberRepository.findById(userId).get();
             assertEquals(members.getUsername(), username);
             assertEquals(members.getProfileImage(), newProfile);
-            profile = newProfile;
+            profileImage = newProfile;
         }
 
         @Test
@@ -285,11 +287,11 @@ class IntegrationMemberTest {
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
             // when
-            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+            mockMvc.perform(post("/api/v1/members/"+ LOGIN_ID +"/password")
                             .content(jsonRequest)
                             .cookie(atkCookie,rtkCookie)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                            .servletPath("/api/v1/members/"+ LOGIN_ID +"/password"))
                     //then
                     .andExpect(status().isOk())
                     .andDo(MockMvcResultHandlers.print(System.out));
@@ -303,11 +305,11 @@ class IntegrationMemberTest {
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
 
             // when
-            mockMvc.perform(put("/api/v0/members/"+loginId+"/password")
+            mockMvc.perform(put("/api/v0/members/"+ LOGIN_ID +"/password")
                             .content(jsonRequest)
                             .cookie(atkCookie,rtkCookie)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v0/members/"+loginId+"/password"))
+                            .servletPath("/api/v0/members/"+ LOGIN_ID +"/password"))
                     //then
                     .andExpect(status().isOk())
                     .andDo(MockMvcResultHandlers.print(System.out));
@@ -321,11 +323,11 @@ class IntegrationMemberTest {
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
             // when
-            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+            mockMvc.perform(post("/api/v1/members/"+ LOGIN_ID +"/password")
                             .content(jsonRequest)
                             .cookie(atkCookie,rtkCookie)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                            .servletPath("/api/v1/members/"+ LOGIN_ID +"/password"))
                     //then
                     .andExpect(status().is4xxClientError())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -342,11 +344,11 @@ class IntegrationMemberTest {
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
             // when
-            mockMvc.perform(post("/api/v1/members/"+loginId+"/password")
+            mockMvc.perform(post("/api/v1/members/"+ LOGIN_ID +"/password")
                             .content(jsonRequest)
                             .cookie(atkCookie,rtkCookie)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .servletPath("/api/v1/members/"+loginId+"/password"))
+                            .servletPath("/api/v1/members/"+ LOGIN_ID +"/password"))
                     //then
                     .andExpect(status().isOk())
                     .andDo(MockMvcResultHandlers.print(System.out));

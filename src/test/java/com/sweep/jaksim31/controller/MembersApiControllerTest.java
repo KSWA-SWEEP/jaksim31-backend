@@ -573,6 +573,7 @@ class MembersApiControllerTest {
         void remove() throws Exception {
 
 
+
             given(memberService.remove(any(), any(), any()))
                     .willReturn(SuccessResponseType.USER_REMOVE_SUCCESS.getMessage());
 
@@ -613,7 +614,7 @@ class MembersApiControllerTest {
         @Test
         void invalidRemove2xx() throws Exception {
 
-            given(memberService.remove(any(), any(), any()))
+            given(memberService.remove(any(), any(), any(), any()))
                     .willThrow(new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, "test"));
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
@@ -636,7 +637,7 @@ class MembersApiControllerTest {
         @Test
         void invalidRemove4xx() throws Exception {
 
-            given(memberService.remove(any(), any(), any()))
+            given(memberService.remove(any(), any(), any(), any()))
                     .willThrow(new BizException(MemberExceptionType.WRONG_PASSWORD));
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");

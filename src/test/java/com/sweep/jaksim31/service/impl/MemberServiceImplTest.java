@@ -65,7 +65,8 @@ class MemberServiceImplTest {
     private static MockedStatic<CookieUtil> cookieUtil;
     private static MemberSaveRequest memberSaveRequest;
     private  static String fakeMemberId;
-
+    private static final MockHttpServletRequest request = new MockHttpServletRequest();
+    private static final MockHttpServletResponse response = new MockHttpServletResponse();
 
 
 
@@ -508,11 +509,17 @@ class MemberServiceImplTest {
             given(memberRepository.save(any()))
                     .willReturn(members);
 
+            given(CookieUtil.getAccessToken(any()))
+                    .willReturn("test");
+
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn(members.getLoginId());
+
             // 아무것도 안하게 하겠음
             doNothing().when(refreshTokenCacheAdapter).delete(any());
 
             // when
-            String res = memberService.remove(userId, memberRemoveRequest,any());
+            String res = memberService.remove(userId, memberRemoveRequest, response, request);
 
             //then
             assertEquals(res, SuccessResponseType.USER_REMOVE_SUCCESS.getMessage());
@@ -532,8 +539,11 @@ class MemberServiceImplTest {
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest(userId, "password");
 
+            given(CookieUtil.getAccessToken(any()))
+                    .willReturn("test");
+
             //when & then
-            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest,any()));
+            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest, response, request));
         }
 
         @Test
@@ -556,8 +566,14 @@ class MemberServiceImplTest {
             given(passwordEncoder.matches(any(), any()))
                     .willReturn(false);
 
+            given(CookieUtil.getAccessToken(any()))
+                    .willReturn("test");
+
+            given(tokenProvider.getMemberLoginIdByToken(any()))
+                    .willReturn(members.getLoginId());
+
             // when & then
-            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest,any()));
+            assertThrows(BizException.class, () -> memberService.remove(userId, memberRemoveRequest, response, request));
             verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
