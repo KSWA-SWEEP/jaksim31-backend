@@ -11,6 +11,7 @@ import com.sweep.jaksim31.adapter.cache.DiaryCacheSerializer;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheSerializer;
 import com.sweep.jaksim31.adapter.cache.MemberCacheSerializer;
 import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
+import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.SocketOptions;
@@ -71,11 +72,31 @@ public class CacheConfig {
     }
 
     @Bean
+    public RedisTemplate<String, DiaryResponse> diaryCacheRedisTemplate() {
+        RedisTemplate<String, DiaryResponse> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(basicCacheRedisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new DiaryCacheSerializer());
+
+        return redisTemplate;
+    }
+
+    @Bean
     public RedisTemplate<String, String> refreshTokenCacheRedisTemplate() {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(basicCacheRedisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
+
+        return redisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, MemberInfoResponse> memberCacheRedisTemplate() {
+        RedisTemplate<String, MemberInfoResponse> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(basicCacheRedisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new MemberCacheSerializer());
 
         return redisTemplate;
     }

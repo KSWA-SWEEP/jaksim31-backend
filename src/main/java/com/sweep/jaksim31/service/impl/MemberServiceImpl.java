@@ -78,7 +78,6 @@ public class MemberServiceImpl implements MemberService {
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
     @Value("${jwt.refresh-token-expire-time}")
     private long rtkLive;
@@ -133,9 +132,6 @@ public class MemberServiceImpl implements MemberService {
 
     }
 
-    /* TODO
-        Redis 추가
-     */
     @Transactional
     public HttpServletResponse reissue(HttpServletRequest request,
                                      HttpServletResponse response) {
@@ -147,7 +143,6 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
 
         String originRefreshToken = refreshTokenCookie.getValue();
-
         // refreshToken 검증
         int refreshTokenFlag = tokenProvider.validateToken(originRefreshToken);
         log.debug("refreshTokenFlag = {}", refreshTokenFlag);
@@ -170,7 +165,7 @@ public class MemberServiceImpl implements MemberService {
                 .build();
 
 
-        // 캐시에 리프레시 토큰이 없는 경우 DB에서 가져 옴
+        // 캐시에 리프레시 토큰이 없는 경우 로그아웃 처리
         if (Objects.isNull(cachedRefreshToken.getValue())) {
             throw new BizException(MemberExceptionType.LOGOUT_MEMBER);
         } else {
@@ -186,7 +181,7 @@ public class MemberServiceImpl implements MemberService {
         String newRefreshToken = tokenProvider.createRefreshToken(loginId, members.getAuthorities());
 
         // 저장소 정보 업데이트
-        refreshTokenCacheAdapter.put(authentication.getName(), newRefreshToken, Duration.ofSeconds(rtkLive / 60));
+        refreshTokenCacheAdapter.put(loginId, newRefreshToken, Duration.ofSeconds(rtkLive / 60));
 
         log.debug("refresh Origin = {}", originRefreshToken);
         log.debug("refresh New = {} ", newRefreshToken);
@@ -306,20 +301,24 @@ public class MemberServiceImpl implements MemberService {
             key = "#userId"
     )
     @Transactional
-    public String remove(String userId, MemberRemoveRequest dto, HttpServletResponse response) throws URISyntaxException {
+    public String remove(String userId, MemberRemoveRequest dto, HttpServletResponse response, HttpServletRequest request) throws URISyntaxException {
         // 멤버가 없을 경우 200 리턴 (멱등성을 위해)
-        Members entity = memberRepository
+        Members members = memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, redirectionUtil.getHomeUrl()));
 
+        // 토큰의 id와 정보를 변경하려고 하는 id가 일치하지 않는 경우
+        if(!tokenProvider.getMemberLoginIdByToken(CookieUtil.getAccessToken(request)).equals(members.getLoginId()))
+            throw new BizException(MemberExceptionType.NO_PERMISSION);
+
         // 비밀번호가 불일치 할 경우
-        if (!passwordEncoder.matches(dto.getPassword(), entity.getPassword())) {
+        if (!passwordEncoder.matches(dto.getPassword(), members.getPassword())) {
             throw new BizException(MemberExceptionType.WRONG_PASSWORD);
         }
 
         // 멤버 엔티티의 delYn을 Yes로 변경 후 삭제 처리
-        entity.remove('Y');
-        memberRepository.save(entity);
+        members.remove('Y');
+        memberRepository.save(members);
 
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(dto.getUserId());

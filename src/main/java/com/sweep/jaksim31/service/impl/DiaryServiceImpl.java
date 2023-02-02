@@ -3,7 +3,8 @@ package com.sweep.jaksim31.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.adapter.RestPage;
-import com.sweep.jaksim31.adapter.cache.DiaryCacheAdapter;
+import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
+import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
 import com.sweep.jaksim31.domain.members.Members;
@@ -104,7 +105,9 @@ public class DiaryServiceImpl implements DiaryService {
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
     private final MongoTemplate mongoTemplate;
-    private final DiaryCacheAdapter diaryCacheAdapter;
+    private final DiaryPagingCacheAdapter diaryCacheAdapter;
+    private final MemberCacheAdapter memberCacheAdapter;
+    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
 
     @Override
     // 전체 일기 조회
@@ -206,6 +209,8 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
 
         return DiaryResponse.of(savedDiary);
     }
@@ -239,10 +244,13 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
+
         System.out.println("#######recent diary is "+members.getRecentDiary().toString());
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
-        if(members.getRecentDiary().getDiaryId().equals(diaryId)){
+        if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
             members.setRecentDiary(DiaryInfoResponse.of(updatedDiary));
             memberRepository.save(members);
         }
@@ -256,8 +264,6 @@ public class DiaryServiceImpl implements DiaryService {
     )
     // 일기 삭제
     public String remove(String userId, String diaryId) {
-
-
         Diary diary = diaryRepository
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
@@ -274,7 +280,7 @@ public class DiaryServiceImpl implements DiaryService {
         diaryRepository.delete(diary);
 
         // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
-        if(members.getRecentDiary().getDiaryId().equals(diaryId)){
+        if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
             System.out.println("#######recent diary is "+members.getRecentDiary().toString());
             Map<String, String> params = new HashMap<>();
             params.put("size", "1");
@@ -286,6 +292,9 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 페이징 캐시 데이터 삭제
         diaryCacheAdapter.findAndDelete(userId +"Page");
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + members.getId());
+
         return diary.getId();
     }
 

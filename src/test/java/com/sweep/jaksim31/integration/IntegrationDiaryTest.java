@@ -81,7 +81,6 @@ class IntegrationDiaryTest {
     private static String refreshToken = "";
     private static Cookie atkCookie;
     private static Cookie rtkCookie;
-
     private static String diaryId;
     private static String recentDiaryId;
     private static String sentence = "나는 이제 경, 못 언덕 피어나듯이 버리었습니다. 이 별을 오는 다하지 계절이 겨울이 다 부끄러운 봅니다. 위에 멀듯이, 이국 어머님, 가난한 별에도 책상을 봅니다. 언덕 어머님, 아스라히 까닭입니다. 나는 자랑처럼 경, 버리었습니다. 못 별이 소학교 프랑시스 사랑과 가을 까닭입니다. 때 오는 없이 거외다. 남은 위에 오는 별 계십니다. 그리워 불러 부끄러운 같이 거외다. 한 봄이 그러나 이웃 헤일 봅니다. 비둘기, 별들을 사랑과 벌써 듯합니다.";
