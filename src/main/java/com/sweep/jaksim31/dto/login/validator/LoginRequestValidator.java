@@ -2,7 +2,7 @@ package com.sweep.jaksim31.dto.login.validator;
 
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 

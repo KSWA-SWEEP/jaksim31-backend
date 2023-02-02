@@ -6,7 +6,7 @@ import com.sweep.jaksim31.dto.diary.validator.DiaryAnalysisRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiarySaveRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiaryThumbnailRequestValidator;
 import com.sweep.jaksim31.exception.handler.ErrorResponse;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

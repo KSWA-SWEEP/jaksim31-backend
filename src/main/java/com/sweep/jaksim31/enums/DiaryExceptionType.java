@@ -1,12 +1,11 @@
-package com.sweep.jaksim31.exception.type;
+package com.sweep.jaksim31.enums;
 
-import com.sweep.jaksim31.exception.BaseExceptionType;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
- * packageName :  com.sweep.jaksim31.exception.type
- * fileName : DiaryExceptionHandler
+ * packageName :  com.sweep.jaksim31.enums
+ * fileName : DiaryExceptionType
  * author :  김주현
  * date : 2023-01-11
  * description : Diary 관련 예외 Type 정의

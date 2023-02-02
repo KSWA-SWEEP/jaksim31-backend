@@ -1,17 +1,12 @@
 package com.sweep.jaksim31.controller;
 
-import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.diary.*;
-import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
-import com.sweep.jaksim31.exception.type.ThirdPartyExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
 import org.hamcrest.Matchers;
@@ -23,26 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;

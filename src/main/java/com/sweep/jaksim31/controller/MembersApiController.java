@@ -6,7 +6,7 @@ import com.sweep.jaksim31.dto.login.validator.LoginRequestValidator;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.member.validator.*;
 import com.sweep.jaksim31.exception.handler.ErrorResponse;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;

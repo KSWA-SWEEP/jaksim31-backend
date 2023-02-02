@@ -3,7 +3,7 @@ package com.sweep.jaksim31.dto.diary.validator;
 
 import com.sweep.jaksim31.dto.diary.DiarySaveRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
