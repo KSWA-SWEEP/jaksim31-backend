@@ -115,7 +115,6 @@ public class CookieUtil {
     }
 
     public static String getAccessToken(HttpServletRequest request) {
-
         Cookie accessTokenCookie = Arrays.stream(request.getCookies())
                 .filter(req -> req.getName().equals("atk"))
                 .findAny()

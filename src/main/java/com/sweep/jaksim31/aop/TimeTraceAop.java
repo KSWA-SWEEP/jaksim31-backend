@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.aop;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Aspect
+@Slf4j
 public class TimeTraceAop {
     @Around("execution(* com.sweep.jaksim31..*.*(..))")
     public Object execute(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -31,8 +33,7 @@ public class TimeTraceAop {
         } finally {
             long finish = System.currentTimeMillis();
             long timeMs = finish - start;
-            System.out.println(joinPoint.toString()+ " " + timeMs +
-                    "ms");
+            log.info(joinPoint.toString()+ " " + timeMs + "ms");
         }
     }
 }

@@ -59,6 +59,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ExtendWith(MockitoExtension.class)
 class IntegrationDiaryTest {
+    private static final String LOGIN_ID = "kjh@test.com";
+    private static final String PASSWORD = "password";
+    private static final String USERNAME = "kjh";
+    private static final String PROFILE_IMAGE = "profileImage";
+    private static final String SENTENCE = "나는 이제 경, 못 언덕 피어나듯이 버리었습니다. 이 별을 오는 다하지 계절이 겨울이 다 부끄러운 봅니다. 위에 멀듯이, 이국 어머님, 가난한 별에도 책상을 봅니다. 언덕 어머님, 아스라히 까닭입니다. 나는 자랑처럼 경, 버리었습니다. 못 별이 소학교 프랑시스 사랑과 가을 까닭입니다. 때 오는 없이 거외다. 남은 위에 오는 별 계십니다. 그리워 불러 부끄러운 같이 거외다. 한 봄이 그러나 이웃 헤일 봅니다. 비둘기, 별들을 사랑과 벌써 듯합니다.";
+    private static final String NEW_EMOTION = "newEmotion";
+    private static String userId = "";
+    private static String accessToken = "";
+    private static String refreshToken = "";
+    private static Cookie atkCookie;
+    private static Cookie rtkCookie;
+    private static String diaryId;
+    private static String recentDiaryId;
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -72,20 +85,8 @@ class IntegrationDiaryTest {
     @Autowired
     DiaryRepository diaryRepository;
 
-    private static String loginId = "kjh@test.com";
-    private static String password = "password";
-    private static String username = "kjh";
-    private static String profile = "profileImage";
-    private static String userId = "";
-    private static String accessToken = "";
-    private static String refreshToken = "";
-    private static Cookie atkCookie;
-    private static Cookie rtkCookie;
 
-    private static String diaryId;
-    private static String recentDiaryId;
-    private static String sentence = "나는 이제 경, 못 언덕 피어나듯이 버리었습니다. 이 별을 오는 다하지 계절이 겨울이 다 부끄러운 봅니다. 위에 멀듯이, 이국 어머님, 가난한 별에도 책상을 봅니다. 언덕 어머님, 아스라히 까닭입니다. 나는 자랑처럼 경, 버리었습니다. 못 별이 소학교 프랑시스 사랑과 가을 까닭입니다. 때 오는 없이 거외다. 남은 위에 오는 별 계십니다. 그리워 불러 부끄러운 같이 거외다. 한 봄이 그러나 이웃 헤일 봅니다. 비둘기, 별들을 사랑과 벌써 듯합니다.";
-    private static String newEmotion = "newEmotion";
+
 
     public DiarySaveRequest getDiaryRequest(int num, String userId) {
         return DiarySaveRequest.builder()
@@ -106,7 +107,7 @@ class IntegrationDiaryTest {
         @DisplayName("[정상] 1.회원 가입")
         @Order(1)
         public void signUp() throws Exception {
-            MemberSaveRequest memberSaveRequest = new MemberSaveRequest(loginId, password, username, profile);
+            MemberSaveRequest memberSaveRequest = new MemberSaveRequest(LOGIN_ID, PASSWORD, USERNAME, PROFILE_IMAGE);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
             // when
             MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/register")
@@ -123,15 +124,15 @@ class IntegrationDiaryTest {
             JSONObject jsonObject = (JSONObject) parser.parse(mvcResult.getResponse().getContentAsString());
 
             Members members = memberRepository.findById(jsonObject.getAsString("userId")).get();
-            assertEquals(members.getLoginId(), loginId);
-            assertEquals(members.getUsername(), username);
-            assertEquals(members.getProfileImage(), profile);
+            assertEquals(members.getLoginId(), LOGIN_ID);
+            assertEquals(members.getUsername(), USERNAME);
+            assertEquals(members.getProfileImage(), PROFILE_IMAGE);
         }
         @Test
         @DisplayName("[정상] 2.로그인")
         @Order(2)
         public void logIn() throws Exception {
-            LoginRequest loginRequest = new LoginRequest(loginId, password);
+            LoginRequest loginRequest = new LoginRequest(LOGIN_ID, PASSWORD);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
             // when
             MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/login")
@@ -259,7 +260,7 @@ class IntegrationDiaryTest {
         @Order(6)
         public void updateDiary() throws Exception {
             DiarySaveRequest request = getDiaryRequest(10, userId);
-            request.setContent(sentence);
+            request.setContent(SENTENCE);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
 
             // when
@@ -272,12 +273,12 @@ class IntegrationDiaryTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.diaryId", Matchers.is(diaryId)))
-                    .andExpect(jsonPath("$.content", Matchers.is(sentence)))
+                    .andExpect(jsonPath("$.content", Matchers.is(SENTENCE)))
                     .andExpect(jsonPath("$.modifyDate",Matchers.is(LocalDate.now().toString())))
                     .andDo(MockMvcResultHandlers.print(System.out));
             // Diary DB 확인
             Diary diary = diaryRepository.findById(diaryId).get();
-            assertEquals(diary.getContent(),sentence);
+            assertEquals(diary.getContent(), SENTENCE);
             assertEquals(diary.getUserId(),userId);
             assertEquals(diary.getModifyDate(), LocalDate.now().atTime(9,0));
             assertEquals(diary.getDate(),LocalDate.of(2023,1,10).atTime(9,0));
@@ -292,8 +293,8 @@ class IntegrationDiaryTest {
         public void updateRecentDiary() throws Exception {
 
             DiarySaveRequest request = getDiaryRequest(20, userId);
-            request.setContent(sentence);
-            request.setEmotion(newEmotion);
+            request.setContent(SENTENCE);
+            request.setEmotion(NEW_EMOTION);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
 
             // when
@@ -306,19 +307,19 @@ class IntegrationDiaryTest {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.diaryId", Matchers.is(recentDiaryId)))
-                    .andExpect(jsonPath("$.content", Matchers.is(sentence)))
-                    .andExpect(jsonPath("$.emotion", Matchers.is(newEmotion)))
+                    .andExpect(jsonPath("$.content", Matchers.is(SENTENCE)))
+                    .andExpect(jsonPath("$.emotion", Matchers.is(NEW_EMOTION)))
                     .andExpect(jsonPath("$.modifyDate",Matchers.is(LocalDate.now().toString())))
                     .andDo(MockMvcResultHandlers.print(System.out));
             // Diary DB 확인
             Diary diary = diaryRepository.findById(recentDiaryId).get();
-            assertEquals(diary.getEmotion(), newEmotion);
+            assertEquals(diary.getEmotion(), NEW_EMOTION);
             assertEquals(diary.getUserId(),userId);
             assertEquals(diary.getModifyDate(), LocalDate.now().atTime(9,0));
             assertEquals(diary.getDate(),LocalDate.of(2023,1,20).atTime(9,0));
             // 사용자 DB 확인(RecentDiary 변경 됨)
             Members members = memberRepository.findById(userId).get();
-            assertEquals(members.getRecentDiary().getEmotion(),newEmotion);
+            assertEquals(members.getRecentDiary().getEmotion(), NEW_EMOTION);
         }
 
         @Test
@@ -326,7 +327,7 @@ class IntegrationDiaryTest {
         @Order(7)
         public void analyzeDiary() throws Exception {
             DiaryAnalysisRequest request = new DiaryAnalysisRequest();
-            request.setSentences(Arrays.asList(sentence));
+            request.setSentences(Arrays.asList(SENTENCE));
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
 
             // when
@@ -392,7 +393,7 @@ class IntegrationDiaryTest {
             // Member DB 확인
             assertEquals(memberRepository.findById(userId).get().getDiaryTotal(),19);
             // RecentDiary 변경 안됨_최신 일기 아님
-            assertEquals(memberRepository.findById(userId).get().getRecentDiary().getEmotion(), newEmotion);
+            assertEquals(memberRepository.findById(userId).get().getRecentDiary().getEmotion(), NEW_EMOTION);
         }
 
         @Test
@@ -443,7 +444,7 @@ class IntegrationDiaryTest {
         @DisplayName("[정상] 11-2.회원 탈퇴")
         @Order(12)
         public void memberRemove() throws Exception {
-            MemberRemoveRequest request = new MemberRemoveRequest(userId, password);
+            MemberRemoveRequest request = new MemberRemoveRequest(userId, PASSWORD);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
             // when
             mockMvc.perform(delete("/api/v1/members/"+userId)
