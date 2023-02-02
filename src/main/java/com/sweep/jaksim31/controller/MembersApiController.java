@@ -178,13 +178,4 @@ public class MembersApiController {
 
         return new ResponseEntity<>(kaKaoMemberService.logout(request, response), httpHeaders, SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getHttpStatus());
     }
-
-    //Validator Exception Handler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
-    protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
-//        log.error("MethodArgumentNotValidException", e);
-        ErrorResponse errorResponse = new ErrorResponse(MemberExceptionType.INVALID_ID.getErrorCode(), MemberExceptionType.INVALID_ID.getMessage());
-        return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
-    }
 }

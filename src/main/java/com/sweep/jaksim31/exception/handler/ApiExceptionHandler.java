@@ -1,11 +1,15 @@
 package com.sweep.jaksim31.exception.handler;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.exception.BizException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.validation.ConstraintViolationException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -47,6 +51,15 @@ public class ApiExceptionHandler {
                 new ErrorResponse(ex.getBaseExceptionType().getErrorCode(), ex.getMessage()),
                 ex.getBaseExceptionType().getHttpStatus()
         );
+    }
+
+    //Validator Exception Handler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
+    protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
+//        log.error("MethodArgumentNotValidException", e);
+        ErrorResponse errorResponse = new ErrorResponse(MemberExceptionType.INVALID_ID.getErrorCode(), MemberExceptionType.INVALID_ID.getMessage());
+        return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
     }
 
     @ExceptionHandler(Exception.class)
