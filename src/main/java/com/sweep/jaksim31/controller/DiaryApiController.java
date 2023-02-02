@@ -131,13 +131,4 @@ public class DiaryApiController {
     public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@Pattern(regexp = idPattern)@PathVariable String userId,  @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, @RequestParam(required = false) Map<String, Object> params) {
         return ResponseEntity.ok(diaryService.emotionStatics(userId, params));
     }
-
-    //Validator Exception Handler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
-    protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
-//        log.error("MethodArgumentNotValidException", e);
-        ErrorResponse errorResponse = new ErrorResponse(DiaryExceptionType.INVALID_ID.getErrorCode(), DiaryExceptionType.INVALID_ID.getMessage());
-        return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
-    }
 }
