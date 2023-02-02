@@ -203,23 +203,6 @@ class MemberApiControllerNullTest {
 
 
     @Nested
-    @DisplayName("Reissue Controller")
-    class Reissue {
-        @Test
-        @DisplayName("토큰 값이 비어있는 경우")
-        void invalidReissueEmptyToken() throws Exception {
-            //when
-            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
-                            .with(csrf()) //403 에러 방지
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().isOk())
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-    }
-
-
-    @Nested
     @DisplayName("isMember Controller")
     class IsMember {
         @Test

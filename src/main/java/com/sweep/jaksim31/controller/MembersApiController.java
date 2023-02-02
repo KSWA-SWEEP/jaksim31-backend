@@ -5,6 +5,7 @@ import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.login.validator.LoginRequestValidator;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.member.validator.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.handler.ErrorResponse;
 import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
@@ -82,9 +83,9 @@ public class MembersApiController {
 
     @Operation(summary = "회원가입", description = "")
     @PostMapping("/v0/members/register")
-    public ResponseEntity<MemberSaveResponse> signup(@Validated @RequestBody MemberSaveRequest memberRequestDto) {
+    public ResponseEntity<String> signup(@Validated @RequestBody MemberSaveRequest memberRequestDto) {
         log.debug("memberRequestDto = {}",memberRequestDto);
-        return new ResponseEntity<>(memberServiceImpl.signup(memberRequestDto), HttpStatus.CREATED);
+        return new ResponseEntity<>(memberServiceImpl.signup(memberRequestDto), SuccessResponseType.SIGNUP_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "로그인", description = "유저 정보를 통해 로그인합니다.")
@@ -92,7 +93,7 @@ public class MembersApiController {
     public ResponseEntity<String> login(
             @Validated @RequestBody LoginRequest loginRequest,
             HttpServletResponse response) throws URISyntaxException {
-        return ResponseEntity.ok(memberServiceImpl.login(loginRequest, response));
+        return new ResponseEntity<>(memberServiceImpl.login(loginRequest, response), SuccessResponseType.LOGIN_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
@@ -107,30 +108,21 @@ public class MembersApiController {
         httpHeaders.setLocation(new URI(loginRedirectUrl));
 
         // 회원가입이 되어있는지 조회하고 없으면 회원가입 있으면 로그인.
-        return new ResponseEntity<>(kaKaoMemberService.login(userInfo.toLoginRequest(), response), httpHeaders, HttpStatus.SEE_OTHER);
+        return new ResponseEntity<>(kaKaoMemberService.login(userInfo.toLoginRequest(), response), httpHeaders, SuccessResponseType.KAKAO_LOGIN_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "회원가입 여부 확인", description = "이메일을 통해 회원가입 여부를 확인합니다.")
     @PostMapping("/v0/members")
     public ResponseEntity<String> isMember(
             @Validated  @RequestBody MemberCheckLoginIdRequest memberRequestDto) {
-        return ResponseEntity.ok(memberServiceImpl.isMember(memberRequestDto));
-    }
-
-    @Operation(summary = "토큰 재발급", description = "리프레쉬 토큰으로 토큰을 재발급 합니다.")
-    @PostMapping("/v1/members/{userId}/reissue")
-    public ResponseEntity<String> reissue(@Pattern(regexp = idPattern) @PathVariable("userId") String userId, HttpServletRequest request,
-                                          HttpServletResponse response
-    ) {
-        memberServiceImpl.reissue(request, response);
-        return ResponseEntity.ok("토큰이 재발급 되었습니다.");
+        return new ResponseEntity<>(memberServiceImpl.isMember(memberRequestDto), SuccessResponseType.IS_MEMBER_SUCCESS.getHttpStatus());
     }
 
 //    @Hidden
     @Operation(summary = "비밀번호 변경", description = "비밀번호 재설정을 요청합니다.")
     @PutMapping("/v0/members/{loginId}/password")
     public ResponseEntity<String> changePassword(@PathVariable("loginId") String loginId, @Validated @RequestBody MemberUpdatePasswordRequest dto) {
-        return ResponseEntity.ok(memberServiceImpl.updatePassword(loginId, dto));
+        return new ResponseEntity<>(memberServiceImpl.updatePassword(loginId, dto), SuccessResponseType.USER_UPDATE_SUCCESS.getHttpStatus());
     }
 
     // ================================================== //
@@ -146,7 +138,7 @@ public class MembersApiController {
     @PatchMapping("/v1/members/{userId}")
     public ResponseEntity<String> updateMember(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
                                                @Validated @RequestBody MemberUpdateRequest dto, HttpServletRequest request) {
-        return ResponseEntity.ok(memberServiceImpl.updateMemberInfo(userId, dto,request));
+        return new ResponseEntity<>(memberServiceImpl.updateMemberInfo(userId, dto,request), SuccessResponseType.USER_UPDATE_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
@@ -165,13 +157,13 @@ public class MembersApiController {
     @Operation(summary = "내 비밀번호 검증(확인)", description = "이메일과 비밀번호 입력 시 비밀번호가 맞는지 확인")
     @PostMapping("/v1/members/{loginId}/password")
     public ResponseEntity<String> isMyPw(@PathVariable("loginId") String loginId, @Validated @RequestBody MemberCheckPasswordRequest dto) {
-        return ResponseEntity.ok(memberServiceImpl.isMyPassword(loginId, dto));}
+        return new ResponseEntity<>(memberServiceImpl.isMyPassword(loginId, dto), SuccessResponseType.CHECK_PW_SUCCESS.getHttpStatus());}
 
     @Operation(summary = "로그아웃", description = "해당 유저의 토큰 정보가 db에서 삭제 됩니다.")
     @PostMapping("/v1/members/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
 
-        return ResponseEntity.ok(memberServiceImpl.logout(request, response));
+        return new ResponseEntity<>(memberServiceImpl.logout(request, response), SuccessResponseType.LOGOUT_SUCCESS.getHttpStatus());
     }
 
     // 아직 테스트 X -> 프론트 연결 후 테스트 진행
@@ -182,7 +174,7 @@ public class MembersApiController {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(new URI(logoutRedirectUrl));
 
-        return new ResponseEntity<>(kaKaoMemberService.logout(request, response), httpHeaders, HttpStatus.SEE_OTHER);
+        return new ResponseEntity<>(kaKaoMemberService.logout(request, response), httpHeaders, SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getHttpStatus());
     }
 
     //Validator Exception Handler
@@ -191,6 +183,6 @@ public class MembersApiController {
     protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
 //        log.error("MethodArgumentNotValidException", e);
         ErrorResponse errorResponse = new ErrorResponse(MemberExceptionType.INVALID_ID.getErrorCode(), MemberExceptionType.INVALID_ID.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
     }
 }

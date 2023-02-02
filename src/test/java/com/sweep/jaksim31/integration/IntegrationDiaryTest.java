@@ -11,6 +11,9 @@ import com.sweep.jaksim31.dto.diary.DiarySaveRequest;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberRemoveRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
 import net.minidev.json.JSONArray;
@@ -116,17 +119,10 @@ class IntegrationDiaryTest {
                             .servletPath("/api/v0/members/register"))
                     //then
                     .andExpect(status().isCreated())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is(notNullValue())))
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.SIGNUP_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out))
                     .andReturn();
-            JSONParser parser = new JSONParser();
-            JSONObject jsonObject = (JSONObject) parser.parse(mvcResult.getResponse().getContentAsString());
-
-            Members members = memberRepository.findById(jsonObject.getAsString("userId")).get();
-            assertEquals(members.getLoginId(), LOGIN_ID);
-            assertEquals(members.getUsername(), USERNAME);
-            assertEquals(members.getProfileImage(), PROFILE_IMAGE);
         }
         @Test
         @DisplayName("[정상] 2.로그인")
@@ -177,8 +173,8 @@ class IntegrationDiaryTest {
                                 .servletPath("/api/v1/diaries"))
                         //then
                         .andExpect(status().isCreated())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(jsonPath("$.diaryId", Matchers.is(notNullValue())))
+                        .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                        .andExpect(content().string(SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage()))
                         .andDo(MockMvcResultHandlers.print(System.out));
 
                 // Member DB 확인
@@ -271,10 +267,8 @@ class IntegrationDiaryTest {
                             .servletPath("/api/v1/diaries/"+diaryId))
                     //then
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.diaryId", Matchers.is(diaryId)))
-                    .andExpect(jsonPath("$.content", Matchers.is(SENTENCE)))
-                    .andExpect(jsonPath("$.modifyDate",Matchers.is(LocalDate.now().toString())))
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
             // Diary DB 확인
             Diary diary = diaryRepository.findById(diaryId).get();
@@ -305,11 +299,8 @@ class IntegrationDiaryTest {
                             .servletPath("/api/v1/diaries/"+recentDiaryId))
                     //then
                     .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.diaryId", Matchers.is(recentDiaryId)))
-                    .andExpect(jsonPath("$.content", Matchers.is(SENTENCE)))
-                    .andExpect(jsonPath("$.emotion", Matchers.is(NEW_EMOTION)))
-                    .andExpect(jsonPath("$.modifyDate",Matchers.is(LocalDate.now().toString())))
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
             // Diary DB 확인
             Diary diary = diaryRepository.findById(recentDiaryId).get();
@@ -408,6 +399,7 @@ class IntegrationDiaryTest {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
             // Diary DB 확인
@@ -419,8 +411,75 @@ class IntegrationDiaryTest {
         }
 
         @Test
-        @DisplayName("[예외] 11-1.회원 탈퇴_잘못된 비밀번호")
+        @DisplayName("[정상] 11.오늘 일기 작성")
         @Order(11)
+        public void saveTodayDiary() throws Exception {
+            // when
+            Members members = Members.builder().build();
+            DiarySaveRequest request = DiarySaveRequest.builder()
+                    .userId(userId)
+                    .content("content")
+                    .date(LocalDate.now())
+                    .emotion("감정없음")
+                    .keywords(new String[]{"keyword"})
+                    .thumbnail("thumbnail")
+                    .build();
+
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
+
+            MvcResult mvcResult = mockMvc.perform(post("/api/v1/diaries")
+                            .cookie(atkCookie,rtkCookie)
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v1/diaries"))
+                    //then
+                    .andExpect(status().isCreated())
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage()))
+                    .andDo(MockMvcResultHandlers.print(System.out))
+                    .andReturn();
+
+            // Member DB 확인
+            members = memberRepository.findById(userId).get();
+            assertEquals(members.getDiaryTotal(), 19);
+
+            assertEquals(members.getRecentDiary().getDiaryDate(), LocalDate.now());
+            recentDiaryId = members.getRecentDiary().getDiaryId();
+
+            // Cookie 설정 확인
+            MockHttpServletResponse response = mvcResult.getResponse();
+            assertEquals(response.getCookie("todayDiaryId").getValue(),recentDiaryId);
+        }
+
+        @Test
+        @DisplayName("[정상] 12.오늘 일기 삭제")
+        @Order(12)
+        public void deleteTodayDiary() throws Exception {
+
+            // when
+            MvcResult mvcResult = mockMvc.perform(delete("/api/v1/diaries/"+userId+"/"+recentDiaryId)
+                            .cookie(atkCookie,rtkCookie)
+                            .servletPath("/api/v1/diaries/"+userId+"/"+recentDiaryId))
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage()))
+                    .andDo(MockMvcResultHandlers.print(System.out))
+                    .andReturn();
+
+            // Diary DB 확인
+            assertEquals(diaryRepository.findById(recentDiaryId).isPresent(),false);
+            // Member DB 확인
+            assertEquals(memberRepository.findById(userId).get().getDiaryTotal(),18);
+
+            // Cookie 설정 확인
+            MockHttpServletResponse response = mvcResult.getResponse();
+            assertEquals(response.getCookie("todayDiaryId").getValue(),"");
+        }
+
+        @Test
+        @DisplayName("[예외] 13-1.회원 탈퇴_잘못된 비밀번호")
+        @Order(13)
         public void invalidMemberRemove() throws Exception {
             MemberRemoveRequest request = new MemberRemoveRequest(userId, "wrongPassword");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
@@ -433,16 +492,16 @@ class IntegrationDiaryTest {
                     //then
                     .andExpect(status().is4xxClientError())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is("WRONG_PASSWORD")))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is("비밀번호를 잘못 입력하였습니다.")))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.WRONG_PASSWORD.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
             // Member DB 확인_아직 지워지면 안됨
             assertEquals(memberRepository.findById(userId).get().getDelYn(),'N');
         }
         @Test
-        @DisplayName("[정상] 11-2.회원 탈퇴")
-        @Order(12)
+        @DisplayName("[정상] 13-2.회원 탈퇴")
+        @Order(14)
         public void memberRemove() throws Exception {
             MemberRemoveRequest request = new MemberRemoveRequest(userId, PASSWORD);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
@@ -460,6 +519,31 @@ class IntegrationDiaryTest {
             // Member DB 확인
             assertEquals(memberRepository.findById(userId).isPresent(),true);
             assertEquals(memberRepository.findById(userId).get().getDelYn(),'Y');
+        }
+        @Test
+        @DisplayName("[예외] 14.탈퇴한 사용자 계정 로그인")
+        @Order(15)
+        public void logInDeletedUser() throws Exception {
+            LoginRequest loginRequest = new LoginRequest(LOGIN_ID, PASSWORD);
+            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
+            // when
+            MvcResult mvcResult = mockMvc.perform(post("/api/v0/members/login")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .servletPath("/api/v0/members/login"))
+                    //then
+                    .andExpect(status().is4xxClientError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.DELETED_USER.getErrorCode())))
+                    .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.DELETED_USER.getMessage())))
+                    .andDo(MockMvcResultHandlers.print(System.out))
+                    .andReturn();
+
+            // Cookie 설정 확인
+            MockHttpServletResponse response = mvcResult.getResponse();
+            assertEquals(response.getCookies().length,0);
+
+
         }
 
     }

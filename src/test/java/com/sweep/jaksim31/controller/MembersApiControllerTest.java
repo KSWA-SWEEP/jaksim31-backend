@@ -91,11 +91,7 @@ class MembersApiControllerTest {
         public void singup() throws Exception {
             //given
             given(memberService.signup(any()))
-                    .willReturn(MemberSaveResponse.builder()
-                            .userId("userId")
-                            .loginId("loginId")
-                            .username("geunho")
-                            .build());
+                    .willReturn(SuccessResponseType.SIGNUP_SUCCESS.getMessage());
 
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "geunho", "profileImage");
@@ -108,10 +104,8 @@ class MembersApiControllerTest {
 
                     //then
                     .andExpect(status().isCreated())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.userId", Matchers.is("userId")))
-                    .andExpect(jsonPath("$.loginId", Matchers.is("loginId")))
-                    .andExpect(jsonPath("$.username", Matchers.is("geunho")))
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(SuccessResponseType.SIGNUP_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -204,7 +198,7 @@ class MembersApiControllerTest {
         void login() throws Exception {
             //given
             given(memberService.login(any(), any()))
-                    .willReturn("로그인이 완료되었습니다.");
+                    .willReturn(SuccessResponseType.LOGIN_SUCCESS.getMessage());
 
             // when
             LoginRequest loginRequest = new LoginRequest("loginId", "password");
@@ -284,41 +278,6 @@ class MembersApiControllerTest {
     }
 
 
-    @Nested
-    @DisplayName("Reissue Controller")
-    class Reissue {
-        @Test
-        @DisplayName("정상인 경우")
-        void reissue() throws Exception {
-            //given
-//            given(memberService.reissue(any(), any()))
-//                    .willReturn();
-            //when
-            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
-                            .with(csrf()) //403 에러 방지
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().isOk())
-                    .andDo(MockMvcResultHandlers.print(System.out));
-
-        }
-        @Test
-        @DisplayName("정상인 경우(refresh token만 있는 경우)")
-        void reissueRefreshTokenOnly() throws Exception {
-            //given
-//            given(memberService.reissue(any(), any()))
-//                    .willReturn("토큰 재발급이 완료되었습니다.");
-
-            //when
-            mockMvc.perform(post("/api/v1/members/testobjectidtestobject12/reissue")
-                            .with(csrf()) //403 에러 방지
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().isOk())
-                    .andDo(MockMvcResultHandlers.print(System.out));
-
-        }
-
 //        @Test
 //        @DisplayName("토큰 값이 비어있는 경우")
 //        void invalidReissueEmptyToken() throws Exception {
@@ -335,9 +294,6 @@ class MembersApiControllerTest {
 //
 //        }
 
-    }
-
-
     @Nested
     @DisplayName("isMember Controller")
     class IsMember {
@@ -346,7 +302,7 @@ class MembersApiControllerTest {
         void isMember() throws Exception {
             //given
             given(memberService.isMember(any()))
-                    .willReturn("test ok");
+                    .willReturn(SuccessResponseType.IS_MEMBER_SUCCESS.getMessage());
             //when
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest("string");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
@@ -358,7 +314,7 @@ class MembersApiControllerTest {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("test ok"))
+                    .andExpect(content().string(SuccessResponseType.IS_MEMBER_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -413,7 +369,7 @@ class MembersApiControllerTest {
         void changePw() throws Exception {
 
             given(memberService.updatePassword(any(), any()))
-                    .willReturn("회원 정보가 정상적으로 변경되었습니다.");
+                    .willReturn(SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
 
             //when
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest("string");
@@ -426,7 +382,7 @@ class MembersApiControllerTest {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("회원 정보가 정상적으로 변경되었습니다."))
+                    .andExpect(content().string(SuccessResponseType.USER_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
         }
@@ -548,7 +504,7 @@ class MembersApiControllerTest {
         @Test
         void updateMember() throws Exception {
             given(memberService.updateMemberInfo(any(), any(), any()))
-                    .willReturn("회원 정보가 변경 되었습니다.");
+                    .willReturn(SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
 
             //when
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("방근호", "프로필이미지");
@@ -562,7 +518,7 @@ class MembersApiControllerTest {
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("회원 정보가 변경 되었습니다."))
+                    .andExpect(content().string(SuccessResponseType.USER_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -617,8 +573,8 @@ class MembersApiControllerTest {
         void remove() throws Exception {
 
 
-            given(memberService.remove(any(), any(), any(), any()))
-                    .willReturn("삭제되었습니다.");
+            given(memberService.remove(any(), any(), any(),any()))
+                    .willReturn(SuccessResponseType.USER_REMOVE_SUCCESS.getMessage());
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberRemoveRequest);
@@ -630,7 +586,7 @@ class MembersApiControllerTest {
 
                     .andExpect(status().is3xxRedirection())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("삭제되었습니다."))
+                    .andExpect(content().string(SuccessResponseType.USER_REMOVE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -657,7 +613,7 @@ class MembersApiControllerTest {
         @Test
         void invalidRemove2xx() throws Exception {
 
-            given(memberService.remove(any(), any(), any(), any()))
+            given(memberService.remove(any(), any(), any(),any()))
                     .willThrow(new BizException(MemberExceptionType.DELETE_NOT_FOUND_USER, "test"));
 
             MemberRemoveRequest memberRemoveRequest = new MemberRemoveRequest("testobjectidtestobject12", "geunho");
@@ -744,7 +700,7 @@ class MembersApiControllerTest {
         void isMyPw() throws Exception {
 
             given(memberService.isMyPassword(any(), any()))
-                    .willReturn("비밀번호가 일치합니다.");
+                    .willReturn(SuccessResponseType.CHECK_PW_SUCCESS.getMessage());
 
             MemberCheckPasswordRequest memberCheckPasswordRequest = new MemberCheckPasswordRequest("password");
             String jsonString = JsonUtil.objectMapper.writeValueAsString(memberCheckPasswordRequest);
@@ -756,7 +712,7 @@ class MembersApiControllerTest {
 
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
-                    .andExpect(content().string("비밀번호가 일치합니다."))
+                    .andExpect(content().string(SuccessResponseType.CHECK_PW_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 
@@ -832,12 +788,12 @@ class MembersApiControllerTest {
         void logout() throws Exception {
 
             given(memberService.logout(any(), any()))
-                    .willReturn("로그아웃 되었습니다.");
+                    .willReturn(SuccessResponseType.LOGOUT_SUCCESS.getMessage());
 
             mockMvc.perform(post("/api/v1/members/logout")
                             .with(csrf()))
                     .andExpect(status().isOk())
-                    .andExpect(content().string("로그아웃 되었습니다."))
+                    .andExpect(content().string(SuccessResponseType.LOGOUT_SUCCESS.getMessage()))
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andDo(MockMvcResultHandlers.print(System.out));
 
@@ -889,7 +845,7 @@ class MembersApiControllerTest {
                             .build());
 
             given(kaKaoMemberService.login(any(), any()))
-                    .willReturn("로그인이 완료되었습니다.");
+                    .willReturn(SuccessResponseType.LOGIN_SUCCESS.getMessage());
 
             //when
             mockMvc.perform(get("/api/v0/members/kakao-login")
@@ -913,14 +869,14 @@ class MembersApiControllerTest {
 
             //given
             given(kaKaoMemberService.logout(any(), any()))
-                    .willReturn("로그아웃 되었습니다.");
+                    .willReturn(SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getMessage());
 
             //when
             mockMvc.perform(get("/api/v1/members/kakao-logout")
                             .with(csrf()))
                     //then
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(content().string("로그아웃 되었습니다."))
+                    .andExpect(content().string(SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
 

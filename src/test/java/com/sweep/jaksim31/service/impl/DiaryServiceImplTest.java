@@ -8,6 +8,7 @@ import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
@@ -161,13 +162,11 @@ public class DiaryServiceImplTest {
             doNothing().when(memberCacheAdapter).delete(any());
 
             // when
-            DiaryResponse expected = diaryService.updateDiary(diaryId, diarySaveRequest);
+            String expected = diaryService.updateDiary(diaryId, diarySaveRequest);
 
             // then
             assert expected != null;
-            assertEquals(expected.getUserId(), diarySaveRequest.getUserId());
-            assertEquals(expected.getDiaryDate(), diarySaveRequest.getDate());
-            assertEquals(expected.getModifyDate(), LocalDate.now());
+            assertEquals(expected, SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage());
 
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, times(1)).findById(userId);
@@ -232,10 +231,10 @@ public class DiaryServiceImplTest {
             doNothing().when(memberCacheAdapter).delete(any());
 
             // when
-            String result = diaryService.remove(userId, diaryId);
+            String result = diaryService.remove(any(), userId, diaryId);
 
             // then
-            assertEquals(result, diaryId);
+            assertEquals(result, SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage());
 
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, times(1)).findById(userId);
@@ -255,7 +254,7 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove("wrong_userId", diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(any(), "wrong_userId", diaryId));
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, never()).findById(userId);
             verify(memberRepository, never()).save(user);
@@ -270,7 +269,7 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove(userId, diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(any(), userId, diaryId));
             verify(memberRepository, never()).findById(userId);
             verify(diaryRepository, never()).delete(any());
         }
