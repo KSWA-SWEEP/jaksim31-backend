@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -247,10 +248,10 @@ public class MemberServiceImpl implements MemberService {
      * @param userId 회원 아이디
      * @return MemberInfoResponse
      */
-//    @Cacheable(
-//            value = "memberCache",
-//            key = "#userId"
-//    )
+    @Cacheable(
+            value = "memberCache",
+            key = "#userId"
+    )
     @Transactional(readOnly = true)
     public MemberInfoResponse getMyInfo(String userId, HttpServletRequest request) {
         MemberInfoResponse members = memberRepository.findById(userId)

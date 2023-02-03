@@ -10,8 +10,6 @@ import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
-import net.minidev.json.JSONObject;
-import net.minidev.json.parser.JSONParser;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import javax.servlet.http.Cookie;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -71,6 +68,11 @@ class IntegrationMemberTest {
     private MemberServiceImpl memberService;
     @Autowired
     private MemberRepository memberRepository;
+
+    @BeforeAll
+    public void init() {
+        memberRepository.deleteAll();
+    }
 
 
     @Nested

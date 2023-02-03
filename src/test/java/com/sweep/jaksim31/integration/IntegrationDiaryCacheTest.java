@@ -22,6 +22,8 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;
@@ -67,6 +69,8 @@ public class IntegrationDiaryCacheTest {
     private static String userId;
     private static Members members;
     private static String diaryId;
+    private static final MockHttpServletRequest request = new MockHttpServletRequest();
+    private static final MockHttpServletResponse response = new MockHttpServletResponse();
 
 
     public DiarySaveRequest getDiaryRequest(int num, String userId) {
@@ -187,7 +191,7 @@ public class IntegrationDiaryCacheTest {
             refreshTokenCacheAdapter.put(MEMBER_CACHE_PREFIX + userId, "test", Duration.ofSeconds(1));
 
             // when
-            diaryService.remove(userId, diaryId);
+            diaryService.remove(response, userId, diaryId);
 
             //then
             assertNull(refreshTokenCacheAdapter.get(DIARY_CACHE_PREFIX + diaryId));
@@ -228,7 +232,7 @@ public class IntegrationDiaryCacheTest {
             refreshTokenCacheAdapter.put(MEMBER_CACHE_PREFIX + userId, "test", Duration.ofSeconds(1));
 
             // when
-            DiaryResponse diaryResponse = diaryService.saveDiary(getDiaryRequest(5, userId));
+            diaryService.saveDiary(response, getDiaryRequest(5, userId));
 
             //then
             assertNull(refreshTokenCacheAdapter.get(userId + DIARY_PAGE_CACHE_SUFFIX));
