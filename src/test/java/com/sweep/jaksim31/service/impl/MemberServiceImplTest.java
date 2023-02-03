@@ -6,8 +6,9 @@ import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.member.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
 import org.junit.jupiter.api.*;
@@ -16,16 +17,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
@@ -116,13 +110,11 @@ class MemberServiceImplTest {
                     .willReturn(memberSaveResponse);
 
             //when
-            MemberSaveResponse expected = memberService.signup(memberSaveRequest);
+            String expected = memberService.signup(memberSaveRequest);
 
             //then
             assert expected != null;
-            assertEquals(expected.getLoginId(), memberSaveRequest.getLoginId());
-            assertEquals(expected.getUsername(), memberSaveRequest.getUsername());
-            assertEquals(expected.getProfileImage(), memberSaveRequest.getProfileImage());
+            assertEquals(expected, SuccessResponseType.SIGNUP_SUCCESS.getMessage());
             verify(memberRepository, times(1)).existsByLoginId(any());
 
         }
@@ -167,7 +159,7 @@ class MemberServiceImplTest {
             String res = memberService.isMember(memberCheckLoginIdRequest);
 
             //then
-            assertEquals(loginId+" 해당 이메일은 가입하였습니다.", res);
+            assertEquals(loginId+SuccessResponseType.IS_MEMBER_SUCCESS.getMessage(), res);
             verify(memberRepository, times(1)).existsByLoginId(loginId);
 
         }
@@ -209,7 +201,7 @@ class MemberServiceImplTest {
             String res = memberService.updatePassword(fakeMemberId, memberUpdatePasswordRequest);
 
             //then
-            assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(memberRepository, times(1)).save(members);
         }
@@ -378,7 +370,7 @@ class MemberServiceImplTest {
             String res = memberService.updateMemberInfo(userId, memberUpdateRequest, any());
 
             //then
-            assertEquals(res, "회원 정보가 정상적으로 변경되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_UPDATE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, times(1)).save(members);
         }
@@ -448,7 +440,7 @@ class MemberServiceImplTest {
             String res = memberService.isMyPassword(fakeMemberId, memberCheckPasswordRequest);
 
             //then
-            assertEquals(res, "비밀번호가 일치합니다.");
+            assertEquals(res, SuccessResponseType.CHECK_PW_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findByLoginId(fakeMemberId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());
@@ -530,7 +522,7 @@ class MemberServiceImplTest {
             String res = memberService.remove(userId, memberRemoveRequest, response, request);
 
             //then
-            assertEquals(res, "정상적으로 회원탈퇴 작업이 처리되었습니다.");
+            assertEquals(res, SuccessResponseType.USER_REMOVE_SUCCESS.getMessage());
             verify(memberRepository, times(1)).findById(userId);
             verify(passwordEncoder, times(1)).encode(any());
             verify(passwordEncoder, times(1)).matches(any(), any());

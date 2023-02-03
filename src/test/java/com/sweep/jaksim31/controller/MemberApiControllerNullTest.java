@@ -6,7 +6,7 @@ import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-27              김주현             최초 생성
+ * 2023-02-01           김주현                PathValue validation 추가로 인한 test 수정
  */
 
 @WebMvcTest(controllers = MembersApiController.class)
@@ -196,23 +197,6 @@ class MemberApiControllerNullTest {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getErrorCode())))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(MemberExceptionType.NOT_FOUND_PASSWORD.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-    }
-
-
-    @Nested
-    @DisplayName("Reissue Controller")
-    class Reissue {
-        @Test
-        @DisplayName("토큰 값이 비어있는 경우")
-        void invalidReissueEmptyToken() throws Exception {
-            //when
-            mockMvc.perform(post("/api/v1/members/geunho/reissue")
-                            .with(csrf()) //403 에러 방지
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().isOk())
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }

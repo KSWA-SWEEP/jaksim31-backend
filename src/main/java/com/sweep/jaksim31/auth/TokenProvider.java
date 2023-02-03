@@ -2,8 +2,8 @@ package com.sweep.jaksim31.auth;
 
 import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.AuthorityExceptionType;
-import com.sweep.jaksim31.exception.type.JwtExceptionType;
+import com.sweep.jaksim31.enums.AuthorityExceptionType;
+import com.sweep.jaksim31.enums.JwtExceptionType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

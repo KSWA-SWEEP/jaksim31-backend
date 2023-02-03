@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 public interface ApiTokenRefreshFeign {
 
     @PostMapping("")
-    ResponseEntity<String> refreshApiToken();
+    ResponseEntity<?> refreshApiToken();
 }
 
 

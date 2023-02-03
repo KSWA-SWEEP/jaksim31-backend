@@ -1,17 +1,12 @@
 package com.sweep.jaksim31.controller;
 
-import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.diary.*;
-import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
-import com.sweep.jaksim31.exception.type.ThirdPartyExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import com.sweep.jaksim31.utils.JsonUtil;
 import org.hamcrest.Matchers;
@@ -23,26 +18,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -338,65 +321,6 @@ public class DiaryApiControllerNullTest  {
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.INPUT_SENTENCES_IS_NULL.getErrorCode())))
                     .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.INPUT_SENTENCES_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-    }
-
-    @Nested
-    @DisplayName("썸네일 생성 컨트롤러")
-    class saveThumbnail {
-        @Test
-        @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
-        public void failSaveThumbnailUserIdIsNULL() throws Exception{
-            //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest(null,"diaryId","thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
-
-            mockMvc.perform(put("/api/v1/diaries/thumbnail")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.USER_ID_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.USER_ID_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
-        @DisplayName("[예외]일기 ID가 입력되지 않았을 때")
-        public void failSaveThumbnailDiaryIdIsNULL() throws Exception{
-            //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId",null,"thumbnail");
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
-
-            mockMvc.perform(put("/api/v1/diaries/thumbnail")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.DIARY_ID_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.DIARY_ID_IS_NULL.getMessage())))
-                    .andDo(MockMvcResultHandlers.print(System.out));
-        }
-        @Test
-        @DisplayName("[예외]썸네일 이미지 경로가 입력되지 않았을 때")
-        public void failSaveThumbnailURIIsNULL() throws Exception{
-            //when
-            DiaryThumbnailRequest diaryThumbnailRequest = new DiaryThumbnailRequest("userId","diaryId",null);
-            String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diaryThumbnailRequest);
-
-            mockMvc.perform(put("/api/v1/diaries/thumbnail")
-                            .with(csrf()) //403 에러 방지
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    //then
-                    .andExpect(status().is4xxClientError())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.errorCode", Matchers.is(DiaryExceptionType.THUMBNAIL_IS_NULL.getErrorCode())))
-                    .andExpect(jsonPath("$.errorMessage", Matchers.is(DiaryExceptionType.THUMBNAIL_IS_NULL.getMessage())))
                     .andDo(MockMvcResultHandlers.print(System.out));
         }
     }

@@ -16,8 +16,9 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.JwtExceptionType;
+import com.sweep.jaksim31.enums.JwtExceptionType;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
@@ -114,6 +115,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         CookieUtil.addSecureCookie(response, "atk", accessToken, (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
         CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isSocial", members.getIsSocial().toString(), (int) rtkLive / 60);
 
         // 저장소 정보 업데이트
         refreshTokenCacheAdapter.put(authenticate.getName(), refreshToken, Duration.ofSeconds(rtkLive / 60));
@@ -126,7 +128,7 @@ public class KakaoMemberServiceImpl implements MemberService {
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
-        return "로그인이 완료되었습니다.";
+        return SuccessResponseType.KAKAO_LOGIN_SUCCESS.getMessage();
 
     }
 
@@ -156,7 +158,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         // 저장소에서 토큰 삭제
         refreshTokenCacheAdapter.delete(authentication.getName());
 
-        return "로그아웃 되었습니다.";
+        return SuccessResponseType.KAKAO_LOGOUT_SUCCESS.getMessage();
     }
 
         // 카카오 인증서버로 부터 Access Token 받아오는 함수
