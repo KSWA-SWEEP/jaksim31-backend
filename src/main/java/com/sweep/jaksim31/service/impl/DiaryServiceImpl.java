@@ -215,7 +215,7 @@ public class DiaryServiceImpl implements DiaryService {
         LocalDate today = LocalDate.now();
         if(diary.getDate().toLocalDate().equals(today)){
             // 만료 시간을 당일 23:59:59로 설정
-            long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+            long todayExpTime = (long) LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
                     - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
             CookieUtil.addCookie(response, "todayDiaryId", diary.getId(), todayExpTime);
@@ -312,7 +312,7 @@ public class DiaryServiceImpl implements DiaryService {
         LocalDate today = LocalDate.now();
         if(diary.getDate().toLocalDate().equals(today)){
             // 만료 시간을 당일 23:59:59로 설정
-            long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+            long todayExpTime = (long) LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
                     - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
 
             CookieUtil.addCookie(response, "todayDiaryId", "", todayExpTime);

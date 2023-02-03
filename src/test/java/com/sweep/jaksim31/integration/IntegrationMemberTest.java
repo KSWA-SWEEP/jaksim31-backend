@@ -72,6 +72,11 @@ class IntegrationMemberTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @BeforeAll
+    public void init() {
+        memberRepository.deleteAll();
+    }
+
 
     @Nested
     @DisplayName("통합 테스트 01. 회원가입/로그인 - MemberService - 로그아웃")

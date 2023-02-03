@@ -88,7 +88,11 @@ class IntegrationDiaryTest {
     @Autowired
     DiaryRepository diaryRepository;
 
-
+    @BeforeAll
+    public void init() {
+        memberRepository.deleteAll();
+        diaryRepository.deleteAll();
+    }
 
 
     public DiarySaveRequest getDiaryRequest(int num, String userId) {

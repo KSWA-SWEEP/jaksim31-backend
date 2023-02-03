@@ -15,6 +15,23 @@
     <description>backend</description>
     <properties>
         <java.version>1.8</java.version>
+        <skip.unit.tests>false</skip.unit.tests>
+        <project.test.result.directory>${project.build.directory}/test-results</project.test.result.directory>
+
+        <sonar.host.url>http://210.109.61.124:8080</sonar.host.url>
+        <sonar.login>{loginId}</sonar.login>
+        <sonar.projectKey>jaksim31</sonar.projectKey>
+        <sonar.projectName>test</sonar.projectName>
+        <sonar.sources>src</sonar.sources>
+        <sonar.language>java</sonar.language>
+        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+        <sonar.profile>Sonar way</sonar.profile>
+        <sonar.java.binaries>${project.build.directory}/classes</sonar.java.binaries>
+        <sonar.test.inclusions>**/*Test.java</sonar.test.inclusions>
+        <sonar.java.codeCoveragePlugin>jacoco</sonar.java.codeCoveragePlugin>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.test.result.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.exclusions>**/*.xml</sonar.exclusions>
+        <sonar.coverage.exclusions>**/qualitymeasurementsample/*</sonar.coverage.exclusions>
     </properties>
     <dependencies>
         <dependency>
@@ -218,7 +235,62 @@
                     <target>11</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>${skip.unit.tests}</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.7.0.1746</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.5</version>
+                <executions>
+                    <execution>
+                        <id>pre-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <propertyName>jacocoArgLine</propertyName>
+                            <destFile>${project.test.result.directory}/jacoco/jacoco.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>post-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.test.result.directory}/jacoco/jacoco.exec</dataFile>
+                            <outputDirectory>${project.test.result.directory}/jacoco</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+
 
 </project>
