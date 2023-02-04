@@ -1,0 +1,84 @@
+# workflow의 이름
+name: Backend CI (Pull request)
+
+# PR 요청에 대해
+on:
+  pull_request:
+    # 특정 브랜치만
+    branches:
+      - develop # develop 브랜치에서 pr 이벤트가 일어났을 때 실행
+    # pr이 생성 되었을 때, 담당 유저가 등록되었을 때, PR에 코드가 머지되었을 때, 라벨이 달렸을 때 동작
+    types: [opened, assigned, synchronize, labeled, reopened]
+
+jobs:
+  ###### 본문 내용과 관련 없는 Job, 빌드 테스트
+  test:
+    env:
+      # KEY - VALUE
+      SONARQUBE_ID: jaksim31
+      SONARQUBE_URL: ${{ secrets.SONARQUBE_URL }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    # ubuntu 환경에서 실행 (환경은 github이 제공)
+    runs-on: macos-latest
+    # 각 단계
+    steps:
+      # 소스코드 체크아웃
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        # 서브모듈 설정
+        with:
+          submodules: true
+          # secrets 변수는 github 세팅에서 미리 세팅한 데이터
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
+
+      - name: Install JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          cache: 'maven'
+
+      # Maven Package Caching
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Grant execute permission for maven
+        run: chmod +x mvnw
+
+      - name: Unit Test & Integration Test
+        run: ./mvnw test -Dspring.profiles.active=local -P local
+
+      - name: Write the testing result on PR
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        if: always()
+        with:
+          files: '**/target/surefire-reports/TEST-*.xml'
+
+      - name: Check Comment on the Code line.
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
+
+      # 위에서 설정했던 정적코드 전송 태스크 실행
+      - name: Sonaqube Analysis
+        if: always()
+        run: ./mvnw sonar:sonar -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
+
+      - name: Comment Sonarqube URL
+        if: always()
+        uses: actions/github-script@v4
+        with:
+          # 이슈에 코멘트를 달아주는 스크립트 실행
+          script: |
+            const { SONARQUBE_ID, SONARQUBE_URL, PR_NUMBER } = process.env
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📊 ${ SONARQUBE_ID }-${ PR_NUMBER } 정적 코드 분석 결과 확인하기 [링크](${SONARQUBE_URL})`})

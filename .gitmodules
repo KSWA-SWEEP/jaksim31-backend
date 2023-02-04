@@ -1,0 +1,3 @@
+[submodule "jaksim31-properties"]
+	path = jaksim31-properties
+	url = https://github.com/KSWA-SWEEP/jaksim31-properties.git
