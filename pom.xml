@@ -17,11 +17,6 @@
         <java.version>1.8</java.version>
         <skip.unit.tests>false</skip.unit.tests>
         <project.test.result.directory>${project.build.directory}/test-results</project.test.result.directory>
-
-        <sonar.host.url>http://210.109.61.124:8080</sonar.host.url>
-        <sonar.login>{loginId}</sonar.login>
-        <sonar.projectKey>jaksim31</sonar.projectKey>
-        <sonar.projectName>test</sonar.projectName>
         <sonar.sources>src</sonar.sources>
         <sonar.language>java</sonar.language>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
@@ -32,6 +27,11 @@
         <sonar.coverage.jacoco.xmlReportPaths>${project.test.result.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>**/*.xml</sonar.exclusions>
         <sonar.coverage.exclusions>**/qualitymeasurementsample/*</sonar.coverage.exclusions>
+
+        <git.submodule.main.directory>${project.basedir}/submodule/resources/main</git.submodule.main.directory>
+        <git.submodule.test.directory>${project.basedir}/submodule/resources/test</git.submodule.test.directory>
+        <main.resources.directory>${project.basedir}/src/main/resources</main.resources.directory>
+        <test.resources.directory>${project.basedir}/src/test/resources</test.resources.directory>
     </properties>
     <dependencies>
         <dependency>
@@ -214,14 +214,15 @@
     <build>
         <resources>
             <resource>
-                <directory>src/main/resources/${env}</directory>
+                <directory>jaksim31-properties/resources/main/${env}</directory>
             </resource>
         </resources>
         <testResources>
             <testResource>
-                <directory>src/test/resources/${env}</directory>
+                <directory>jaksim31-properties/resources/test/${env}</directory>
             </testResource>
         </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -235,25 +236,27 @@
                     <target>11</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>${skip.unit.tests}</skipTests>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!-- surefire plugin 등록-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-surefire-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <skipTests>${skip.unit.tests}</skipTests>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-failsafe-plugin</artifactId>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <goals>-->
+            <!--                            <goal>integration-test</goal>-->
+            <!--                            <goal>verify</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
+            <!-- sonarqube scanner 등록 -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
@@ -290,7 +293,5 @@
             </plugin>
         </plugins>
     </build>
-
-
 
 </project>
