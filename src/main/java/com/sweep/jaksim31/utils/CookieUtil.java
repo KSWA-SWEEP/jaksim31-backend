@@ -1,13 +1,14 @@
 package com.sweep.jaksim31.utils;
 
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.enums.JwtExceptionType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.util.SerializationUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Base64;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * packageName :  com.sweep.jaksim31.utils
@@ -19,6 +20,9 @@ import java.util.Optional;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
+ * 2023-01-27           김주현             path 추가
+ * 2023-01-30           방근호             getAccessToken, getRefreshToken 추가
+ * 2023-01-31           방근호,김주현       Default Cookie reset 추가
  */
 
 public class CookieUtil {
@@ -41,6 +45,7 @@ public class CookieUtil {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .maxAge(maxAge)
+                .path("/")
                 .build();
 
 
@@ -62,10 +67,37 @@ public class CookieUtil {
     public static void addPublicCookie(HttpServletResponse response, String name, String value, int maxAge) {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
                 .build();
 
 
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public static void resetCookie(HttpServletResponse response, String name, String value) {
+
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+    }
+    public static void resetDefaultCookies(HttpServletResponse response) {
+        Map<String,String> cookies = new HashMap<>();
+        cookies.put("atk", "");
+        cookies.put("rtk", "");
+        cookies.put("isLogin", "false");
+        cookies.put("todayDiaryId", "");
+        cookies.put("userId", "");
+        cookies.put("isSocial", "");
+        for(String i : cookies.keySet()){
+            ResponseCookie cookie = ResponseCookie.from(i, cookies.get(i))
+                    .path("/")
+                    .maxAge(0)
+                    .build();
+            response.addHeader("Set-Cookie", cookie.toString());
+        }
     }
 
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
@@ -81,6 +113,25 @@ public class CookieUtil {
                 }
             }
         }
+    }
+
+    public static String getAccessToken(HttpServletRequest request) {
+        Cookie accessTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("atk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+
+        return accessTokenCookie.getValue();
+    }
+
+    public static String getRefreshToken(HttpServletRequest request) {
+
+        Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
+                .filter(req -> req.getName().equals("rtk"))
+                .findAny()
+                .orElseThrow(() -> new BizException(JwtExceptionType.EMPTY_TOKEN));
+
+        return refreshTokenCookie.getValue();
     }
 
     public static String serialize(Object obj) {

@@ -5,6 +5,7 @@ import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.dto.diary.*;
 import org.json.simple.parser.ParseException;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 
@@ -37,13 +38,13 @@ public interface DiaryService {
     RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map params);
 
     // 일기 생성
-    DiaryResponse saveDiary(DiarySaveRequest diarySaveRequest);
+    String saveDiary(HttpServletResponse response, DiarySaveRequest diarySaveRequest);
 
     // 일기 수정
-    DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest);
+    String updateDiary(String diaryId, DiarySaveRequest diarySaveRequest);
 
     // 일기 삭제
-    String remove(String userId,String diaryId);
+    String remove(HttpServletResponse response, String userId,String diaryId);
 
     // 일기 조회
     DiaryResponse findDiary(String userId, String diaryId);

@@ -1,14 +1,17 @@
 package com.sweep.jaksim31.service.impl;
 
-import com.sweep.jaksim31.controller.feign.EmotionAnalysisFeign;
+import com.sweep.jaksim31.adapter.RestPage;
+import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
+import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.bson.Document;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +23,6 @@ import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.support.PageableExecutionUtils;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import java.time.LocalDate;
@@ -43,6 +45,7 @@ import static org.mockito.Mockito.*;
  * -----------------------------------------------------------
  * 2023-01-19           김주현             최초 생성
  * 2023-01-20           김주현             일기 삭제 service 수정으로 인한 test 수정
+ * 2023-01-25           방근호             캐시로 인한 테스트 검증 코드 추가 및 수정
  */
 @ExtendWith(MockitoExtension.class)
 @WithMockUser(username = "username", password = "password", roles = "ROLE_USER")
@@ -57,7 +60,9 @@ public class DiaryServiceImplTest {
     @Mock
     private MongoTemplate mongoTemplate;
     @Mock
-    private EmotionAnalysisFeign emotionAnalysisFeign;
+    private DiaryPagingCacheAdapter diaryCacheAdapter;
+    @Mock
+    private MemberCacheAdapter memberCacheAdapter;
 
     private static MockedStatic<DiaryResponse> diaryResponse;
     private static MockedStatic<DiaryInfoResponse> diaryInfoResponse;
@@ -136,12 +141,15 @@ public class DiaryServiceImplTest {
             Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
             assert updatedDiary != null;
             DiaryResponse diaryResponse = new DiaryResponse(diaryId, userId, "testContext", diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
+            DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse();
+            diaryInfoResponse.setDiaryId("differentDiaryId");
+            Members members = Members.builder().recentDiary(diaryInfoResponse).build();
             // 일기가 존재하고
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(updatedDiary));
             // 사용자가 존재할 때
             given(memberRepository.findById(userId))
-                    .willReturn(Optional.of(Members.builder().build()));
+                    .willReturn(Optional.of(members));
             // 일기 저장 시 Diary 리턴
             given(diaryRepository.save(any()))
                     .willReturn(updatedDiary);
@@ -149,18 +157,21 @@ public class DiaryServiceImplTest {
             given(DiaryResponse.of(updatedDiary))
                     .willReturn(diaryResponse);
 
+            // 아무것도 안하게 하겠음
+            doNothing().when(diaryCacheAdapter).findAndDelete(any());
+            doNothing().when(memberCacheAdapter).delete(any());
+
             // when
-            DiaryResponse expected = diaryService.updateDiary(diaryId, diarySaveRequest);
+            String expected = diaryService.updateDiary(diaryId, diarySaveRequest);
 
             // then
             assert expected != null;
-            assertEquals(expected.getUserId(), diarySaveRequest.getUserId());
-            assertEquals(expected.getDiaryDate(), diarySaveRequest.getDate());
-            assertEquals(expected.getModifyDate(), LocalDate.now());
+            assertEquals(expected, SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage());
 
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, times(1)).findById(userId);
             verify(diaryRepository, times(1)).save(any());
+            verify(diaryCacheAdapter, times(1)).findAndDelete(any());
         }
         @Test
         @DisplayName("[예외]일기가 존재하지 않을 때, 저장 X")
@@ -175,6 +186,7 @@ public class DiaryServiceImplTest {
             // then
             assertThrows(BizException.class, () -> diaryService.updateDiary(diaryId, diarySaveRequest));
             verify(diaryRepository, never()).save(updatedDiary);
+            verify(diaryCacheAdapter, never()).findAndDelete(any());
         }
         @Test
         @DisplayName("[예외]사용자가 존재하지 않을 때, 저장 X")
@@ -191,6 +203,7 @@ public class DiaryServiceImplTest {
             // then
             assertThrows(BizException.class, () -> diaryService.updateDiary(diaryId, diarySaveRequest));
             verify(diaryRepository, never()).save(updatedDiary);
+            verify(diaryCacheAdapter, never()).findAndDelete(any());
         }
     }
 
@@ -204,27 +217,34 @@ public class DiaryServiceImplTest {
         void removeDiary(){
             // given
             Diary diary = new Diary(diaryId, diarySaveRequest);
-            Members user = Members.builder().diaryTotal(5).build();
+            DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse();
+            diaryInfoResponse.setDiaryId("differentDiaryId");
+            Members user = Members.builder().diaryTotal(5).recentDiary(diaryInfoResponse).build();
             // 삭제하려고 하는 일기가 존재함
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.of(diary));
             given(memberRepository.findById(userId))
                     .willReturn(Optional.of(user));
 
+            // 아무것도 안하게 하겠음
+            doNothing().when(diaryCacheAdapter).findAndDelete(any());
+            doNothing().when(memberCacheAdapter).delete(any());
+
             // when
-            String result = diaryService.remove(userId, diaryId);
+            String result = diaryService.remove(any(), userId, diaryId);
 
             // then
-            assertEquals(result, diaryId);
+            assertEquals(result, SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage());
 
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, times(1)).findById(userId);
             verify(memberRepository, times(1)).save(user);
             verify(diaryRepository, times(1)).delete(diary);
+            verify(diaryCacheAdapter, times(1)).findAndDelete(any());
         }
         @Test
         @DisplayName("[예외]사용자의 일기가 아닐 경우")
-        void failUpdateDiaryNoPermission(){
+        void failRemoveDiaryNoPermission(){
             // given
             Diary diary = new Diary(diaryId, diarySaveRequest);
             Members user = Members.builder().diaryTotal(5).build();
@@ -234,7 +254,7 @@ public class DiaryServiceImplTest {
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove("wrong_userId", diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(any(), "wrong_userId", diaryId));
             verify(diaryRepository, times(1)).findById(diaryId);
             verify(memberRepository, never()).findById(userId);
             verify(memberRepository, never()).save(user);
@@ -242,14 +262,14 @@ public class DiaryServiceImplTest {
         }
         @Test
         @DisplayName("[예외]일기가 존재하지 않을 때")
-        void failUpdateDiaryNotFoundDiary(){
+        void failRemoveDiaryNotFoundDiary(){
             // given
             given(diaryRepository.findById(diaryId))
                     .willReturn(Optional.empty());
 
             // when
             // then
-            assertThrows(BizException.class, () -> diaryService.remove(userId, diaryId));
+            assertThrows(BizException.class, () -> diaryService.remove(any(), userId, diaryId));
             verify(memberRepository, never()).findById(userId);
             verify(diaryRepository, never()).delete(any());
         }
@@ -339,6 +359,9 @@ public class DiaryServiceImplTest {
             given(PageableExecutionUtils.getPage(any(),any(),any()))
                     .willReturn(page);
 
+            given(diaryCacheAdapter.get(any()))
+                    .willReturn(null);
+
             // when
             Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
@@ -350,6 +373,7 @@ public class DiaryServiceImplTest {
 
             verify(memberRepository, times(1)).findById(userId);
             verify(mongoTemplate, times(1)).find(any(),any(),any());
+            verify(diaryCacheAdapter, times(1)).get(any());
         }
         @Test
         @DisplayName("[정상]사용자 일기 조회 성공_page,size")
@@ -374,6 +398,11 @@ public class DiaryServiceImplTest {
             given(PageableExecutionUtils.getPage(any(),any(),any()))
                     .willReturn(page);
 
+            given(diaryCacheAdapter.get(any()))
+                    .willReturn(null);
+
+            doNothing().when(diaryCacheAdapter).put(any(), any());
+
             // when
             Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
@@ -386,6 +415,7 @@ public class DiaryServiceImplTest {
 
             verify(memberRepository, times(1)).findById(userId);
             verify(mongoTemplate, times(1)).find(any(),any(),any());
+            verify(diaryCacheAdapter, times(1)).get(any());
         }
         @Test
         @DisplayName("[정상]사용자 일기 조회 성공_page")
@@ -410,6 +440,11 @@ public class DiaryServiceImplTest {
             given(PageableExecutionUtils.getPage(any(),any(),any()))
                     .willReturn(page);
 
+            given(diaryCacheAdapter.get(any()))
+                    .willReturn(null);
+
+            doNothing().when(diaryCacheAdapter).put(any(), any());
+
             // when
             Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
 
@@ -422,6 +457,8 @@ public class DiaryServiceImplTest {
 
             verify(memberRepository, times(1)).findById(userId);
             verify(mongoTemplate, times(1)).find(any(),any(),any());
+            verify(diaryCacheAdapter, times(1)).put(any(), any());
+            verify(diaryCacheAdapter, times(1)).get(any());
         }
         @Test
         @DisplayName("[정상]사용자 일기 조회 성공_no params")
@@ -442,8 +479,16 @@ public class DiaryServiceImplTest {
                             .build()));
             given(mongoTemplate.find(any(),any(),any()))
                     .willReturn(List.of(diary));
+
             given(PageableExecutionUtils.getPage(any(),any(),any()))
-                    .willReturn(page);
+                    .willReturn((Page<Object>) page);
+
+
+            given(diaryCacheAdapter.get(any()))
+                    .willReturn(null);
+
+            //void method
+            doNothing().when(diaryCacheAdapter).put(any(), any());
 
             // when
             Page<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
@@ -457,6 +502,8 @@ public class DiaryServiceImplTest {
 
             verify(memberRepository, times(1)).findById(userId);
             verify(mongoTemplate, times(1)).find(any(),any(),any());
+            verify(diaryCacheAdapter, times(1)).put(any(), any());
+            verify(diaryCacheAdapter, times(1)).get(any());
         }
         @Test
         @DisplayName("[예외]사용자가 존재하지 않을 때")
@@ -471,6 +518,40 @@ public class DiaryServiceImplTest {
             assertThrows(BizException.class, () -> diaryService.findUserDiaries(userId, param));
             verify(mongoTemplate, never()).find(any(),any(),any());
         }
+        @Test
+        @DisplayName("[정상] 캐시가 존재할 때")
+        void hasCache(){
+            // given
+            Map<String, String> param = new HashMap<>();
+            DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
+            Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "date"));
+            Page<DiaryInfoResponse> page = new PageImpl(diaryInfoResponses, pageable, 1);
+
+            given(memberRepository.findById(userId))
+                    .willReturn(Optional.of(Members.builder()
+                            .diaryTotal(5)
+                            .build()));
+
+            given(diaryCacheAdapter.get(any()))
+                    .willReturn(new RestPage<>(page));
+
+            //when
+            RestPage<DiaryInfoResponse> expected = diaryService.findUserDiaries(userId,param);
+
+            // then
+            assert expected != null;
+            assertEquals(expected.getPageable(), pageable);
+            assertEquals(expected.getSize(), page.getSize());
+            assertEquals(expected.getSort(), page.getSort());
+            assertEquals(expected.getContent(), diaryInfoResponses);
+
+            verify(memberRepository, times(1)).findById(userId);
+            verify(mongoTemplate, never()).find(any(),any(),any());
+            verify(diaryCacheAdapter, times(1)).get(any());
+        }
+
+
     }
 
     @Nested

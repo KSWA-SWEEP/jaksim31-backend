@@ -4,7 +4,7 @@ import com.sweep.jaksim31.domain.auth.Authority;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

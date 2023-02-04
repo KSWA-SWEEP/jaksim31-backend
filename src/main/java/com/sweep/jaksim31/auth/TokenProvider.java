@@ -1,18 +1,17 @@
 package com.sweep.jaksim31.auth;
 
-import com.sweep.jaksim31.dto.token.TokenResponse;
 import com.sweep.jaksim31.domain.auth.Authority;
-import com.sweep.jaksim31.exception.type.AuthorityExceptionType;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.JwtExceptionType;
-import io.jsonwebtoken.*;
+import com.sweep.jaksim31.enums.AuthorityExceptionType;
+import com.sweep.jaksim31.enums.JwtExceptionType;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.*;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -40,6 +39,7 @@ import java.util.stream.Collectors;
  * -----------------------------------------------------------
  * 2023-01-09           방근호             최초 생성
  * 2023-01-11           김주현             Email -> LoginId
+ * 2023-01-30           방근호             createTokenDto 제거
  */
 
 @Slf4j
@@ -119,31 +119,6 @@ public class TokenProvider {
         return this.parseClaims(token).getSubject();
     }
 
-    /**
-     *
-     * @param accessToken
-     * @param refreshToken
-     * @return TOEKN DTO를 생성한다.
-     */
-//    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime) {
-//        return TokenDTO.builder()
-//                .accessToken(accessToken)
-//                .refreshToken(refreshToken)
-//                .expTime(expTime)
-//                .loginId("")
-//                .grantType(BEARER_TYPE)
-//                .build();
-//    }
-    public TokenResponse createTokenDTO(String accessToken, String refreshToken, String expTime, String loginId) {
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expTime(expTime)
-                .loginId(loginId)
-                .grantType(BEARER_TYPE)
-                .build();
-    }
-
     public Authentication getAuthentication(String accessToken) throws BizException {
 
         // 토큰 복호화
@@ -184,7 +159,6 @@ public class TokenProvider {
             return -1;
         }
     }
-
 
     private Claims parseClaims(String accessToken) {
         try {

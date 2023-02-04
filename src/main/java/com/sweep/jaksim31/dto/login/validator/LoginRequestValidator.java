@@ -2,7 +2,7 @@ package com.sweep.jaksim31.dto.login.validator;
 
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -31,9 +31,9 @@ public class LoginRequestValidator implements Validator {
             return;
         }
         LoginRequest request = LoginRequest.class.cast(target);
-        if(Objects.isNull(request.getLoginId()))
+        if(Objects.isNull(request.getLoginId())|| request.getLoginId().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_LOGIN_ID);
-        if(Objects.isNull(request.getPassword()))
+        if(Objects.isNull(request.getPassword())|| request.getPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
 
     }

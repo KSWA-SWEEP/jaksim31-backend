@@ -1,13 +1,11 @@
 package com.sweep.jaksim31.dto.member;
 
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.members.Members;
+import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 /**
  * packageName :  com.sweep.jaksim31.dto.member
@@ -22,6 +20,7 @@ import java.util.List;
  * 2023-01-12           김주현             profilePhoto -> profileImage
  *                      김주현             id -> userId
  *                      방근호             클래스 이름 변경
+ * 2023-01-31           김주현             recentDiaries -> recentDiary(DiaryInfoResponse)
  */
 
 @Data
@@ -33,10 +32,10 @@ public class MemberInfoResponse {
     private String loginId;
     private String username;
     private String profileImage;
-    private List<Diary> recentDiaries;
+    private DiaryInfoResponse recentDiary;
     private int diaryTotal;
 
     public static MemberInfoResponse of(Members members) {
-        return new MemberInfoResponse(members.getId(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiaries(), members.getDiaryTotal());
+        return new MemberInfoResponse(members.getId(), members.getLoginId(), members.getUsername(), members.getProfileImage(), members.getRecentDiary(), members.getDiaryTotal());
     }
 }

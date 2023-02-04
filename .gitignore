@@ -33,16 +33,18 @@ build/
 .vscode/
 
 .DS_Store
-/logs
+.logs/
 applicaion.yml
-src/main/resources/application.yml
-src/main/resources/application-dev.yml
-src/main/resources/application-test.yml
-src/test/resources/application.yml
+src/main/resources/local/application.yml
+src/main/resources/dev/application.yml
+src/main/resources/prod/application.yml
+src/test/resources/local/application.yml
+src/test/resources/dev/application.yml
+src/test/resources/prod/application.yml
 
 ### log files ###
-was-logs
-./docker-data
-./docker-data/**
-.logs
+.docker-data/
+docker-data
+logs
+
 

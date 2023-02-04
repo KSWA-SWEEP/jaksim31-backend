@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.auth;
 
+import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -21,7 +22,7 @@ import java.io.PrintWriter;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-13           방근호             최초 생성
- *
+ * 2023-01-31           방근호,김주현       Error 시 Cookie 삭제
  */
 
 @Slf4j
@@ -31,11 +32,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException , ServletException {
         // 유효한 자격증명을 제공하지 않고 접근하려 할때 401
+        CookieUtil.resetDefaultCookies(response);
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
-        out.println("{\"error\": \"NO_AUTHORIZATION\", \"message\" : \"인증정보가 없습니다.\"}");
+        out.println("{\"errorCode\": \"NO_AUTHORIZATION\", \"message\" : \"인증정보가 없습니다.\"}");
 
     }
 }

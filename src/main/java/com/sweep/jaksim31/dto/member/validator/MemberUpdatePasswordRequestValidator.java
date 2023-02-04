@@ -2,7 +2,7 @@ package com.sweep.jaksim31.dto.member.validator;
 
 import com.sweep.jaksim31.dto.member.MemberUpdatePasswordRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -31,7 +31,7 @@ public class MemberUpdatePasswordRequestValidator implements Validator {
             return;
         }
         MemberUpdatePasswordRequest request = MemberUpdatePasswordRequest.class.cast(target);
-        if(Objects.isNull(request.getNewPassword()))
+        if(Objects.isNull(request.getNewPassword())|| request.getNewPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_NEW_PASSWORD);
 
     }

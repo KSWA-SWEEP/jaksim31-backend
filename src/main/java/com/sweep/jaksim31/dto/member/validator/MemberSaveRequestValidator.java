@@ -2,7 +2,7 @@ package com.sweep.jaksim31.dto.member.validator;
 
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -31,16 +31,13 @@ public class MemberSaveRequestValidator implements Validator {
             return;
         }
         MemberSaveRequest request = MemberSaveRequest.class.cast(target);
-        if(Objects.isNull(request.getLoginId()))
+        if(Objects.isNull(request.getLoginId())|| request.getLoginId().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_LOGIN_ID);
-        if(Objects.isNull(request.getPassword()))
+        if(Objects.isNull(request.getPassword())|| request.getPassword().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_PASSWORD);
-        if(Objects.isNull(request.getUsername()))
+        if(Objects.isNull(request.getUsername())|| request.getUsername().length() == 0)
             throw new BizException(MemberExceptionType.NOT_FOUND_USERNAME);
-        // TODO 프로필 이미지가 필수인지 확인하고 활성화할지 비활할지 선택하기
-//        if(Objects.isNull(request.getProfileImage()))
-//            throw new BizException(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE);
-
-
+        if(Objects.isNull(request.getProfileImage()) || request.getProfileImage().length() == 0)
+            throw new BizException(MemberExceptionType.NOT_FOUND_PROFILE_IMAGE);
     }
 }

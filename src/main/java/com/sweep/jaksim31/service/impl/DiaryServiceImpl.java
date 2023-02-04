@@ -2,24 +2,28 @@ package com.sweep.jaksim31.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.Authenticator;
 import com.sweep.jaksim31.adapter.RestPage;
-import com.sweep.jaksim31.adapter.cache.CacheAdapter;
+import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
+import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
+import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiaryRepository;
+import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
-import com.sweep.jaksim31.domain.diary.Diary;
-import com.sweep.jaksim31.domain.diary.DiaryRepository;
-import com.sweep.jaksim31.domain.members.MemberRepository;
-import com.sweep.jaksim31.exception.type.MemberExceptionType;
-import com.sweep.jaksim31.exception.type.ThirdPartyExceptionType;
-import com.sweep.jaksim31.service.DiaryService;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
-import com.sweep.jaksim31.exception.type.DiaryExceptionType;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
+import com.sweep.jaksim31.service.DiaryService;
+import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -44,12 +48,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import javax.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.time.chrono.ChronoLocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -79,11 +84,11 @@ import java.util.stream.Collectors;
  *                      김주현             일기 삭제 및 생성 시 사용자 정보의 totalDiary 값 업데이트
  *                      김주현             사용자 일기 조회 및 검색 시 page 정보가 input으로 들어오지 않았을 때 default(page=0, size=user.diaryTotal)
  * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
+ *                      김주현             findDiaries 수정(날짜 검색 오류 수정 및 키워드 검색 추가)
+ * 2023-02-01           김주현             마지막 남은 일기 삭제 시 recentDiary 설정 오류 수정
  */
 /* TODO
-    * 일기 조건 조회 MongoTemplate 사용해서 수정하기
     * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
-    * 오늘 일기 삭제 시 set-cookie 다시 설정
     * 캐시 테스트 코드 작성
 */
 @Slf4j
@@ -106,7 +111,9 @@ public class DiaryServiceImpl implements DiaryService {
     private final EmotionAnalysisFeign emotionAnalysisFeign;
 
     private final MongoTemplate mongoTemplate;
-    private final CacheAdapter cacheAdapter;
+    private final DiaryPagingCacheAdapter diaryCacheAdapter;
+    private final MemberCacheAdapter memberCacheAdapter;
+    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
 
     @Override
     // 전체 일기 조회
@@ -134,8 +141,12 @@ public class DiaryServiceImpl implements DiaryService {
         // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
-        if(!params.containsKey("size"))
-            params.put("size", user.getDiaryTotal()+"");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
@@ -143,7 +154,7 @@ public class DiaryServiceImpl implements DiaryService {
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
 
         // 캐싱된 값이 있는지 확인
-        RestPage<DiaryInfoResponse> cacheDiaryPage = cacheAdapter.get(userId+pageable);
+        RestPage<DiaryInfoResponse> cacheDiaryPage = diaryCacheAdapter.get(userId+pageable);
 
         if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
 
@@ -166,7 +177,7 @@ public class DiaryServiceImpl implements DiaryService {
                 () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
         );
         // 캐시에 저장
-        cacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
+        diaryCacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
 
         return new RestPage<>(diaryPage);
     }
@@ -177,32 +188,45 @@ public class DiaryServiceImpl implements DiaryService {
      * @return Diary
      */
     @Override
-    public DiaryResponse saveDiary(DiarySaveRequest diarySaveRequest){
+    public String saveDiary(HttpServletResponse response, DiarySaveRequest diarySaveRequest){
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository.findById(diarySaveRequest.getUserId())
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
                 throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
-        // 날짜가 유효하지 않을 때(미래)
-        if(diarySaveRequest.getDate().isAfter(ChronoLocalDate.from(LocalDate.now().atTime(11,59)))){
-            throw new BizException(DiaryExceptionType.WRONG_DATE);
-        }
-        // 사용자 정보의 total diary 정보 업데이트
-        user.setDiaryTotal(user.getDiaryTotal()+1);
-        memberRepository.save(user);
 
         Diary diary = diarySaveRequest.toEntity();
-        // 썸네일 URL 추가
-        // TODO
-        //  * 썸네일 저장 부분 고려해보기. 아직 미완.
-        //  * 최근 일기 저장(recentDiaries) 고려해보기. 만약 한다고 하면 구현 필요.
-        diary.setThumbnail(DOWNLOAD_URL+"/" + diary.getUserId() + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
+        diaryRepository.save(diary);
+        // 사용자 정보의 total diary 정보 업데이트
+        user.setDiaryTotal(user.getDiaryTotal()+1);
+        // 사용자 정보의 recentDiary 정보 업데이트
+        DiaryInfoResponse recentDiary = user.getRecentDiary();
+        if(Objects.isNull(recentDiary) || Objects.isNull(recentDiary.getDiaryId())
+         || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
+            recentDiary = DiaryInfoResponse.of(diary);
+        }
+
+        user.setRecentDiary(recentDiary);
+
+        memberRepository.save(user);
+
+        // 오늘 일기일 경우, todayDiary Cookie 설정
+        LocalDate today = LocalDate.now();
+        if(diary.getDate().toLocalDate().equals(today)){
+            // 만료 시간을 당일 23:59:59로 설정
+            long todayExpTime = (long) LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                    - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+
+            CookieUtil.addCookie(response, "todayDiaryId", diary.getId(), todayExpTime);
+        }
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
 
-        return DiaryResponse.of(diaryRepository.save(diary));
+        return SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage();
     }
 
     /**
@@ -217,21 +241,35 @@ public class DiaryServiceImpl implements DiaryService {
             value = "diaryCache",
             key = "#diaryId"
     )
-    public DiaryResponse updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
+    public String updateDiary(String diaryId, DiarySaveRequest diarySaveRequest) {
         // 일기를 찾을 수 없을 때
-        diaryRepository
+        Diary diary = diaryRepository
                 .findById(diaryId)
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
-        memberRepository
-                .findById(diarySaveRequest.getUserId())
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        Members members = memberRepository
+                    .findById(diarySaveRequest.getUserId())
+                    .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+
+        // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
+        // TODO Test 코드 짜기
+        if(!diary.getUserId().equals(diarySaveRequest.getUserId()))
+            throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
 
+        System.out.println("#######recent diary is "+members.getRecentDiary().toString());
+        // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
-        return DiaryResponse.of(diaryRepository.save(updatedDiary));
+        if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
+            members.setRecentDiary(DiaryInfoResponse.of(updatedDiary));
+            memberRepository.save(members);
+        }
+        diaryRepository.save(updatedDiary);
+        return SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage();
     }
 
     @Override
@@ -240,8 +278,7 @@ public class DiaryServiceImpl implements DiaryService {
             key = "#diaryId"
     )
     // 일기 삭제
-    public String remove(String userId, String diaryId) {
-
+    public String remove(HttpServletResponse response, String userId, String diaryId) {
 
         Diary diary = diaryRepository
                 .findById(diaryId)
@@ -252,16 +289,46 @@ public class DiaryServiceImpl implements DiaryService {
             throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
         // 사용자 정보의 total diary 정보 업데이트
-        Members user = memberRepository.findById(userId)
+        Members members = memberRepository.findById(userId)
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        user.setDiaryTotal(user.getDiaryTotal()-1);
+        members.setDiaryTotal(members.getDiaryTotal()-1);
 
+        // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
+        if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
+            System.out.println("#######recent diary is "+members.getRecentDiary().toString());
+            Map<String, String> params = new HashMap<>();
+            params.put("size", "1");
+            params.put("page", "1");
+            Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
+            if(page.getContent().isEmpty()) {
+//                System.out.println("########### Empty");
+                members.setRecentDiary(new DiaryInfoResponse());
+            }
+            else
+                members.setRecentDiary(page.getContent().get(0));
+        }
+
+        // 오늘 일기일 경우, todayDiary Cookie 설정
+        LocalDate today = LocalDate.now();
+        if(diary.getDate().toLocalDate().equals(today)){
+            // 만료 시간을 당일 23:59:59로 설정
+            long todayExpTime = (long) LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
+                    - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+
+            CookieUtil.addCookie(response, "todayDiaryId", "", todayExpTime);
+        }
+
+        // 사용자 정보 저장
+        memberRepository.save(members);
+        // 다이어리 삭제
         diaryRepository.delete(diary);
-        memberRepository.save(user);
-
         // 페이징 캐시 데이터 삭제
-        cacheAdapter.findAndDelete(userId+"Page");
-        return diary.getId();
+        diaryCacheAdapter.findAndDelete(userId +"Page");
+
+        // 사용자 캐시 데이터 삭제
+        memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + members.getId());
+
+        return SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage();
     }
 
     @Override
@@ -298,11 +365,15 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
         Pageable pageable;
-        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=9) 세팅
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
         if(!params.containsKey("page"))
             params.put("page", "0");
-        if(!params.containsKey("size"))
-            params.put("size", user.getDiaryTotal()+"");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
         if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
@@ -313,19 +384,24 @@ public class DiaryServiceImpl implements DiaryService {
                 .with(pageable)
                 .skip(pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
+        // userId 조건 설정
         query.addCriteria(Criteria.where("userId").is(userId));
 
-        for(String i : params.keySet()){
-            if(i.equals("startDate")){
-                query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)));
-            }else if(i.equals("endDate")){
-                query.addCriteria(Criteria.where("date").lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
-            }else if(i.equals("page") || i.equals("sort") || i.equals("size"))
-                continue;
-            else{
-                query.addCriteria(Criteria.where(i).is(params.get(i).toString()));
-            }
+        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
+        if(!params.containsKey("startDate"))
+            params.put("startDate","1990-01-01");
+        if(!params.containsKey("endDate"))
+            params.put("endDate", LocalDate.now().toString());
+        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)).lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
+        // 검색어 조건 설정
+        if(params.containsKey("searchWord")) {
+            query.addCriteria(Criteria.where("content").regex(params.get("searchWord").toString()));
         }
+        // 감정 조건 설정
+        if(params.containsKey("emotion")) {
+            query.addCriteria(Criteria.where("emotion").is(params.get("emotion").toString()));
+        }
+
         List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
                 .stream()
                 .map(DiaryInfoResponse::of)
