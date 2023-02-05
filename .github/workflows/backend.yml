@@ -98,7 +98,7 @@ jobs:
           name: test-result
           path: target/surefire-reports/
 
-      - name: (PR) Archive test results artifacts
+      - name: (PR) Archive classes artifacts
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v3
         with:
