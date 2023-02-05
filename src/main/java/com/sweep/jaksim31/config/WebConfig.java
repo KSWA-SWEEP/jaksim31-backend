@@ -14,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-01-13           방근호             최초 생성
+ * 2023-02-06           방근호             CORS 정책 수정
  *
  */
 
@@ -22,24 +23,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry){
-        registry.addMapping("localhost:3000")
-                .allowedOrigins("*")
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000", "https://jaksim31.xyz", "http://jaksim31.xyz")
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 }
-
-
-
-//@Configuration
-//public class WebConfig implements WebMvcConfigurer {
-//    @Override
-//    public void addCorsMappings(CorsRegistry registry){
-//        registry.addMapping("/**")
-//                .allowedOrigins("http://localhost:3000", "https://jaksim31.xyz", "http://jaksim31.xyz")
-//                .allowedMethods("*")
-//                .allowedHeaders("*")
-//                .allowCredentials(true);
-//    }
-//}

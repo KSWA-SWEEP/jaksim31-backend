@@ -91,26 +91,83 @@ jobs:
           name: target
           path: target/*.jar
 
-      - name: (PR) Write the testing result on PR
+      - name: (PR) Archive test results artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-result
+          path: target/surefire-reports/
+
+      - name: (PR) Archive classes artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: classes
+          path: target/classes/
+
+  Report-Test-Result:
+    if: github.event_name == 'pull_request'
+    needs: Backend-CI
+    # macos 환경에서 CI 실행 (환경은 github이 제공)
+    runs-on: ubuntu-latest
+    # 각 단계
+    steps:
+      # 이전 Job에서 업로드한 Jar file 다운로드
+      - name: Download a test result
+        uses: actions/download-artifact@v1
+        with:
+          name: test-result
+
+      - name: Write the testing result on PR
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always() && github.event_name == 'pull_request'
         with:
-          junit_files: '**/target/surefire-reports/TEST-*.xml'
+          junit_files: '**/test-result/TEST-*.xml'
           comment_title: 'Jaksim31 Unit & Integration Test Results'
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
 
-      - name: (PR) Check Comment on the Code line.
+      - name: Check Comment on the Code line.
         uses: mikepenz/action-junit-report@v3
         if: always() && github.event_name == 'pull_request'
         with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          report_paths: '**/test-result/TEST-*.xml'
           token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
 
-      # 위에서 설정했던 정적코드 전송 태스크 실행
-      - name: (PR) Sonarqube Analysis
-        if: always() && github.event_name == 'pull_request'
-        run: ./mvnw sonar:sonar -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
 
-      - name: (PR) Comment Sonarqube URL
+  Sonarqube-Analysis:
+    if: github.event_name == 'pull_request'
+    needs: Backend-CI
+    env:
+      # KEY - VALUE
+      SONARQUBE_ID: jaksim31
+      SONARQUBE_URL: ${{ secrets.SONARQUBE_URL }}
+      SONARQUBE_BINARIES: classes
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      # macos 환경에서 CI 실행 (환경은 github이 제공)
+    runs-on: ubuntu-latest
+    # 각 단계
+    steps:
+      # 소스코드 가져오기
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        # 서브모듈 설정
+        with:
+          submodules: true
+          # secrets 변수는 github 세팅에서 미리 세팅한 데이터
+          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
+
+      # 이전 Job에서 업로드한 Jar file 다운로드
+      - name: Download a test result
+        uses: actions/download-artifact@v1
+        with:
+          name: classes
+
+      # 위에서 설정했던 정적코드 전송 태스크 실행
+      - name: Sonarqube Analysis
+        if: always() && github.event_name == 'pull_request'
+        run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
+
+      - name: Comment Sonarqube URL
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v4
         with:
@@ -166,7 +223,9 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: qkdrmsgh73/jaksim31-backend:latest
+          tags: |
+            ${{ secrets.DOCKER_ID }}/jaksim31-backend:$(date +%s)
+            ${{ secrets.DOCKER_ID }}/jaksim31-backend:latest
           cache-from: type=gha    # gha=Github Action Cache
           cache-to: type=gha,mode=max
 
