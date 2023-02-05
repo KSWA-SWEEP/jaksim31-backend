@@ -6,4 +6,4 @@ ARG JAR_FILE=target/*.jar
 
 COPY ${JAR_FILE} app.jar
 
-ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "/app.jar"]
+ENTRYPOINT ["java",  "-jar", "-Dspring.profiles.active=prod", "-Duser.timezone=Asia/Seoul","/app.jar"]
