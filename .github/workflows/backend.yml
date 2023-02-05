@@ -224,7 +224,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKER_ID }}/jaksim31-backend:$(date +%s)
+            ${{ secrets.DOCKER_ID }}/jaksim31-backend:${{github.run_number}}
             ${{ secrets.DOCKER_ID }}/jaksim31-backend:latest
           cache-from: type=gha    # gha=Github Action Cache
           cache-to: type=gha,mode=max
