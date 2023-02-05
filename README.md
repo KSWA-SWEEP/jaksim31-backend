@@ -1,3 +1,6 @@
+**main :** ![main branch](https://github.com/kswa-sweep/jaksim31-backend/actions/workflows/backend.yml/badge.svg?branch=main) <br>
+**develop :** ![develop branch](https://github.com/kswa-sweep/jaksim31-backend/actions/workflows/backend.yml/badge.svg?branch=develop)
+
 ```markdown
 📦jaksim31
 ┣ 📂aop
