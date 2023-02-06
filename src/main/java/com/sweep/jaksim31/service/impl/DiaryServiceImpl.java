@@ -114,6 +114,9 @@ public class DiaryServiceImpl implements DiaryService {
     private final MemberCacheAdapter memberCacheAdapter;
     private static final String MEMBER_CACHE_PREFIX = "memberCache::";
 
+    String[] searchCondition = {"userId", "startDate", "endDate", "emotion"};
+    String collectionName = "diary";
+
     @Override
     // 전체 일기 조회
     public List<DiaryResponse> allDiaries(){
@@ -163,9 +166,9 @@ public class DiaryServiceImpl implements DiaryService {
                 .skip((long) pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
         // filter(사용자 id)
-        query.addCriteria(Criteria.where("userId").is(userId));
+        query.addCriteria(Criteria.where(searchCondition[0]).is(userId));
         // filtering 된 데이터
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, collectionName)
                 .stream()
                 .map(DiaryInfoResponse::of)
                 .collect(Collectors.toList());
@@ -173,7 +176,7 @@ public class DiaryServiceImpl implements DiaryService {
         Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
                 diaries,
                 pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, collectionName)
         );
         // 캐시에 저장
         diaryCacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
@@ -381,24 +384,24 @@ public class DiaryServiceImpl implements DiaryService {
                 .skip((long)pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
         // userId 조건 설정
-        query.addCriteria(Criteria.where("userId").is(userId));
+        query.addCriteria(Criteria.where(searchCondition[0]).is(userId));
 
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
-        if(!params.containsKey("startDate"))
-            params.put("startDate","1990-01-01");
-        if(!params.containsKey("endDate"))
-            params.put("endDate", LocalDate.now().toString());
-        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)).lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
+        if(!params.containsKey(searchCondition[1]))
+            params.put(searchCondition[1],"1990-01-01");
+        if(!params.containsKey(searchCondition[2]))
+            params.put(searchCondition[2], LocalDate.now().toString());
+        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get(searchCondition[1]).toString())).atTime(9,0)).lte(LocalDate.parse((params.get(searchCondition[2]).toString())).atTime(9,0)));
         // 검색어 조건 설정
         if(params.containsKey("searchWord")) {
             query.addCriteria(Criteria.where("content").regex(params.get("searchWord").toString()));
         }
         // 감정 조건 설정
-        if(params.containsKey("emotion")) {
-            query.addCriteria(Criteria.where("emotion").is(params.get("emotion").toString()));
+        if(params.containsKey(searchCondition[3])) {
+            query.addCriteria(Criteria.where(searchCondition[3]).is(params.get(searchCondition[3]).toString()));
         }
 
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, collectionName)
                 .stream()
                 .map(DiaryInfoResponse::of)
                 .collect(Collectors.toList());
@@ -406,7 +409,7 @@ public class DiaryServiceImpl implements DiaryService {
         Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
                 diaries,
                 pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, collectionName)
         );
         return new RestPage<>(diaryPage);
     }
@@ -477,7 +480,7 @@ public class DiaryServiceImpl implements DiaryService {
         // JSON parsingß
         String jsonStr = mapper.writeValueAsString(Objects.requireNonNull(emotionAnalysisResult.getBody()).get("0"));
         JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonStr);
-        JSONObject currentEmotion = (JSONObject) jsonObject.get("emotion");
+        JSONObject currentEmotion = (JSONObject) jsonObject.get(searchCondition[3]);
         koreanEmotion = currentEmotion.get("value").toString();
 
         // 문장 번역
@@ -568,12 +571,12 @@ public class DiaryServiceImpl implements DiaryService {
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
-        if(params.containsKey("startDate")){
-            startDate = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);}
+        if(params.containsKey(searchCondition[1])){
+            startDate = (LocalDate.parse(((String)params.get(searchCondition[1])))).atTime(9,0);}
         else{
             startDate = LocalDate.of(1990, 1, 1).atTime(9, 0);}
-        if(params.containsKey("endDate")){
-            endDate = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);}
+        if(params.containsKey(searchCondition[2])){
+            endDate = (LocalDate.parse(((String)params.get(searchCondition[2])))).atTime(9,0);}
         else{
             endDate = LocalDate.now().atTime(9,0);}
 
@@ -581,12 +584,12 @@ public class DiaryServiceImpl implements DiaryService {
         // filter
         MatchOperation matchOperation = Aggregation.match(
                 Criteria.where("date").gte(startDate).lte(endDate)
-                        .and("userId").is(userId)
+                        .and(searchCondition[0]).is(userId)
         );
         // group (Group By)
-        GroupOperation groupOperation = Aggregation.group("emotion").count().as("countEmotion");
+        GroupOperation groupOperation = Aggregation.group(searchCondition[3]).count().as("countEmotion");
         // projection (원하는 필드를 제외하거나 포함)
-        ProjectionOperation projectionOperation = Aggregation.project("emotion", "countEmotion");
+        ProjectionOperation projectionOperation = Aggregation.project(searchCondition[3], "countEmotion");
 
         // 모든 조건을 포함하여 쿼리 실행. (Input : Diary.class / Output : DiaryEmotionStatics.class)
         AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
