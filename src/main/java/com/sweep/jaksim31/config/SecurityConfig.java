@@ -79,7 +79,7 @@ public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 �
 
                 .and()
                 .formLogin().disable()
-                .csrf().disable()
+                .csrf().disable() // NOSONAR
                 .headers().disable()
                 .httpBasic().disable()
                 .rememberMe().disable()

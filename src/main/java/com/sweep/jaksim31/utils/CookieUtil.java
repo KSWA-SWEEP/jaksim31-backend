@@ -48,7 +48,6 @@ public class CookieUtil {
                 .path("/")
                 .build();
 
-
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
@@ -58,6 +57,7 @@ public class CookieUtil {
                 .maxAge(maxAge)
                 .httpOnly(true)
                 .secure(true)
+                .sameSite("Strict")
                 .path("/")
                 .build();
 

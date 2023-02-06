@@ -129,7 +129,7 @@ public class MemberServiceImpl implements MemberService {
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
         // 만료 시간을 당일 23:59:59로 설정
         long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
-                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+                - LocalDateTime.now().toLocalTime().toSecondOfDay() + ((long)3600*9); // GMT로 설정되어서 3600*9 추가..
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 

@@ -1,6 +1,5 @@
 package com.sweep.jaksim31.adapter.cache;
 
-import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,7 +22,7 @@ public class DiaryCacheAdapter {
     }
 
     public void put(String key, DiaryResponse value) {
-        diaryCacheOperation.set(key, value, Duration.ofSeconds(24 * 60 * 60));
+        diaryCacheOperation.set(key, value, Duration.ofSeconds((long)24 * 60 * 60));
     }
 
     public DiaryResponse get(String key) {

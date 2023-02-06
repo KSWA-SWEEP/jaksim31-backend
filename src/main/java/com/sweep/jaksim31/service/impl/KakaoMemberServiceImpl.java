@@ -94,11 +94,11 @@ public class KakaoMemberServiceImpl implements MemberService {
         if (!memberRepository.existsByLoginId(loginRequest.getLoginId())) {
             MemberSaveRequest memberSaveRequest = loginRequest.toMemberSaveRequest();
             Members members = memberSaveRequest.toMember(passwordEncoder, true);
-            System.out.println(members.toString());
+            log.info(members.toString());
             memberRepository.save(members);
         }
 
-        System.out.println(loginRequest.getLoginId() +" " +  loginRequest.getPassword());
+        log.info(loginRequest.getLoginId() +" " +  loginRequest.getPassword());
 
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken =
                 new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
@@ -124,7 +124,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         Diary todayDiary = diaryRepository.findDiaryByUserIdAndDate(members.getId(), today.atTime(9,0)).orElse(null);
         // 만료 시간을 당일 23:59:59로 설정
         long todayExpTime = LocalDateTime.of(today.plusDays(1), LocalTime.of(23, 59, 59,59)).toLocalTime().toSecondOfDay()
-                - LocalDateTime.now().toLocalTime().toSecondOfDay() + (3600*9); // GMT로 설정되어서 3600*9 추가..
+                - LocalDateTime.now().toLocalTime().toSecondOfDay() + ((long)3600*9); // GMT로 설정되어서 3600*9 추가..
 
         CookieUtil.addCookie(response, "todayDiaryId", Objects.nonNull(todayDiary) ? todayDiary.getId() : "", todayExpTime);
 
@@ -148,8 +148,8 @@ public class KakaoMemberServiceImpl implements MemberService {
 
         // 카카오 인증 서버에 토큰 만료 요청
         ResponseEntity<String> res = kakaoOAuthLogoutFeign.requestLogout(loginId);
-        System.out.println(res.getBody());
-        System.out.println(res.getStatusCode());
+        log.info(res.getBody());
+        log.info(String.valueOf(res.getStatusCode()));
 
         // 쿠키에 있는 토큰 정보 삭제
         // 쿠키에서 토큰 삭제 작업
@@ -164,18 +164,18 @@ public class KakaoMemberServiceImpl implements MemberService {
         // 카카오 인증서버로 부터 Access Token 받아오는 함수
     public String getAccessToken (String code){
         ResponseEntity<KakaoOAuth> res = kakaoOAuthTokenFeign.getAccessToken(code);
-        System.out.println(res.getStatusCode());
-        System.out.println(res.getBody());
+        log.info(String.valueOf(res.getStatusCode()));
+        log.info(String.valueOf(res.getBody()));
 
         return "Bearer " + Objects.requireNonNull(res.getBody()).getAccessToken();
     }
 
     // 카카오 인증서버로 부터 Access Token으로 유저 정보를 받아오는 함수
     public KakaoProfile getKakaoUserInfo (String accessToken){
-        System.out.println("유저정보 받아오기");
+        log.info("유저정보 받아오기");
         ResponseEntity<KakaoProfile> res = kakaoOAuthInfoFeign.getUserInfo(accessToken);
-        System.out.println(res.getStatusCode());
-        System.out.println(res.getBody());
+        log.info(String.valueOf(res.getStatusCode()));
+        log.info(String.valueOf(res.getBody()));
 
         if (!res.getStatusCode().equals(HttpStatus.OK)) {
             throw new RuntimeException("카카오 유저 정보 불러오기 실패");

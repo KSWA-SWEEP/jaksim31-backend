@@ -2,7 +2,6 @@ package com.sweep.jaksim31.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.Authenticator;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
@@ -17,11 +16,11 @@ import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
-import com.sweep.jaksim31.enums.SuccessResponseType;
-import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
+import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.service.DiaryService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.RequiredArgsConstructor;
@@ -100,7 +99,7 @@ public class DiaryServiceImpl implements DiaryService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
 
     @Value("${kakao.download-storage.url}")
-    private String DOWNLOAD_URL;
+    private String downloadUrl;
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
     private final UploadImageFeign uploadImageFeign;
@@ -261,7 +260,6 @@ public class DiaryServiceImpl implements DiaryService {
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
 
-        System.out.println("#######recent diary is "+members.getRecentDiary().toString());
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
         if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
@@ -295,13 +293,11 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
         if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
-            System.out.println("#######recent diary is "+members.getRecentDiary().toString());
             Map<String, String> params = new HashMap<>();
             params.put("size", "1");
             params.put("page", "1");
             Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
             if(page.getContent().isEmpty()) {
-//                System.out.println("########### Empty");
                 members.setRecentDiary(new DiaryInfoResponse());
             }
             else
@@ -375,14 +371,14 @@ public class DiaryServiceImpl implements DiaryService {
                 params.put("size", "1");
         }
         // sort가 없으면 최신순(default), asc라고 오면 오래된 순
-        if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
+        if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
         else
             pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
         // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
         Query query = new Query()
                 .with(pageable)
-                .skip(pageable.getPageSize() * pageable.getPageNumber())
+                .skip((long)pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
         // userId 조건 설정
         query.addCriteria(Criteria.where("userId").is(userId));
@@ -442,10 +438,9 @@ public class DiaryServiceImpl implements DiaryService {
             ResponseEntity<Object> res = uploadImageFeign.uploadFile("/" + userId  + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png", image);
             if(!res.getStatusCode().equals(HttpStatus.CREATED))
                 throw new BizException(ThirdPartyExceptionType.NOT_UPLOAD_IMAGE);
-//            System.out.println(UPLOAD_URL+"/" +userId+ "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png");
             return "객체 스토리지에 업로드 성공";
         } finally {
-            System.out.println(DOWNLOAD_URL+"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
+            log.info(downloadUrl +"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
         }
     }
 
@@ -520,7 +515,6 @@ public class DiaryServiceImpl implements DiaryService {
 
 
         for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-//            System.out.println(result.toString());
             // weight가 0.5 이상인 키워드만 가져온다.
             if (result.getWeight() >= 0.5)
                 englishKeywords.add(result.getKeyword());
@@ -533,7 +527,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 번역 api 호출 전 스트링 하나로 합쳐준다.
         StringBuilder sb = new StringBuilder();
-        for (ExtractedKeywordResponse.Result result : extractKeywords.getBody().getResult()) {
+        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
             sb.append(result.getKeyword()).append(", ");
         }
 
@@ -567,9 +561,10 @@ public class DiaryServiceImpl implements DiaryService {
     // 감정 통계
     public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
-        memberRepository
+         memberRepository
                 .findById(userId)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
+
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
@@ -599,8 +594,7 @@ public class DiaryServiceImpl implements DiaryService {
                 DiaryEmotionStatics.class);
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
-        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
-        return diaryEmotionStaticsResponse;
+        return DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
     }
 
 }

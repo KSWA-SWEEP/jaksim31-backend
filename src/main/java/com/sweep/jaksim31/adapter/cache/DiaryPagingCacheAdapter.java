@@ -24,7 +24,7 @@ public class DiaryPagingCacheAdapter {
     }
 
     public void put(String key, RestPage<DiaryInfoResponse> value) {
-        diaryPageCacheOperation.set(key, value, Duration.ofSeconds(24 * 60 * 60));
+        diaryPageCacheOperation.set(key, value, Duration.ofSeconds((long)24 * 60 * 60));
     }
 
     public RestPage<DiaryInfoResponse> get(String key) {
@@ -44,7 +44,6 @@ public class DiaryPagingCacheAdapter {
             while (cursor.hasNext()) {
                 String value = new String(cursor.next());
                 cacheKeys.add(value);
-//      System.out.println("KEYS Evict===========>>>>>>>>>" + value);
             }
             return cacheKeys;
         });
