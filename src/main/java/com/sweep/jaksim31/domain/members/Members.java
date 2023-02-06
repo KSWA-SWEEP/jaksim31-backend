@@ -63,19 +63,19 @@ public class Members {
 
     @Builder
     public Members(String username, String loginId, String password, Boolean isSocial, char delYn, DiaryInfoResponse recentDiary,
-                   String profileImage, int diaryTotal,  Instant register_date, Instant update_date) {
+                   String profileImage, int diaryTotal,  Instant registerDate, Instant updateDate) {
         this.username = username;
         this.loginId = loginId;
         this.password = password;
         this.delYn = delYn;
-        this.registerDate = register_date;
-        this.updateDate = update_date;
+        this.registerDate = registerDate;
+        this.updateDate = updateDate;
         this.isSocial = isSocial;
         this.diaryTotal = diaryTotal;
         this.recentDiary = recentDiary;
         this.profileImage = profileImage;
         this.addAuthority(new Authority(username, MemberAuth.of("ROLE_USER")));
-        System.out.println();
+
     }
 
     public void addAuthority(Authority authority) {

@@ -64,7 +64,7 @@ public class CookieUtil {
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
-    public static void addPublicCookie(HttpServletResponse response, String name, String value, int maxAge) {
+    public static void addPublicCookie(HttpServletResponse response, String name, String value) {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path("/")

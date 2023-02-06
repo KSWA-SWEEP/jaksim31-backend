@@ -14,8 +14,6 @@ public class UploadImageFeignConfig {
                 requestTemplate.header("X-Auth-Token", authToken.toString());
                 requestTemplate.header("Content-Type", "image/png");
                 requestTemplate.header("Transfer-Encoding", "gzip");
-//                System.out.println(requestTemplate.toString());
-//                System.out.println(requestTemplate.body());
             };
         }
     }

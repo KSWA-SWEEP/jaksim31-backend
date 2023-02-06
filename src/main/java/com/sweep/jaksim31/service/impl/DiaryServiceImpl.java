@@ -522,8 +522,8 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 영어로 추출된 키워드 한글로 번역
         TranslationRequest tmpTranslationRequest = new TranslationRequest();
-        tmpTranslationRequest.setSource_lang("en");
-        tmpTranslationRequest.setTarget_lang("ko");
+        tmpTranslationRequest.setSourceLang("en");
+        tmpTranslationRequest.setTargetLang("ko");
 
         // 번역 api 호출 전 스트링 하나로 합쳐준다.
         StringBuilder sb = new StringBuilder();

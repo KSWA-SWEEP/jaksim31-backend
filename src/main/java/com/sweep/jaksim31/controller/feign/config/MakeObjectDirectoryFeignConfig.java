@@ -13,8 +13,6 @@ public class MakeObjectDirectoryFeignConfig {
             return requestTemplate -> {
                 requestTemplate.header("X-Auth-Token", authToken.toString());
                 requestTemplate.header("Content-Type", "application/directory");
-//                System.out.println(requestTemplate.toString());
-//                System.out.println(requestTemplate.body());
             };
         }
     }

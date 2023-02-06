@@ -118,9 +118,9 @@ public class MemberServiceImpl implements MemberService {
         // 쿠키에 토큰 정보 및 인증 정보 저장
         CookieUtil.addSecureCookie(response, "atk", accessToken, (int) rtkLive / 60);
         CookieUtil.addSecureCookie(response, "rtk", refreshToken, (int) rtkLive / 60);
-        CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
-        CookieUtil.addPublicCookie(response, "userId", members.getId(), (int) rtkLive / 60);
-        CookieUtil.addPublicCookie(response, "isSocial", members.getIsSocial().toString(), (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isLogin", "true");
+        CookieUtil.addPublicCookie(response, "userId", members.getId());
+        CookieUtil.addPublicCookie(response, "isSocial", members.getIsSocial().toString());
 
         // 레디스에 캐싱
         refreshTokenCacheAdapter.put(loginId, refreshToken, Duration.ofSeconds((int) rtkLive / 60));
@@ -194,7 +194,7 @@ public class MemberServiceImpl implements MemberService {
         // 로그인 여부 및 토큰 만료 시간 Cookie 설정
         CookieUtil.addSecureCookie(response, "atk", newAccessToken, (int) rtkLive / 60);
         CookieUtil.addSecureCookie(response, "rtk", newRefreshToken, (int) rtkLive / 60);
-        CookieUtil.addPublicCookie(response, "isLogin", "true", (int) rtkLive / 60);
+        CookieUtil.addPublicCookie(response, "isLogin", "true");
 
         // 토큰 발급
         return response;

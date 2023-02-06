@@ -88,7 +88,7 @@ class MembersApiControllerTest {
     class SignUp {
         @Test
         @DisplayName("정상인 경우")
-        public void singup() throws Exception {
+        void singup() throws Exception {
             //given
             given(memberService.signup(any()))
                     .willReturn(SuccessResponseType.SIGNUP_SUCCESS.getMessage());
@@ -111,7 +111,7 @@ class MembersApiControllerTest {
 
         @Test
         @DisplayName("사용자 아이디를 입력하지 않은 경우")
-        public void invalidSingupNotFoundLoginId() throws Exception {
+        void invalidSingupNotFoundLoginId() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("", "password", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -131,7 +131,7 @@ class MembersApiControllerTest {
 
         @Test
         @DisplayName("비밀번호를 입력하지 않은 경우")
-        public void invalidSingupNotFoundPassword() throws Exception {
+        void invalidSingupNotFoundPassword() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -151,7 +151,7 @@ class MembersApiControllerTest {
 
         @Test
         @DisplayName("사용자 이름울 입력하지 않은 경우")
-        public void invalidSingupNotFoundUsername() throws Exception {
+        void invalidSingupNotFoundUsername() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -171,7 +171,7 @@ class MembersApiControllerTest {
 
         @Test
         @DisplayName("프로필 이미지가 없는 경우")
-        public void invalidSingupNotFoundProfileImage() throws Exception {
+        void invalidSingupNotFoundProfileImage() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "username", "");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import com.sweep.jaksim31.dto.member.MemberInfoResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -26,7 +25,7 @@ public class MemberCacheSerializer implements RedisSerializer<MemberInfoResponse
             .disable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .registerModules(new JavaTimeModule(), new Jdk8Module());
-    private final Charset UTF_8 = StandardCharsets.UTF_8;
+    private final Charset utf8 = StandardCharsets.UTF_8;
 
     @Override
     public byte[] serialize(MemberInfoResponse memberInfoResponse) throws SerializationException {
@@ -35,7 +34,7 @@ public class MemberCacheSerializer implements RedisSerializer<MemberInfoResponse
 
         try {
             String json = MAPPER.writeValueAsString(memberInfoResponse);
-            return json.getBytes(UTF_8);
+            return json.getBytes(utf8);
         } catch (JsonProcessingException e) {
             throw new SerializationException("json serialize error", e);
         }
@@ -48,7 +47,7 @@ public class MemberCacheSerializer implements RedisSerializer<MemberInfoResponse
             return null;
 
         try {
-            return MAPPER.readValue(new String(bytes, UTF_8), MemberInfoResponse.class);
+            return MAPPER.readValue(new String(bytes, utf8), MemberInfoResponse.class);
         } catch (JsonProcessingException e) {
             throw new SerializationException("json deserialize error", e);
         }

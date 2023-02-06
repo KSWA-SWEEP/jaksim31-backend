@@ -1,9 +1,11 @@
 package com.sweep.jaksim31.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
 import org.springframework.util.StopWatch;
 
+@Slf4j
 public class ExecutionTimeTestExecutionListener extends AbstractTestExecutionListener {
 
     private StopWatch stopWatch;
@@ -12,7 +14,7 @@ public class ExecutionTimeTestExecutionListener extends AbstractTestExecutionLis
     public void beforeTestClass(TestContext testContext) throws Exception {
         super.beforeTestClass(testContext);
         stopWatch = new StopWatch(testContext.getTestClass().getSimpleName());
-        System.out.println("Running test '" + testContext.getTestClass().getSimpleName() + "'...");
+        log.info("Running test '" + testContext.getTestClass().getSimpleName() + "'...");
     }
 
     @Override
@@ -31,9 +33,9 @@ public class ExecutionTimeTestExecutionListener extends AbstractTestExecutionLis
 
     @Override
     public void afterTestClass(TestContext testContext) throws Exception {
-        System.out.println(stopWatch.prettyPrint());
+        log.info(stopWatch.prettyPrint());
 
-        System.out.println("Test '" + testContext.getTestClass().getSimpleName() + "' finished after " + stopWatch.getTotalTimeSeconds() + " seconds.");
+        log.info("Test '" + testContext.getTestClass().getSimpleName() + "' finished after " + stopWatch.getTotalTimeSeconds() + " seconds.");
         super.afterTestClass(testContext);
     }
 }

@@ -80,7 +80,7 @@ class MemberApiControllerNullTest {
     class SignUp {
         @Test
         @DisplayName("사용자 아이디를 입력하지 않은 경우")
-        public void invalidSingupNotFoundLoginId() throws Exception {
+        void invalidSingupNotFoundLoginId() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest(null, "password", "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -100,7 +100,7 @@ class MemberApiControllerNullTest {
 
         @Test
         @DisplayName("비밀번호를 입력하지 않은 경우")
-        public void invalidSingupNotFoundPassword() throws Exception {
+        void invalidSingupNotFoundPassword() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", null, "geunho", "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -120,7 +120,7 @@ class MemberApiControllerNullTest {
 
         @Test
         @DisplayName("사용자 이름울 입력하지 않은 경우")
-        public void invalidSingupNotFoundUsername() throws Exception {
+        void invalidSingupNotFoundUsername() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", null, "profileImage");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
@@ -140,7 +140,7 @@ class MemberApiControllerNullTest {
 
         @Test
         @DisplayName("프로필 이미지가 없는 경우")
-        public void invalidSingupNotFoundProfileImage() throws Exception {
+        void invalidSingupNotFoundProfileImage() throws Exception {
             //when
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest("loginId", "password", "username", null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);

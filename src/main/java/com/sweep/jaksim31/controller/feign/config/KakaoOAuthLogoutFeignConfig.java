@@ -4,7 +4,6 @@ import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 
 public class KakaoOAuthLogoutFeignConfig {
@@ -17,7 +16,6 @@ public class KakaoOAuthLogoutFeignConfig {
                 requestTemplate.header("Content-Type", "application/x-www-form-urlencoded");
                 requestTemplate.header("Authorization", "KakaoAK " + adminKey);
                 requestTemplate.query("target_id_type", "user_id");
-//                System.out.println(requestTemplate.toString());
             };
         }
     }
