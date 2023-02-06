@@ -239,6 +239,16 @@ jobs:
           source: "scripts/deploy.sh"
           target: "/home/centos/deploy"
 
+      - name: Transfer Deploy Script use SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT2 }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          source: "scripts/deploy.sh"
+          target: "/home/centos/deploy"
+
       # SSH Connect
       - name: Execute Server Init Script
         uses: appleboy/ssh-action@master
@@ -248,5 +258,19 @@ jobs:
           username: ${{ secrets.REMOTE_USERNAME }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script_stop: true
-          script: chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
+          script: | 
+            chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
+            sleep 30s
+
+      # SSH Connect
+      - name: Execute Server Init Script
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT2 }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script_stop: true
+          script: |
+            chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
 
