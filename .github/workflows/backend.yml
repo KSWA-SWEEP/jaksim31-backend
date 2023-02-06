@@ -246,7 +246,7 @@ jobs:
           port: ${{ secrets.REMOTE_PORT2 }}
           username: ${{ secrets.REMOTE_USERNAME }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
-          source: "scripts/deploy.sh"
+          source: "scripts/deploy2.sh"
           target: "/home/centos/deploy"
 
       # SSH Connect
@@ -272,5 +272,5 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script_stop: true
           script: |
-            chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
+            chmod +x /home/centos/deploy/scripts/deploy2.sh && sh /home/centos/deploy/scripts/deploy2.sh
 

@@ -50,7 +50,10 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 //        System.out.println(request.getServletPath());
-        if(request.getServletPath().startsWith("/api/v0") || request.getServletPath().startsWith("/swagger") || request.getServletPath().startsWith("/actuator")) {
+        if(request.getServletPath().startsWith("/api/v0") ||
+                request.getServletPath().startsWith("/swagger") ||
+                request.getServletPath().startsWith("/management") ||
+                request.getServletPath().startsWith("/favicon")) {
             filterChain.doFilter(request, response);
         } else {
             String token = resolveToken(request);

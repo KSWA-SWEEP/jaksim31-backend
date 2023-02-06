@@ -74,7 +74,7 @@ public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 �
 
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/**", "/swagger-ui/**", "/actuator/**").permitAll()
+                .antMatchers("/api/**", "/swagger-ui/**", "/management/**", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
 
                 .and()
