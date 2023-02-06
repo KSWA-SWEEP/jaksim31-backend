@@ -50,8 +50,8 @@ public class TokenProvider {
     private static final String AUTHORITIES_KEY = "auth";
     private static final String BEARER_TYPE = "Bearer";
 
-    private final long ACCESS_TOKEN_EXPIRE_TIME;            // 30분
-    private final long REFRESH_TOKEN_EXPIRE_TIME;  // 7일
+    private final long accessTokenExpireTime;            // 30분
+    private final long refreshTokenExpireTime;  // 7일
 
     private final Key key;
 
@@ -59,8 +59,8 @@ public class TokenProvider {
                          @Value("${jwt.access-token-expire-time}") long accessTime,
                          @Value("${jwt.refresh-token-expire-time}") long refreshTime
     ) {
-        this.ACCESS_TOKEN_EXPIRE_TIME = accessTime;
-        this.REFRESH_TOKEN_EXPIRE_TIME = refreshTime;
+        this.accessTokenExpireTime = accessTime;
+        this.refreshTokenExpireTime = refreshTime;
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
@@ -94,7 +94,7 @@ public class TokenProvider {
      * @return 엑세스 토큰 생성
      */
     public String createAccessToken(String loginId,Set<Authority> auth) {
-        return this.createToken(loginId,auth,ACCESS_TOKEN_EXPIRE_TIME);
+        return this.createToken(loginId,auth, accessTokenExpireTime);
     }
 
     /**
@@ -104,7 +104,7 @@ public class TokenProvider {
      * @return 리프레시 토큰 생성
      */
     public String createRefreshToken(String loginId,Set<Authority> auth) {
-        return this.createToken(loginId,auth,REFRESH_TOKEN_EXPIRE_TIME);
+        return this.createToken(loginId,auth, refreshTokenExpireTime);
     }
 
     /**

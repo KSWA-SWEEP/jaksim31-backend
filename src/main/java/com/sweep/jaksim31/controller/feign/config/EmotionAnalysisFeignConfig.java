@@ -15,8 +15,6 @@ public class EmotionAnalysisFeignConfig {
             return requestTemplate -> {
                 requestTemplate.header("x-api-key", apiKey);
                 requestTemplate.header("Content-Type", "application/json");
-//                System.out.println(requestTemplate);
-//                System.out.println(requestTemplate.body());
             };
         }
     }

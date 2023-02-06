@@ -16,8 +16,6 @@ public class UnsplashSearchFeignConfig {
             return requestTemplate -> {
                 requestTemplate.query("client_id", apiKey);
                 requestTemplate.query("query", searchKeyword);
-//                System.out.println(requestTemplate.toString());
-//                System.out.println(requestTemplate.body());
             };
         }
     }

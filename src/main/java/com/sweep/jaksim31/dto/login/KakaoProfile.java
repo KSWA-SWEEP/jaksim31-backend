@@ -1,9 +1,6 @@
 package com.sweep.jaksim31.dto.login;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sweep.jaksim31.dto.login.KakaoLoginRequest;
-import com.sweep.jaksim31.dto.login.LoginRequest;
-import com.sweep.jaksim31.dto.member.MemberSaveRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,13 +40,19 @@ public class KakaoProfile {
 
     @Data
     public static class KakaoAccount { //(2)
-        public Boolean profile_nickname_needs_agreement;
-        public Boolean profile_image_needs_agreement;
+        @JsonProperty("profile_nickname_needs_agreement")
+        public Boolean profileNicknameNeedsAgreement;
+        @JsonProperty("profile_image_needs_agreement")
+        public Boolean profileImageNeedsAgreement;
         public Profile profile;
-        public Boolean has_email;
-        public Boolean email_needs_agreement;
-        public Boolean is_email_valid;
-        public Boolean is_email_verified;
+        @JsonProperty("has_email")
+        public Boolean hasEmail;
+        @JsonProperty("email_needs_agreement")
+        public Boolean emailNeedsAgreement;
+        @JsonProperty("is_email_valid")
+        public Boolean isEmailValid;
+        @JsonProperty("is_email_verified")
+        public Boolean isEmailVerified;
         public String email;
 
         @Data

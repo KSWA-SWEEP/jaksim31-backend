@@ -83,7 +83,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 1.가입 확인_회원 가입 전")
         @Order(1)
-        public void isMember() throws Exception {
+        void isMember() throws Exception {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(LOGIN_ID);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
             // when
@@ -100,7 +100,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 2.회원 가입")
         @Order(2)
-        public void signUp() throws Exception {
+        void signUp() throws Exception {
             MemberSaveRequest memberSaveRequest = new MemberSaveRequest(LOGIN_ID, password, username, profileImage);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberSaveRequest);
             // when
@@ -119,7 +119,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 3.가입 확인_회원 가입 후")
         @Order(3)
-        public void isMemberAfterSignUp() throws Exception {
+        void isMemberAfterSignUp() throws Exception {
             MemberCheckLoginIdRequest memberCheckLoginIdRequest = new MemberCheckLoginIdRequest(LOGIN_ID);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberCheckLoginIdRequest);
             // when
@@ -137,7 +137,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 4-1.로그인")
         @Order(4)
-        public void logIn() throws Exception {
+        void logIn() throws Exception {
             LoginRequest loginRequest = new LoginRequest(LOGIN_ID, password);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
             // when
@@ -153,7 +153,7 @@ class IntegrationMemberTest {
 
             // Cookie 설정 확인
             MockHttpServletResponse response = mvcResult.getResponse();
-            assertEquals(response.getCookie("isLogin").getValue(),"true");
+            assertEquals("true", response.getCookie("isLogin").getValue());
             assertNotNull(response.getCookie("atk").getValue());
             assertNotNull(response.getCookie("rtk").getValue());
 
@@ -167,7 +167,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[예외] 4-2.로그인_비밀번호가 불일치할 경우")
         @Order(4)
-        public void invalidLogin() throws Exception {
+        void invalidLogin() throws Exception {
             LoginRequest loginRequest = new LoginRequest(LOGIN_ID, "wrongPassword");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(loginRequest);
             // when
@@ -186,7 +186,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 5. 사용자 정보 조회")
         @Order(5)
-        public void getMyInfo() throws Exception {
+        void getMyInfo() throws Exception {
 
             // when
             mockMvc.perform(get("/api/v1/members/" + userId)
@@ -207,7 +207,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 6-1. 사용자 정보 Update_Username, ProfileImage")
         @Order(6)
-        public void updateMember() throws Exception {
+        void updateMember() throws Exception {
             String newUsername = "방근호";
             String newProfile = "프로필이미지";
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest(newUsername, newProfile);
@@ -234,7 +234,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 6-2. 사용자 정보 Update_Username")
         @Order(6)
-        public void updateMember_Username() throws Exception {
+        void updateMember_Username() throws Exception {
             String newUsername = "Bang";
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest(newUsername, "");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
@@ -259,7 +259,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 6-3. 사용자 정보 Update_ProfileImage")
         @Order(6)
-        public void updateMember_ProfileImage() throws Exception {
+        void updateMember_ProfileImage() throws Exception {
             String newProfile = "Bang_image";
             MemberUpdateRequest memberUpdateRequest = new MemberUpdateRequest("", newProfile);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdateRequest);
@@ -284,7 +284,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 7-1. 비밀번호 변경_CheckPW")
         @Order(7)
-        public void changePassword_checkPassword() throws Exception {
+        void changePassword_checkPassword() throws Exception {
             MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest(password);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
@@ -301,7 +301,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 7-2. 비밀번호 변경_ChangePW")
         @Order(8)
-        public void changePassword_changePassword() throws Exception {
+        void changePassword_changePassword() throws Exception {
             String newPassword = "newPassword";
             MemberUpdatePasswordRequest memberUpdatePasswordRequest = new MemberUpdatePasswordRequest(newPassword);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(memberUpdatePasswordRequest);
@@ -320,7 +320,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[예외] 7-3. 비밀번호 변경_CheckPW with BeforePW")
         @Order(9)
-        public void changePassword_beforePassword() throws Exception {
+        void changePassword_beforePassword() throws Exception {
             MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest("password");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
@@ -341,7 +341,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] 7-4. 비밀번호 변경_CheckPW with AfterPW")
         @Order(9)
-        public void changePassword_afterPassword() throws Exception {
+        void changePassword_afterPassword() throws Exception {
             MemberCheckPasswordRequest checkPasswordRequest = new MemberCheckPasswordRequest(password);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(checkPasswordRequest);
 
@@ -360,7 +360,7 @@ class IntegrationMemberTest {
         @Test
         @DisplayName("[정상] last. 로그아웃")
         @Order(10)
-        public void logout() throws Exception {
+        void logout() throws Exception {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("Authorization", "Bearer "+refreshToken);
 
@@ -375,11 +375,11 @@ class IntegrationMemberTest {
 
             // Cookie 설정 확인
             MockHttpServletResponse response = mvcResult.getResponse();
-            assertEquals(response.getCookie("isLogin").getValue(),"false");
-            assertEquals(response.getCookie("atk").getValue(),"");
-            assertEquals(response.getCookie("rtk").getValue(),"");
-            assertEquals(response.getCookie("todayDiaryId").getValue(),"");
-            assertEquals(response.getCookie("userId").getValue(),"");
+            assertEquals("false", response.getCookie("isLogin").getValue());
+            assertEquals("", response.getCookie("atk").getValue());
+            assertEquals("", response.getCookie("rtk").getValue());
+            assertEquals("", response.getCookie("todayDiaryId").getValue());
+            assertEquals("", response.getCookie("userId").getValue());
 
             atkCookie = new Cookie("atk", response.getCookie("atk").getValue());
             rtkCookie = new Cookie("rtk", response.getCookie("rtk").getValue());

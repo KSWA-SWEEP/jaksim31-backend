@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.dto.tokakao;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -23,7 +24,9 @@ import lombok.Setter;
 public class TranslationRequest {
 
     private String q;
-    private String source_lang = "ko";
-    private String target_lang = "en";
+    @JsonProperty("source_lang")
+    private String sourceLang = "ko";
+    @JsonProperty("target_lang")
+    private String targetLang = "en";
 
 }

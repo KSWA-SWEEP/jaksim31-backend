@@ -29,7 +29,7 @@ public class KakaoLoginRequest extends LoginRequest {
 
     @Override
     public MemberSaveRequest toMemberSaveRequest() {
-        System.out.println();
+
         return MemberSaveRequest.builder()
                 .loginId(super.getLoginId())
                 .username(username)

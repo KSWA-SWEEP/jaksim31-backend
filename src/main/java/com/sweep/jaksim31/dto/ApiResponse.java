@@ -13,15 +13,15 @@ public class ApiResponse<T> {
     private String message = "OK";
     private String code = "200";
     private Object data = "no data";
-    private final static int SUCCESS = 200;
-    private final static int NOT_FOUND = 400;
-    private final static int FAILED = 500;
-    private final static String SUCCESS_MESSAGE = "SUCCESS";
-    private final static String NOT_FOUND_MESSAGE = "NOT FOUND";
-    private final static String FAILED_MESSAGE = "서버에서 오류가 발생하였습니다.";
-    private final static String INVALID_ACCESS_TOKEN = "Invalid access token.";
-    private final static String INVALID_REFRESH_TOKEN = "Invalid refresh token.";
-    private final static String NOT_EXPIRED_TOKEN_YET = "Not expired token yet.";
+    private static final int SUCCESS = 200;
+    private static final int NOT_FOUND = 400;
+    private static final int FAILED = 500;
+    private static final String SUCCESS_MESSAGE = "SUCCESS";
+    private static final String NOT_FOUND_MESSAGE = "NOT FOUND";
+    private static final String FAILED_MESSAGE = "서버에서 오류가 발생하였습니다.";
+    private static final String INVALID_ACCESS_TOKEN = "Invalid access token.";
+    private static final String INVALID_REFRESH_TOKEN = "Invalid refresh token.";
+    private static final String NOT_EXPIRED_TOKEN_YET = "Not expired token yet.";
 
     private final ApiResponseHeader header;
     private final Map<String, T> body;

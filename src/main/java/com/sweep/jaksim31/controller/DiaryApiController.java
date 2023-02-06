@@ -5,10 +5,7 @@ import com.sweep.jaksim31.dto.diary.*;
 import com.sweep.jaksim31.dto.diary.validator.DiaryAnalysisRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiarySaveRequestValidator;
 import com.sweep.jaksim31.dto.diary.validator.DiaryThumbnailRequestValidator;
-import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.enums.SuccessResponseType;
-import com.sweep.jaksim31.exception.handler.ErrorResponse;
-import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.service.impl.DiaryServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,18 +13,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.parser.ParseException;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.ConstraintViolationException;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +59,7 @@ import java.util.Map;
 @Validated
 public class DiaryApiController {
     private final DiaryServiceImpl diaryService;
-    private final String idPattern = "^[a-zA-Z0-9]{24}$";
+    private static final String ID_PATTERN = "^[a-zA-Z0-9]{24}$";
     @InitBinder
     public void init(WebDataBinder binder) {
         binder.addValidators(new DiarySaveRequestValidator(), new DiaryThumbnailRequestValidator(), new DiaryAnalysisRequestValidator());
@@ -81,36 +74,36 @@ public class DiaryApiController {
     // 일기 등록
     @Operation(summary = "일기 등록", description = "일기를 저장합니다.")
     @PostMapping(value = "")
-    public ResponseEntity<?> saveDiary(HttpServletResponse response, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
+    public ResponseEntity<String> saveDiary(HttpServletResponse response, @Validated @RequestBody DiarySaveRequest diarySaveRequest){
         return new ResponseEntity<>(diaryService.saveDiary(response, diarySaveRequest), SuccessResponseType.DIARY_SAVE_SUCCESS.getHttpStatus());
     }
 
     // 일기 수정
     @Operation(summary = "일기 수정", description = "일기를 수정합니다.")
     @PutMapping(value = "{diaryId}")
-    public ResponseEntity<?> updateDiary(@Pattern(regexp = idPattern, message = "잘못 된 ID 값입니다.") @PathVariable String diaryId, @Valid @RequestBody DiarySaveRequest diarySaveRequest){
-        System.out.printf("Diary ID \"%s\" Update%n",diaryId);
+    public ResponseEntity<String> updateDiary(@Pattern(regexp = ID_PATTERN, message = "잘못 된 ID 값입니다.") @PathVariable String diaryId, @Valid @RequestBody DiarySaveRequest diarySaveRequest){
+        log.info("Diary ID \"%s\" Update%n",diaryId);
         return new ResponseEntity<>(diaryService.updateDiary(diaryId, diarySaveRequest), SuccessResponseType.DIARY_UPDATE_SUCCESS.getHttpStatus());
     }
 
     // 일기 삭제
     @Operation(summary = "일기 삭제", description = "일기를 삭제합니다.")
     @DeleteMapping(value="{userId}/{diaryId}")
-    public ResponseEntity<?> deleteDiary(HttpServletResponse response, @Pattern(regexp = idPattern)@PathVariable String userId, @Pattern(regexp = idPattern)@PathVariable String diaryId){
+    public ResponseEntity<String> deleteDiary(HttpServletResponse response, @Pattern(regexp = ID_PATTERN)@PathVariable String userId, @Pattern(regexp = ID_PATTERN)@PathVariable String diaryId){
         return new ResponseEntity<>(diaryService.remove(response, userId, diaryId), SuccessResponseType.DIARY_REMOVE_SUCCESS.getHttpStatus());
     }
 
     // 개별 일기 조회
     @Operation(summary = "개별 일기 조회", description = "일기ID로 하나의 일기를 조회합니다.")
     @GetMapping(value="{userId}/{diaryId}")
-    public ResponseEntity<DiaryResponse> findDiary(@Pattern(regexp = idPattern)@PathVariable String userId, @Pattern(regexp = idPattern) @PathVariable String diaryId){
+    public ResponseEntity<DiaryResponse> findDiary(@Pattern(regexp = ID_PATTERN)@PathVariable String userId, @Pattern(regexp = ID_PATTERN) @PathVariable String diaryId){
         return ResponseEntity.ok(diaryService.findDiary(userId, diaryId));
     }
 
     // 사용자 일기 조회
     @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@Pattern(regexp = idPattern)@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@Pattern(regexp = ID_PATTERN)@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
         if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate") || params.containsKey("searchWord")){
             // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
             return ResponseEntity.ok(diaryService.findDiaries(userId, params));
@@ -128,7 +121,7 @@ public class DiaryApiController {
     
     @Operation(summary = "감정 통계", description = "사용자 일기에 대한 감정 통계를 제공합니다.")
     @GetMapping(value = "{userId}/emotions")
-    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@Pattern(regexp = idPattern)@PathVariable String userId,  @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, @RequestParam(required = false) Map<String, Object> params) {
+    public ResponseEntity<DiaryEmotionStaticsResponse> emotionStatistics(@Pattern(regexp = ID_PATTERN)@PathVariable String userId, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, @RequestParam(required = false) Map<String, Object> params) {
         return ResponseEntity.ok(diaryService.emotionStatics(userId, params));
     }
 }

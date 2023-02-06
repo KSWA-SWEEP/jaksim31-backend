@@ -12,8 +12,6 @@ public class KakaoOAuthUserInfoFeignConfig {
         public RequestInterceptor requestInterceptor() throws URISyntaxException {
             return requestTemplate -> {
                 requestTemplate.header("Content-Type", "application/x-www-form-urlencoded");
-//                System.out.println(requestTemplate);
-//                System.out.println(requestTemplate.request().toString());
             };
         }
     }

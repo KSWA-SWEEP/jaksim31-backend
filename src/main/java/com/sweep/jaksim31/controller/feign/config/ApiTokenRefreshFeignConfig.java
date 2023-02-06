@@ -15,7 +15,6 @@ public class ApiTokenRefreshFeignConfig {
                 requestTemplate.header("Content-Type", "application/json");
                 requestTemplate.body(requestBody);
 //                requestTemplate.header("X-Object-Meta-content-type", "image/jpeg");
-//                System.out.println(requestTemplate.toString());
             };
         }
     }
