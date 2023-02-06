@@ -579,7 +579,6 @@ public class DiaryServiceImpl implements DiaryService {
             endDate = (LocalDate.parse(((String)params.get(searchCondition[2])))).atTime(9,0);}
         else{
             endDate = LocalDate.now().atTime(9,0);}
-
         // Aggregation 설정
         // filter
         MatchOperation matchOperation = Aggregation.match(
