@@ -98,12 +98,22 @@ jobs:
           name: test-result
           path: target/surefire-reports/
 
-      - name: (PR) Archive classes artifacts
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v3
+      - name: (PR)Sonarqube Analysis
+        if: always() && github.event_name == 'pull_request'
+        run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
+
+      - name: Comment Sonarqube URL
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v4
         with:
-          name: classes
-          path: target/classes/
+          # 이슈에 코멘트를 달아주는 스크립트 실행
+          script: |
+            const { SONARQUBE_ID, SONARQUBE_URL, PR_NUMBER } = process.env
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📊 ${ SONARQUBE_ID }-${ PR_NUMBER } 정적 코드 분석 결과 확인하기 [링크](${SONARQUBE_URL})`})
 
   Report-Test-Result:
     if: github.event_name == 'pull_request'
@@ -132,68 +142,6 @@ jobs:
         with:
           report_paths: '**/test-result/TEST-*.xml'
           token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
-
-
-  Sonarqube-Analysis:
-    if: github.event_name == 'pull_request'
-    needs: Backend-CI
-    env:
-      # KEY - VALUE
-      SONARQUBE_ID: jaksim31
-      SONARQUBE_URL: ${{ secrets.SONARQUBE_URL }}
-      SONARQUBE_BINARIES: classes
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      # macos 환경에서 CI 실행 (환경은 github이 제공)
-    runs-on: ubuntu-latest
-    # 각 단계
-    steps:
-      # 소스코드 가져오기
-      - name: Checkout source code
-        uses: actions/checkout@v2
-        # 서브모듈 설정
-        with:
-          submodules: true
-          # secrets 변수는 github 세팅에서 미리 세팅한 데이터
-          token: ${{ secrets.SUBMODULE_ACCESS_TOKEN }}
-
-      # 이전 Job에서 업로드한 Jar file 다운로드
-      - name: Download a test result
-        uses: actions/download-artifact@v1
-        with:
-          name: classes
-
-      - name: Install JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-          cache: 'maven'
-
-      # Maven Package Caching
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      # 위에서 설정했던 정적코드 전송 태스크 실행
-      - name: Sonarqube Analysis
-        if: always() && github.event_name == 'pull_request'
-        run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
-
-      - name: Comment Sonarqube URL
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v4
-        with:
-          # 이슈에 코멘트를 달아주는 스크립트 실행
-          script: |
-            const { SONARQUBE_ID, SONARQUBE_URL, PR_NUMBER } = process.env
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `📊 ${ SONARQUBE_ID }-${ PR_NUMBER } 정적 코드 분석 결과 확인하기 [링크](${SONARQUBE_URL})`})
 
   Backend-CD:
     # main 브랜치에 push 하는 경우에만 배포 JOB 실행
