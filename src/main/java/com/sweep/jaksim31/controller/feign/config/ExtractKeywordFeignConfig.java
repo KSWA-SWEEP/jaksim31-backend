@@ -14,7 +14,6 @@ public class ExtractKeywordFeignConfig {
             return requestTemplate -> {
                 requestTemplate.header("x-api-key", apiKey);
                 requestTemplate.header("Content-Type", "application/json");
-//                System.out.println(requestTemplate.toString());
             };
         }
     }

@@ -23,8 +23,10 @@ public class KakaoOAuth {
     private String accessToken;
     @JsonProperty("refresh_token")
     private String refreshToken;
-    private int expires_in;
-    private int refresh_token_expires_in;
+    @JsonProperty("expires_in")
+    private int expiresIn;
+    @JsonProperty("refresh_token_expires_in")
+    private int refreshTokenExpiresIn;
     private String scope;
 
 }

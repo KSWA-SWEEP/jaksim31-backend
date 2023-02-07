@@ -27,7 +27,6 @@ public class TimeTraceAop {
     @Around("execution(* com.sweep.jaksim31..*.*(..))")
     public Object execute(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
-//        System.out.println("START: " + joinPoint.toString());
         try {
             return joinPoint.proceed();
         } finally {

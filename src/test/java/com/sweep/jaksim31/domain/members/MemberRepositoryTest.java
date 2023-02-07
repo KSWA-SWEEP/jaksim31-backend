@@ -33,8 +33,8 @@ class MemberRepositoryTest {
                 .loginId("test-loginId" + num)
                 .username("test-username" + num)
                 .password("test-password" + num)
-                .register_date(Instant.now().plus(9, ChronoUnit.HOURS))
-                .update_date(Instant.now().plus(9, ChronoUnit.HOURS))
+                .registerDate(Instant.now().plus(9, ChronoUnit.HOURS))
+                .updateDate(Instant.now().plus(9, ChronoUnit.HOURS))
                 .delYn('N')
                 .isSocial(false)
                 .diaryTotal(0)
@@ -54,7 +54,7 @@ class MemberRepositoryTest {
         //then
         assertThat(savedMember).isSameAs(members);
         assertThat(savedMember.getLoginId()).isEqualTo(members.getLoginId());
-        assertThat(savedMember.getIsSocial()).isEqualTo(false);
+        assertThat(savedMember.getIsSocial()).isFalse();
 
     }
 
@@ -134,8 +134,8 @@ class MemberRepositoryTest {
                 .extracting("profileImage")
                 .isEqualTo(memberUpdateRequest.getProfileImage());
 
-        assertThat(memberRepository.findAll().size())
-                .isEqualTo(3);
+        assertThat(memberRepository.findAll())
+                .hasSize(3);
 
         for (Members tmp : mongoTemplate.findAll(Members.class, "member")) {
             System.out.println(tmp.toString());
@@ -153,8 +153,8 @@ class MemberRepositoryTest {
         memberRepository.delete(targetMember);
 
         //then
-        assertThat(memberRepository.findAll().size())
-                .isEqualTo(2);
+        assertThat(memberRepository.findAll())
+                .hasSize(2);
 
         for (Members tmp : mongoTemplate.findAll(Members.class, "member")) {
             System.out.println(tmp.toString());

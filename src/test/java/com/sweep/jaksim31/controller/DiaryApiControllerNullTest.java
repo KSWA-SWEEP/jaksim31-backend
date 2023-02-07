@@ -78,7 +78,7 @@ public class DiaryApiControllerNullTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
-        public void failSaveDiaryUserIdIsNULL() throws Exception{
+        void failSaveDiaryUserIdIsNULL() throws Exception{
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest(null, "contents", date, "happy", keywords,"thumbnail");
             //when
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -96,7 +96,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
-        public void failSaveDiaryContentIsNULL() throws Exception{
+        void failSaveDiaryContentIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -114,7 +114,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
-        public void failSaveDiaryEmotionIsNULL() throws Exception{
+        void failSaveDiaryEmotionIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -132,7 +132,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(NULL)")
-        public void failSaveDiaryKeywordIsNULL() throws Exception{
+        void failSaveDiaryKeywordIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", null,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -150,7 +150,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
-        public void failSaveDiaryThumbnailIsNULL() throws Exception{
+        void failSaveDiaryThumbnailIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -168,7 +168,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]일기 날짜가 입력되지 않았을 때")
-        public void failSaveDiaryDateIsNULL() throws Exception{
+        void failSaveDiaryDateIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -193,7 +193,7 @@ public class DiaryApiControllerNullTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
-        public void failUpdateDiaryUserIdIsNULL() throws Exception{
+        void failUpdateDiaryUserIdIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest(null, "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -211,7 +211,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
-        public void failUpdateDiaryContentIsNULL() throws Exception{
+        void failUpdateDiaryContentIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", null, date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -229,7 +229,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
-        public void failUpdateDiaryEmotionIsNULL() throws Exception{
+        void failUpdateDiaryEmotionIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, null, keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -247,7 +247,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(NULL)")
-        public void failUpdateDiaryKeywordIsNULL() throws Exception{
+        void failUpdateDiaryKeywordIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", null,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -265,7 +265,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
-        public void failUpdateDiaryThumbnailIsNULL() throws Exception{
+        void failUpdateDiaryThumbnailIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", date, "happy", keywords,null);
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -283,7 +283,7 @@ public class DiaryApiControllerNullTest  {
         }
         @Test
         @DisplayName("[예외]일기 날짜가 입력되지 않았을 때")
-        public void failUpdateDiaryDateIsNULL() throws Exception{
+        void failUpdateDiaryDateIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("63c0cb6f30dc3d547e3b88bb", "contents", null, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -306,7 +306,7 @@ public class DiaryApiControllerNullTest  {
     class analyzeDiary {
         @Test
         @DisplayName("[예외]분석 할 문장들이 입력되지 않았을 때(NULL)")
-        public void failAnalyzeDiaryInputSentencesIsNull() throws Exception{
+        void failAnalyzeDiaryInputSentencesIsNull() throws Exception{
             //when
             DiaryAnalysisRequest diaryAnalysisRequest = new DiaryAnalysisRequest();
             diaryAnalysisRequest.setSentences(null);

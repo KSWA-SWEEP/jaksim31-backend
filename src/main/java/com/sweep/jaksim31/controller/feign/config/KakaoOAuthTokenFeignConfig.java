@@ -25,7 +25,6 @@ public class KakaoOAuthTokenFeignConfig {
                 requestTemplate.query("grant_type", grantType);
                 requestTemplate.query("client_id", clientId);
                 requestTemplate.query("redirect_uri", String.valueOf(encodedRedirectUrl));
-//                System.out.println(requestTemplate.toString());
             };
         }
     }
