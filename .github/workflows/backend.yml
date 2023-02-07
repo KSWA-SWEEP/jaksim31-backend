@@ -260,7 +260,7 @@ jobs:
           script_stop: true
           script: | 
             chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
-            sleep 30s
+            sleep 20s
 
       # SSH Connect
       - name: Execute Server Init Script
