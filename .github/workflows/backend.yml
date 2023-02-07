@@ -33,6 +33,7 @@ jobs:
       SONARQUBE_ID: jaksim31
       SONARQUBE_URL: ${{ secrets.SONARQUBE_URL }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
+      SONARQUBE_BINARIES: target/classes
     # macos 환경에서 CI 실행 (환경은 github이 제공)
     runs-on: macos-latest
     # 각 단계
@@ -98,11 +99,11 @@ jobs:
           name: test-result
           path: target/surefire-reports/
 
-      - name: (PR)Sonarqube Analysis
+      - name: (PR) Sonarqube Analysis
         if: always() && github.event_name == 'pull_request'
         run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
 
-      - name: Comment Sonarqube URL
+      - name: (PR) Comment Sonarqube URL
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v4
         with:
