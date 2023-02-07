@@ -162,6 +162,21 @@ jobs:
         with:
           name: classes
 
+#      - name: Install JDK 11
+#        uses: actions/setup-java@v3
+#        with:
+#          java-version: '11'
+#          distribution: 'adopt'
+#          cache: 'maven'
+
+      # Maven Package Caching
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       # 위에서 설정했던 정적코드 전송 태스크 실행
       - name: Sonarqube Analysis
         if: always() && github.event_name == 'pull_request'
@@ -239,6 +254,16 @@ jobs:
           source: "scripts/deploy.sh"
           target: "/home/centos/deploy"
 
+      - name: Transfer Deploy Script use SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT2 }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          source: "scripts/deploy2.sh"
+          target: "/home/centos/deploy"
+
       # SSH Connect
       - name: Execute Server Init Script
         uses: appleboy/ssh-action@master
@@ -248,5 +273,19 @@ jobs:
           username: ${{ secrets.REMOTE_USERNAME }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script_stop: true
-          script: chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
+          script: | 
+            chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
+            sleep 20s
+
+      # SSH Connect
+      - name: Execute Server Init Script
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT2 }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script_stop: true
+          script: |
+            chmod +x /home/centos/deploy/scripts/deploy2.sh && sh /home/centos/deploy/scripts/deploy2.sh
 

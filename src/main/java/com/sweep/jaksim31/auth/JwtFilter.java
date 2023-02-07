@@ -49,8 +49,10 @@ public class JwtFilter extends OncePerRequestFilter {
     // JWT 토큰의 인증 정보를 현재 쓰레드의 SecurityContext 에 저장하는 역할 수행
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-
-        if(request.getServletPath().startsWith("/api/v0") || request.getServletPath().startsWith("/swagger")) {
+        if(request.getServletPath().startsWith("/api/v0") ||
+                request.getServletPath().startsWith("/swagger") ||
+                request.getServletPath().startsWith("/management") ||
+                request.getServletPath().startsWith("/favicon")) {
             filterChain.doFilter(request, response);
         } else {
             String token = resolveToken(request);
