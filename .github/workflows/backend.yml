@@ -162,6 +162,21 @@ jobs:
         with:
           name: classes
 
+      - name: Install JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          cache: 'maven'
+
+      # Maven Package Caching
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       # 위에서 설정했던 정적코드 전송 태스크 실행
       - name: Sonarqube Analysis
         if: always() && github.event_name == 'pull_request'
