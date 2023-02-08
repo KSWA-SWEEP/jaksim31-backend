@@ -2,7 +2,6 @@ package com.sweep.jaksim31.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.Authenticator;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
@@ -10,6 +9,7 @@ import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
+import com.sweep.jaksim31.domain.diary.DiarySearchQueryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
@@ -17,11 +17,11 @@ import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
-import com.sweep.jaksim31.enums.SuccessResponseType;
-import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
+import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.service.DiaryService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -100,7 +101,7 @@ public class DiaryServiceImpl implements DiaryService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
 
     @Value("${kakao.download-storage.url}")
-    private String DOWNLOAD_URL;
+    private String downloadUrl;
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
     private final UploadImageFeign uploadImageFeign;
@@ -109,11 +110,15 @@ public class DiaryServiceImpl implements DiaryService {
     private final ExtractKeywordFeign extractKeywordFeign;
     private final TranslationFeign translationFeign;
     private final EmotionAnalysisFeign emotionAnalysisFeign;
+    private final DiarySearchQueryRepository diarySearchQueryRepository;
 
     private final MongoTemplate mongoTemplate;
     private final DiaryPagingCacheAdapter diaryCacheAdapter;
     private final MemberCacheAdapter memberCacheAdapter;
     private static final String MEMBER_CACHE_PREFIX = "memberCache::";
+
+    String[] searchCondition = {"userId", "startDate", "endDate", "emotion"};
+    String collectionName = "diary";
 
     @Override
     // 전체 일기 조회
@@ -164,9 +169,9 @@ public class DiaryServiceImpl implements DiaryService {
                 .skip((long) pageable.getPageSize() * pageable.getPageNumber())
                 .limit(pageable.getPageSize());
         // filter(사용자 id)
-        query.addCriteria(Criteria.where("userId").is(userId));
+        query.addCriteria(Criteria.where(searchCondition[0]).is(userId));
         // filtering 된 데이터
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
+        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, collectionName)
                 .stream()
                 .map(DiaryInfoResponse::of)
                 .collect(Collectors.toList());
@@ -174,12 +179,63 @@ public class DiaryServiceImpl implements DiaryService {
         Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
                 diaries,
                 pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
+                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, collectionName)
         );
         // 캐시에 저장
         diaryCacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
 
         return new RestPage<>(diaryPage);
+    }
+
+    /**
+     * @param userId 유저 아이디
+     * @param params 정렬 조건
+     * @return List of DiaryInfoResponse
+     */
+
+    @Override
+    // 일기 검색, 조건 조회
+    public RestPage<DiaryInfoResponse> searchUserDiaries(String userId, Map<String, Object> params) throws IOException {
+
+        // 사용자를 찾을 수 없을 때
+        Members user = memberRepository
+                .findById(userId)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        Pageable pageable;
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
+        if(!params.containsKey("page"))
+            params.put("page", "0");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
+
+        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
+        if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
+        else
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
+
+        Map<String, Object> sortedMap = new TreeMap<>(params);
+
+        // 캐싱된 값이 있는지 확인
+        RestPage<DiaryInfoResponse> cacheDiaryPage = diaryCacheAdapter.get(userId + pageable + sortedMap);
+
+        if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
+
+        List<DiaryInfoResponse> diaries = diarySearchQueryRepository.findByCondition(userId, params, pageable)
+                .stream()
+                .map(DiaryInfoResponse::of)
+                .collect(Collectors.toList());
+
+        RestPage<DiaryInfoResponse> searchedDiaries = new RestPage<>(diaries, pageable, diaries.size());
+
+        // 캐시에 저장
+        diaryCacheAdapter.put(userId + pageable + sortedMap, searchedDiaries);
+
+        return searchedDiaries;
     }
 
     /**
@@ -261,7 +317,6 @@ public class DiaryServiceImpl implements DiaryService {
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
 
-        System.out.println("#######recent diary is "+members.getRecentDiary().toString());
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
         if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
@@ -295,13 +350,11 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
         if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
-            System.out.println("#######recent diary is "+members.getRecentDiary().toString());
             Map<String, String> params = new HashMap<>();
             params.put("size", "1");
             params.put("page", "1");
             Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
             if(page.getContent().isEmpty()) {
-//                System.out.println("########### Empty");
                 members.setRecentDiary(new DiaryInfoResponse());
             }
             else
@@ -347,73 +400,7 @@ public class DiaryServiceImpl implements DiaryService {
         return DiaryResponse.of(diary);
     }
 
-    /**
-     * @param userId 유저 아이디
-     * @param params 정렬 조건
-     * @return List of DiaryInfoResponse
-     */
 
-    @Override
-    // 일기 검색, 조건 조회
-    public RestPage<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params){
-        // TODO
-        //  * ElasticSearch 연결 되면 elasticSerch 사용해서 검색하도록 수정
-
-        //mongoTemplate 사용해서 일단 구현
-        // 사용자를 찾을 수 없을 때
-        Members user = memberRepository
-                .findById(userId)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        Pageable pageable;
-        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
-        if(!params.containsKey("page"))
-            params.put("page", "0");
-        if(!params.containsKey("size")) {
-            if (user.getDiaryTotal() > 0)
-                params.put("size", user.getDiaryTotal() + "");
-            else
-                params.put("size", "1");
-        }
-        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
-        if(params.containsKey("sort") && params.get("sort").toString().toLowerCase().equals("asc"))
-            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
-        else
-            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
-        // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
-        Query query = new Query()
-                .with(pageable)
-                .skip(pageable.getPageSize() * pageable.getPageNumber())
-                .limit(pageable.getPageSize());
-        // userId 조건 설정
-        query.addCriteria(Criteria.where("userId").is(userId));
-
-        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
-        if(!params.containsKey("startDate"))
-            params.put("startDate","1990-01-01");
-        if(!params.containsKey("endDate"))
-            params.put("endDate", LocalDate.now().toString());
-        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get("startDate").toString())).atTime(9,0)).lte(LocalDate.parse((params.get("endDate").toString())).atTime(9,0)));
-        // 검색어 조건 설정
-        if(params.containsKey("searchWord")) {
-            query.addCriteria(Criteria.where("content").regex(params.get("searchWord").toString()));
-        }
-        // 감정 조건 설정
-        if(params.containsKey("emotion")) {
-            query.addCriteria(Criteria.where("emotion").is(params.get("emotion").toString()));
-        }
-
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, "diary")
-                .stream()
-                .map(DiaryInfoResponse::of)
-                .collect(Collectors.toList());
-        // filtering 된 데이터, 페이징 정보, document 개수 정보로 Page 객체 생성
-        Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
-                diaries,
-                pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, "diary")
-        );
-        return new RestPage<>(diaryPage);
-    }
 
     /**
      * @title saveThumbnail
@@ -442,10 +429,9 @@ public class DiaryServiceImpl implements DiaryService {
             ResponseEntity<Object> res = uploadImageFeign.uploadFile("/" + userId  + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png", image);
             if(!res.getStatusCode().equals(HttpStatus.CREATED))
                 throw new BizException(ThirdPartyExceptionType.NOT_UPLOAD_IMAGE);
-//            System.out.println(UPLOAD_URL+"/" +userId+ "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png");
             return "객체 스토리지에 업로드 성공";
         } finally {
-            System.out.println(DOWNLOAD_URL+"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
+            log.info(downloadUrl +"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
         }
     }
 
@@ -482,7 +468,7 @@ public class DiaryServiceImpl implements DiaryService {
         // JSON parsingß
         String jsonStr = mapper.writeValueAsString(Objects.requireNonNull(emotionAnalysisResult.getBody()).get("0"));
         JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonStr);
-        JSONObject currentEmotion = (JSONObject) jsonObject.get("emotion");
+        JSONObject currentEmotion = (JSONObject) jsonObject.get(searchCondition[3]);
         koreanEmotion = currentEmotion.get("value").toString();
 
         // 문장 번역
@@ -520,7 +506,6 @@ public class DiaryServiceImpl implements DiaryService {
 
 
         for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-//            System.out.println(result.toString());
             // weight가 0.5 이상인 키워드만 가져온다.
             if (result.getWeight() >= 0.5)
                 englishKeywords.add(result.getKeyword());
@@ -528,12 +513,12 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 영어로 추출된 키워드 한글로 번역
         TranslationRequest tmpTranslationRequest = new TranslationRequest();
-        tmpTranslationRequest.setSource_lang("en");
-        tmpTranslationRequest.setTarget_lang("ko");
+        tmpTranslationRequest.setSourceLang("en");
+        tmpTranslationRequest.setTargetLang("ko");
 
         // 번역 api 호출 전 스트링 하나로 합쳐준다.
         StringBuilder sb = new StringBuilder();
-        for (ExtractedKeywordResponse.Result result : extractKeywords.getBody().getResult()) {
+        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
             sb.append(result.getKeyword()).append(", ");
         }
 
@@ -567,18 +552,19 @@ public class DiaryServiceImpl implements DiaryService {
     // 감정 통계
     public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
-        memberRepository
+         memberRepository
                 .findById(userId)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
+
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
-        if(params.containsKey("startDate")){
-            startDate = (LocalDate.parse(((String)params.get("startDate")))).atTime(9,0);}
+        if(params.containsKey(searchCondition[1])){
+            startDate = (LocalDate.parse(((String)params.get(searchCondition[1])))).atTime(9,0);}
         else{
             startDate = LocalDate.of(1990, 1, 1).atTime(9, 0);}
-        if(params.containsKey("endDate")){
-            endDate = (LocalDate.parse(((String)params.get("endDate")))).atTime(9,0);}
+        if(params.containsKey(searchCondition[2])){
+            endDate = (LocalDate.parse(((String)params.get(searchCondition[2])))).atTime(9,0);}
         else{
             endDate = LocalDate.now().atTime(9,0);}
 
@@ -586,12 +572,12 @@ public class DiaryServiceImpl implements DiaryService {
         // filter
         MatchOperation matchOperation = Aggregation.match(
                 Criteria.where("date").gte(startDate).lte(endDate)
-                        .and("userId").is(userId)
+                        .and(searchCondition[0]).is(userId)
         );
         // group (Group By)
-        GroupOperation groupOperation = Aggregation.group("emotion").count().as("countEmotion");
+        GroupOperation groupOperation = Aggregation.group(searchCondition[3]).count().as("countEmotion");
         // projection (원하는 필드를 제외하거나 포함)
-        ProjectionOperation projectionOperation = Aggregation.project("emotion", "countEmotion");
+        ProjectionOperation projectionOperation = Aggregation.project(searchCondition[3], "countEmotion");
 
         // 모든 조건을 포함하여 쿼리 실행. (Input : Diary.class / Output : DiaryEmotionStatics.class)
         AggregationResults<DiaryEmotionStatics> aggregation = this.mongoTemplate.aggregate(Aggregation.newAggregation(matchOperation, groupOperation, projectionOperation),
@@ -599,8 +585,7 @@ public class DiaryServiceImpl implements DiaryService {
                 DiaryEmotionStatics.class);
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
-        DiaryEmotionStaticsResponse diaryEmotionStaticsResponse = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
-        return diaryEmotionStaticsResponse;
+        return DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
     }
 
 }

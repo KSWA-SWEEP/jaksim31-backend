@@ -3,7 +3,6 @@ package com.sweep.jaksim31.controller;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
@@ -35,7 +34,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +42,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -102,7 +101,7 @@ public class DiaryApiControllerTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[정상]일기 저장 완료")
-        public void saveDiary() throws Exception{
+        void saveDiary() throws Exception{
             //given
             given(diaryService.saveDiary(any(), any()))
                     .willReturn(SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage());
@@ -124,7 +123,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자를 찾을 수 없을 때")
-        public void failSaveDiaryNotFoundUser() throws Exception{
+        void failSaveDiaryNotFoundUser() throws Exception{
             //given
             given(diaryService.saveDiary(any(), any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -146,7 +145,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]이미 등록 된 일기가 있을 때")
-        public void failSaveDiaryDuplicateDiary() throws Exception{
+        void failSaveDiaryDuplicateDiary() throws Exception{
             //given
             given(diaryService.saveDiary(any(), any()))
                     .willThrow(new BizException(DiaryExceptionType.DUPLICATE_DIARY));
@@ -168,7 +167,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
-        public void failSaveDiaryUserIdIsNULL() throws Exception{
+        void failSaveDiaryUserIdIsNULL() throws Exception{
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("", "contents", date, "happy", keywords,"thumbnail");
             //when
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -186,7 +185,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
-        public void failSaveDiaryContentIsNULL() throws Exception{
+        void failSaveDiaryContentIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -204,7 +203,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
-        public void failSaveDiaryEmotionIsNULL() throws Exception{
+        void failSaveDiaryEmotionIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -222,7 +221,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(Empty)")
-        public void failSaveDiaryKeywordIsEmpty() throws Exception{
+        void failSaveDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", empty_keywords,"thumbnail");
@@ -241,7 +240,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
-        public void failSaveDiaryThumbnailIsNULL() throws Exception{
+        void failSaveDiaryThumbnailIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -259,7 +258,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]날짜가 유효하지 않을 때")
-        public void failSaveDiaryWrongDate() throws Exception{
+        void failSaveDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
@@ -284,7 +283,7 @@ public class DiaryApiControllerTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[정상]일기 조회 완료")
-        public void findDiary() throws Exception{
+        void findDiary() throws Exception{
             DiaryResponse diary = DiaryResponse.builder()
                     .diaryId("diaryId")
                     .userId("testobjectidtestobject12")
@@ -344,7 +343,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]일기가 없는 경우")
-        public void failFindDiaryNotFoundDiary() throws Exception{
+        void failFindDiaryNotFoundDiary() throws Exception{
             //given
             given(diaryService.findDiary(any(),any()))
                     .willThrow(new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
@@ -363,7 +362,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자의 일기가 아닌 경우")
-        public void failFindDiaryNoPermission() throws Exception{
+        void failFindDiaryNoPermission() throws Exception{
             //given
             given(diaryService.findDiary(any(),any()))
                     .willThrow(new BizException(DiaryExceptionType.NO_PERMISSION));
@@ -388,7 +387,82 @@ public class DiaryApiControllerTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[정상]일기 조회 완료")
-        public void findUserDiaries() throws Exception{
+        void findUserDiaries() throws Exception{
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("testobjectidtestobject12")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.findUserDiaries(any(),any()))
+                    .willReturn(new RestPage<>(page));
+
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
+                            .with(csrf()) //403 에러 방지
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("testobjectidtestobject12")))
+                    .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).findUserDiaries(any(), any());
+            verify(diaryService, never()).searchUserDiaries(any(), any());
+        }
+        @Test
+        @DisplayName("[정상]일기 조건 조회 완료")
+        void findDiaries() throws Exception{
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("testobjectidtestobject12")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.searchUserDiaries(any(),any()))
+                    .willReturn(new RestPage<>(page));
+
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
+                            .with(csrf()) //403 에러 방지
+                            .queryParam("emotion", "슬픔")
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("testobjectidtestobject12")))
+                    .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).searchUserDiaries(any(), any());
+            verify(diaryService, never()).findUserDiaries(any(), any());
+        }
+        @Test
+        @DisplayName("[정상]일기 조회 완료(페이징)")
+        void findUserDiariesPaging() throws Exception{
             List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
                     .diaryId("diaryId")
                     .userId("testobjectidtestobject12")
@@ -420,11 +494,13 @@ public class DiaryApiControllerTest  {
                     .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
                     .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
                     .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).findUserDiaries(any(), any());
+            verify(diaryService, never()).searchUserDiaries(any(), any());
         }
-        // TODO 사용자 일기 조건 조회 test 코드 추가
         @Test
         @DisplayName("[예외]사용자가 없는 경우")
-        public void failFindUserDiariesNotFoundUser() throws Exception{
+        void failFindUserDiariesNotFoundUser() throws Exception{
             //given
             given(diaryService.findUserDiaries(any(),any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -451,7 +527,7 @@ public class DiaryApiControllerTest  {
         LocalDate date = LocalDate.of(2023, 1, 18);
         @Test
         @DisplayName("[정상]일기 수정 완료")
-        public void updateDiary() throws Exception{
+        void updateDiary() throws Exception{
             //given
             given(diaryService.updateDiary(any(), any()))
                     .willReturn(
@@ -471,6 +547,8 @@ public class DiaryApiControllerTest  {
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andExpect(content().string(SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
+
+
         }
 
         @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")
@@ -495,7 +573,7 @@ public class DiaryApiControllerTest  {
 
         @Test
         @DisplayName("[예외]사용자를 찾을 수 없을 때")
-        public void failUpdateDiaryNotFoundUser() throws Exception{
+        void failUpdateDiaryNotFoundUser() throws Exception{
             //given
             given(diaryService.updateDiary(any(), any()))
                     .willThrow(new BizException(MemberExceptionType.NOT_FOUND_USER));
@@ -518,7 +596,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]등록 된 일기가 없을 때")
-        public void failUpdateDiaryNotFoundDiary() throws Exception{
+        void failUpdateDiaryNotFoundDiary() throws Exception{
             //given
             given(diaryService.updateDiary(any(), any()))
                     .willThrow(new BizException(DiaryExceptionType.NOT_FOUND_DIARY));;
@@ -540,7 +618,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자 ID가 입력되지 않았을 때")
-        public void failUpdateDiaryUserIdIsNULL() throws Exception{
+        void failUpdateDiaryUserIdIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("", "contents", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -558,7 +636,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]일기 내용이 입력되지 않았을 때")
-        public void failUpdateDiaryContentIsNULL() throws Exception{
+        void failUpdateDiaryContentIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "", date, "happy", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -576,7 +654,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]감정 분석 결과가 입력되지 않았을 때")
-        public void failUpdateDiaryEmotionIsNULL() throws Exception{
+        void failUpdateDiaryEmotionIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "", keywords,"thumbnail");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -594,7 +672,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]키워드가 입력되지 않았을 때(Empty)")
-        public void failUpdateDiaryKeywordIsEmpty() throws Exception{
+        void failUpdateDiaryKeywordIsEmpty() throws Exception{
             String[] empty_keywords = new String[0];
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", empty_keywords,"thumbnail");
@@ -613,7 +691,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]썸네일 주소가 입력되지 않았을 때")
-        public void failUpdateDiaryThumbnailIsNULL() throws Exception{
+        void failUpdateDiaryThumbnailIsNULL() throws Exception{
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"");
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(diarySaveRequest);
@@ -631,7 +709,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]날짜가 유효하지 않을 때")
-        public void failUpdateDiaryWrongDate() throws Exception{
+        void failUpdateDiaryWrongDate() throws Exception{
             date = LocalDate.now().plusDays(1);
             //when
             DiarySaveRequest diarySaveRequest = new DiarySaveRequest("testobjectidtestobject12", "contents", date, "happy", keywords,"thumbnail");
@@ -654,7 +732,7 @@ public class DiaryApiControllerTest  {
     class removeDiary {
         @Test
         @DisplayName("[정상]일기 삭제 완료")
-        public void removeDiary() throws Exception{
+        void removeDiary() throws Exception{
             //given
             given(diaryService.remove(any(), any(), any()))
                     .willReturn("diaryId");
@@ -702,7 +780,7 @@ public class DiaryApiControllerTest  {
 
         @Test
         @DisplayName("[정상]일기 정보가 없을 때")
-        public void removeDiaryNotFoundDiary() throws Exception{
+        void removeDiaryNotFoundDiary() throws Exception{
             //given
             given(diaryService.remove(any(), any(), any()))
                     .willThrow(new BizException(DiaryExceptionType.DELETE_NOT_FOUND_DIARY));
@@ -728,7 +806,7 @@ public class DiaryApiControllerTest  {
         List<String> sentences = List.of(new String[]{"문장1", "문장2", "문장3"});
         @Test
         @DisplayName("[정상]일기 분석 완료")
-        public void analyzeDiary() throws Exception{
+        void analyzeDiary() throws Exception{
             //given
             given(diaryService.analyzeDiary(any()))
                     .willReturn(DiaryAnalysisResponse.builder()
@@ -758,7 +836,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]분석 할 문장들이 입력되지 않았을 때(Empty)")
-        public void failAnalyzeDiaryInputSentencesIsEmpty() throws Exception{
+        void failAnalyzeDiaryInputSentencesIsEmpty() throws Exception{
             List<String> empty_sentences = List.of(new String[0]);
             //when
             DiaryAnalysisRequest diaryAnalysisRequest = new DiaryAnalysisRequest();
@@ -778,7 +856,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]감정 분석 API 오류")
-        public void failAnalyzeDiaryEmotionAnalysis() throws Exception{
+        void failAnalyzeDiaryEmotionAnalysis() throws Exception{
             //given
             given(diaryService.analyzeDiary(any()))
                     .willThrow(new BizException(ThirdPartyExceptionType.NOT_ANALYZE_EMOTION));
@@ -801,7 +879,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]키워드 추출 API 오류")
-        public void failAnalyzeDiaryKeywordExtract() throws Exception{
+        void failAnalyzeDiaryKeywordExtract() throws Exception{
             //given
             given(diaryService.analyzeDiary(any()))
                     .willThrow(new BizException(ThirdPartyExceptionType.NOT_EXTRACT_KEYWORD));
@@ -824,7 +902,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]번역 API 오류")
-        public void failAnalyzeDiaryTranslation() throws Exception{
+        void failAnalyzeDiaryTranslation() throws Exception{
             //given
             given(diaryService.analyzeDiary(any()))
                     .willThrow(new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD));
@@ -852,7 +930,7 @@ public class DiaryApiControllerTest  {
     class emotionStatistics {
         @Test
         @DisplayName("[정상]감정 통계 완료")
-        public void emotionStatistics() throws Exception{
+        void emotionStatistics() throws Exception{
             List<DiaryEmotionStatics> emotionStatics = List.of(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
             //given
             given(diaryService.emotionStatics(any(), any()))
@@ -889,7 +967,7 @@ public class DiaryApiControllerTest  {
 
         @Test
         @DisplayName("[정상]감정 통계 완료(날짜 조건이 있을 때)")
-        public void emotionStatisticsWithDate() throws Exception{
+        void emotionStatisticsWithDate() throws Exception{
             List<DiaryEmotionStatics> emotionStatics = List.of(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
 //            emotionStatics.add(DiaryEmotionStatics.builder().emotion("좋음").countEmotion(1).build());
             Map<String, Object> param = new HashMap<>();
@@ -918,7 +996,7 @@ public class DiaryApiControllerTest  {
         }
         @Test
         @DisplayName("[예외]사용자를 찾을 수 없을 때")
-        public void failEmotionStatisticsNotFoundUser() throws Exception{
+        void failEmotionStatisticsNotFoundUser() throws Exception{
             DiaryEmotionStatics[] diaryEmotionStatics = {new DiaryEmotionStatics("좋음", 1), new DiaryEmotionStatics("나쁨", 1)};
             List<DiaryEmotionStatics> emotionStatics = new ArrayList<>(List.of(diaryEmotionStatics));
 

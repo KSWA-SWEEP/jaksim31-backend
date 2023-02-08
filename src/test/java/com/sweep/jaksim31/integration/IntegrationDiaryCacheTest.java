@@ -112,7 +112,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("1-1. [정상] 다이어리 조회 시 캐싱 데이터 생성 ")
-        public void successFindDiary() {
+        void successFindDiary() {
             //given
             diaryRepository.save(getDiaryRequest(1, userId).toEntity());
             // 테스트용 diaryId
@@ -128,7 +128,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("1-2. [예외] 다이어리 조회 시 예외 발생하면 캐싱 X")
-        public void failFindDiary() {
+        void failFindDiary() {
             //given
             diaryCacheAdapter.delete(DIARY_CACHE_PREFIX + diaryId);
             // when
@@ -149,7 +149,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("2-1. [정상] 다이어리 페이지 조회 시 캐싱 데이터 생성 ")
-        public void successFindUserDiaries() {
+        void successFindUserDiaries() {
 
             // when
             diaryService.findUserDiaries(userId, new HashMap<String, String>());
@@ -161,7 +161,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("2-2. [예외] 다이어리 페이지 조회 시 예외 발생하면 캐싱 X")
-        public void failFindUserDiaries() {
+        void failFindUserDiaries() {
 
             // when
             try {
@@ -181,7 +181,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("3-1. [정상] 다이어리 삭제 시 캐시 데이터 제거 ")
-        public void successRemoveDiary() {
+        void successRemoveDiary() {
             // 현재 테스트에서는 캐시가 정상적으로 제거 되는지만 확인하면 되므로,
             // value가 String인 refresh token cache adapter를 사용하여 간편하게 테스트 진행.
 
@@ -201,7 +201,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("3-2. [정상] 다이어리 수정 시 캐시 데이터 제거 ")
-        public void successUpdateDiary() {
+        void successUpdateDiary() {
             //given
             diaryRepository.save(getDiaryRequest(3, userId).toEntity());
             // 테스트용 diaryId
@@ -222,7 +222,7 @@ public class IntegrationDiaryCacheTest {
 
         @Test
         @DisplayName("3-3. [정상] 다이어리 등록 시 캐시 데이터 제거 ")
-        public void successSaveDiary() {
+        void successSaveDiary() {
             //given
             diaryRepository.save(getDiaryRequest(3, userId).toEntity());
             // 테스트용 diaryId

@@ -6,8 +6,6 @@ import com.sweep.jaksim31.dto.login.validator.LoginRequestValidator;
 import com.sweep.jaksim31.dto.member.*;
 import com.sweep.jaksim31.dto.member.validator.*;
 import com.sweep.jaksim31.enums.SuccessResponseType;
-import com.sweep.jaksim31.exception.handler.ErrorResponse;
-import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.service.impl.KakaoMemberServiceImpl;
 import com.sweep.jaksim31.service.impl.MemberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,13 +17,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Pattern;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -61,7 +57,7 @@ import java.net.URISyntaxException;
 @RequestMapping("/api")
 @Validated
 public class MembersApiController {
-    private final String idPattern = "^[a-zA-Z0-9]{24}$";
+    private static final String ID_PATTERN = "^[a-zA-Z0-9]{24}$";
     private final MemberServiceImpl memberServiceImpl;
     private final KakaoMemberServiceImpl kaKaoMemberService;
     @Value("${kakao.auth.login-redirect-url}")
@@ -99,7 +95,7 @@ public class MembersApiController {
     @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
     @GetMapping(value="/v0/members/kakao-login")
     public ResponseEntity<String> kakaoLogin(@RequestParam("code") String authorizationCode, HttpServletResponse response) throws Exception {
-        System.out.println(authorizationCode);
+        log.info(authorizationCode);
         // 카카오 인증코드로 토큰 얻어서 유저 정보 얻기
         KakaoProfile userInfo = kaKaoMemberService.getKakaoUserInfo((kaKaoMemberService.getAccessToken(authorizationCode)));
 
@@ -129,21 +125,21 @@ public class MembersApiController {
 
     @Operation(summary = "개별 정보 조회", description = "자신의 정보를 요청합니다.")
     @GetMapping("/v1/members/{userId}")
-    public ResponseEntity<MemberInfoResponse> getMyInfo(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
+    public ResponseEntity<MemberInfoResponse> getMyInfo(@Pattern(regexp = ID_PATTERN) @PathVariable("userId") String userId,
                                                         HttpServletRequest request) {
         return ResponseEntity.ok(memberServiceImpl.getMyInfo(userId,request));
     }
 
     @Operation(summary = "유저 정보 업데이트 요청", description = "유저 정보 업데이트를 요청합니다.")
     @PatchMapping("/v1/members/{userId}")
-    public ResponseEntity<String> updateMember(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
+    public ResponseEntity<String> updateMember(@Pattern(regexp = ID_PATTERN) @PathVariable("userId") String userId,
                                                @Validated @RequestBody MemberUpdateRequest dto, HttpServletRequest request) {
         return new ResponseEntity<>(memberServiceImpl.updateMemberInfo(userId, dto,request), SuccessResponseType.USER_UPDATE_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "유저 삭제 요청", description = "유저 정보가 삭제됩니다.")
     @DeleteMapping("/v1/members/{userId}")
-    public ResponseEntity<String> remove(@Pattern(regexp = idPattern) @PathVariable("userId") String userId,
+    public ResponseEntity<String> remove(@Pattern(regexp = ID_PATTERN) @PathVariable("userId") String userId,
                                          @Validated @RequestBody MemberRemoveRequest dto,
                                          HttpServletResponse response,
                                          HttpServletRequest request) throws URISyntaxException {

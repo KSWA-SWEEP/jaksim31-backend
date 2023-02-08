@@ -4,6 +4,7 @@ import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.util.ExecutionTimeTestExecutionListener;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
@@ -38,6 +39,7 @@ import static org.springframework.data.domain.Sort.by;
  */
 
 @DataMongoTest
+@Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class, ExecutionTimeTestExecutionListener.class})
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class) // 메소드 순서 지정
@@ -77,9 +79,9 @@ class DiaryRepositoryTest {
         Diary diary = diaryRepository.findAll().get(0);
 
         //then
-        assertEquals(diaryRepository.findAll().size(), 20);
+        assertEquals(20, diaryRepository.findAll().size());
         assertTrue(diary.getContent().startsWith("content"));
-        assertEquals(Arrays.stream(diary.getKeywords()).count(), 1);
+        assertEquals(1, Arrays.stream(diary.getKeywords()).count());
     }
 
     @Test
@@ -93,9 +95,9 @@ class DiaryRepositoryTest {
         diaryRepository.delete(diary);
 
         //then
-        assertEquals(diaryRepository.findAll().size(), 19);
+        assertEquals(19, diaryRepository.findAll().size());
         for (Diary tmp : mongoTemplate.findAll(Diary.class, "diary")) {
-            System.out.println(tmp.toString());
+            log.info(tmp.toString());
         }
     }
 
@@ -117,9 +119,9 @@ class DiaryRepositoryTest {
         diaryRepository.save(diary);
 
         //then
-        assertEquals(diaryRepository.findAll().size(), 20);
+        assertEquals(20, diaryRepository.findAll().size());
         assertTrue(diary.getContent().startsWith("content"));
-        assertEquals(Arrays.stream(diary.getKeywords()).count(), 1);
+        assertEquals(1, Arrays.stream(diary.getKeywords()).count());
     }
 
     @Test
@@ -128,9 +130,9 @@ class DiaryRepositoryTest {
     void findAll() {
         //when
         //then
-        assertEquals(diaryRepository.findAll().size(), 20);
+        assertEquals(20, diaryRepository.findAll().size());
         for (Diary tmp : mongoTemplate.findAll(Diary.class, "diary")) {
-            System.out.println(tmp.toString());
+            log.info(tmp.toString());
         }
     }
 
@@ -156,8 +158,8 @@ class DiaryRepositoryTest {
     @DisplayName("사용자 일기 전체 조회 (Read) - User ObjectId")
     void findAllByUserId() {
         //then
-        assertThat(diaryRepository.findAllByUserId("63c0cb6f30dc3d547e3b88bb").size())
-                .isEqualTo(20);
+        assertThat(diaryRepository.findAllByUserId("63c0cb6f30dc3d547e3b88bb"))
+                .hasSize(20);
         for (Diary tmp : diaryRepository.findAllByUserId("63c0cb6f30dc3d547e3b88bb")) {
             assertThat(tmp.getUserId())
                     .isEqualTo("63c0cb6f30dc3d547e3b88bb");
@@ -191,7 +193,7 @@ class DiaryRepositoryTest {
         List<DiaryInfoResponse> diaryInfoResponsesList = mongoTemplate.find(query, DiaryInfoResponse.class, "diary");
 
         //then
-        assertThat(diaryInfoResponsesList.size()).isEqualTo(9);
+        assertThat(diaryInfoResponsesList).hasSize(9);
 
         for (DiaryInfoResponse diaryInfoResponse : diaryInfoResponsesList) {
             assertThat(diaryInfoResponse.getUserId()).isEqualTo("63c0cb6f30dc3d547e3b88bb");
@@ -217,7 +219,7 @@ class DiaryRepositoryTest {
         List<DiaryInfoResponse> diaryInfoResponsesList = mongoTemplate.find(query, DiaryInfoResponse.class, "diary");
 
         //then
-        assertThat(diaryInfoResponsesList.size()).isEqualTo(6);
+        assertThat(diaryInfoResponsesList).hasSize(6);
         int idx = 10;
         for (DiaryInfoResponse diaryInfoResponse : diaryInfoResponsesList) {
             assertThat(diaryInfoResponse.getEmotion()).isEqualTo(idx + "");

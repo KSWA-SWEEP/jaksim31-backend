@@ -39,7 +39,7 @@ public class EmbeddedMongoDBTest {
     class EmbeddedMongo {
         @Test
         @DisplayName("Embedded MongoDB 연동 테스트 1")
-        public void test() {
+        void test() {
             // then
             assertThat(mongoTemplate.findAll(DBObject.class, "collection")).extracting("key")
                     .containsOnly("geunho");
@@ -51,7 +51,7 @@ public class EmbeddedMongoDBTest {
 
         @Test
         @DisplayName("Embedded MongoDB 연동 테스트 2")
-        public void baseNmTest() {
+        void baseNmTest() {
             for (DBObject tmp : mongoTemplate.findAll(DBObject.class, "collection")) {
                 System.out.println(tmp.toString());
             }

@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.dto.tokakao;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
@@ -23,9 +24,11 @@ import java.util.List;
 public class ExtractedKeywordResponse {
 
     List<Result> result;
-    double elapsed_time;
+    @JsonProperty("elapsed_time")
+    double elapsedTime;
     String version;
-    int max_candidate_num;
+    @JsonProperty("max_candidate_num")
+    int maxCandidateNum;
 
     @Getter
     @ToString
