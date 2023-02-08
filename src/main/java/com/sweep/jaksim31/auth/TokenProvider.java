@@ -1,17 +1,17 @@
 package com.sweep.jaksim31.auth;
 
-import com.sweep.jaksim31.dto.token.TokenDTO;
-import com.sweep.jaksim31.entity.auth.Authority;
-import com.sweep.jaksim31.util.exceptionhandler.AuthorityExceptionType;
-import com.sweep.jaksim31.util.exceptionhandler.BizException;
-import io.jsonwebtoken.*;
+import com.sweep.jaksim31.domain.auth.Authority;
+import com.sweep.jaksim31.exception.BizException;
+import com.sweep.jaksim31.enums.AuthorityExceptionType;
+import com.sweep.jaksim31.enums.JwtExceptionType;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.*;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,6 +28,20 @@ import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * packageName :  com.sweep.jaksim31.auth
+ * fileName : TokenProvider
+ * author :  방근호
+ * date : 2023-01-09
+ * description : 사용자 Token 생성 및 인증을 위한 Provider
+ * ===========================================================
+ * DATE                 AUTHOR                NOTE
+ * -----------------------------------------------------------
+ * 2023-01-09           방근호             최초 생성
+ * 2023-01-11           김주현             Email -> LoginId
+ * 2023-01-30           방근호             createTokenDto 제거
+ */
+
 @Slf4j
 @Getter
 @Component
@@ -36,8 +50,8 @@ public class TokenProvider {
     private static final String AUTHORITIES_KEY = "auth";
     private static final String BEARER_TYPE = "Bearer";
 
-    private final long ACCESS_TOKEN_EXPIRE_TIME;            // 30분
-    private final long REFRESH_TOKEN_EXPIRE_TIME;  // 7일
+    private final long accessTokenExpireTime;            // 30분
+    private final long refreshTokenExpireTime;  // 7일
 
     private final Key key;
 
@@ -45,15 +59,15 @@ public class TokenProvider {
                          @Value("${jwt.access-token-expire-time}") long accessTime,
                          @Value("${jwt.refresh-token-expire-time}") long refreshTime
     ) {
-        this.ACCESS_TOKEN_EXPIRE_TIME = accessTime;
-        this.REFRESH_TOKEN_EXPIRE_TIME = refreshTime;
+        this.accessTokenExpireTime = accessTime;
+        this.refreshTokenExpireTime = refreshTime;
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    protected String createToken(String email, Set<Authority> auth, long tokenValid) {
+    protected String createToken(String loginId, Set<Authority> auth, long tokenValid) {
         // ex) sub : abc@abc.com
-        Claims claims = Jwts.claims().setSubject(email);
+        Claims claims = Jwts.claims().setSubject(loginId);
 
         // ex)  auth : ROLE_USER,ROLE_ADMIN
         claims.put(AUTHORITIES_KEY,
@@ -75,47 +89,34 @@ public class TokenProvider {
 
     /**
      *
-     * @param email
+     * @param loginId
      * @param auth
      * @return 엑세스 토큰 생성
      */
-    public String createAccessToken(String email,Set<Authority> auth) {
-        return this.createToken(email,auth,ACCESS_TOKEN_EXPIRE_TIME);
+    public String createAccessToken(String loginId,Set<Authority> auth) {
+        return this.createToken(loginId,auth, accessTokenExpireTime);
     }
 
     /**
      *
-     * @param email
+     * @param loginId
      * @param auth
      * @return 리프레시 토큰 생성
      */
-    public String createRefreshToken(String email,Set<Authority> auth) {
-        return this.createToken(email,auth,REFRESH_TOKEN_EXPIRE_TIME);
+    public String createRefreshToken(String loginId,Set<Authority> auth) {
+        return this.createToken(loginId,auth, refreshTokenExpireTime);
     }
 
     /**
      *
      * @param token
-     * @return 토큰 값을 파싱하여 클레임에 담긴 이메일 값을 가져온다.
+     * @return 토큰 값을 파싱하여 클레임에 담긴 LoginId 값을 가져온다.
      */
-    public String getMemberEmailByToken(String token) {
+    public String getMemberLoginIdByToken(String token) {
+        if (token == null)
+            throw new BizException(JwtExceptionType.EMPTY_TOKEN);
         // 토큰의 claim 의 sub 키에 이메일 값이 들어있다.
         return this.parseClaims(token).getSubject();
-    }
-
-    /**
-     *
-     * @param accessToken
-     * @param refreshToken
-     * @return TOEKN DTO를 생성한다.
-     */
-    public TokenDTO createTokenDTO(String accessToken, String refreshToken, String expTime) {
-        return TokenDTO.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expTime(expTime)
-                .grantType(BEARER_TYPE)
-                .build();
     }
 
     public Authentication getAuthentication(String accessToken) throws BizException {
@@ -128,7 +129,7 @@ public class TokenProvider {
         }
 
         log.debug("claims.getAuth = {}",claims.get(AUTHORITIES_KEY));
-        log.debug("claims.getEmail = {}",claims.getSubject());
+        log.debug("claims.getLoginId = {}",claims.getSubject());
 
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities =
@@ -143,7 +144,7 @@ public class TokenProvider {
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);
 
-        return new CustomEmailPasswordAuthToken(principal, "", authorities);
+        return new CustomLoginIdPasswordAuthToken(principal, "", authorities);
     }
 
     public int validateToken(String token) {
@@ -159,11 +160,11 @@ public class TokenProvider {
         }
     }
 
-
     private Claims parseClaims(String accessToken) {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) { // 만료된 토큰이 더라도 일단 파싱을 함
+//            throw new BizException(JwtExceptionType.BAD_TOKEN);
             return e.getClaims();
         }
     }
