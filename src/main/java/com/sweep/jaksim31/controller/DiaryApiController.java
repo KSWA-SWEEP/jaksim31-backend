@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -103,10 +104,14 @@ public class DiaryApiController {
     // 사용자 일기 조회
     @Operation(summary = "사용자 일기 조회", description = "해당 사용자의 일기를 조회합니다. 조회 조건(Query parameter)이 없을 경우 해당 사용자의 전체 일기가 조회됩니다.")
     @GetMapping(value = "{userId}")
-    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@Pattern(regexp = ID_PATTERN)@PathVariable String userId, @RequestParam(required = false) String page, @RequestParam(required = false) String size, @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params){
+    public ResponseEntity<Page<DiaryInfoResponse>> findUserDiary(@Pattern(regexp = ID_PATTERN)@PathVariable String userId,
+                                                                 @RequestParam(required = false) String page, @RequestParam(required = false) String size,
+                                                                 @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params,
+                                                                 @RequestParam(required = false) String emotion, @RequestParam(required = false) String startDate,
+                                                                 @RequestParam(required = false) String endDate, @RequestParam(required = false) String searchKeyword) throws IOException {
         if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate") || params.containsKey("searchWord")){
             // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
-            return ResponseEntity.ok(diaryService.findDiaries(userId, params));
+            return ResponseEntity.ok(diaryService.searchUserDiaries(userId, params));
         }else
             // 페이징 및 정렬 조건만 있으면 사용자 일기 전체 조회
             return ResponseEntity.ok(diaryService.findUserDiaries(userId, params));

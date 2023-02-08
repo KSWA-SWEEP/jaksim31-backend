@@ -3,7 +3,6 @@ package com.sweep.jaksim31.controller;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.domain.auth.AuthorityRepository;
-import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
@@ -35,7 +34,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +42,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -407,6 +406,81 @@ public class DiaryApiControllerTest  {
             //when
             mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
                             .with(csrf()) //403 에러 방지
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("testobjectidtestobject12")))
+                    .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).findUserDiaries(any(), any());
+            verify(diaryService, never()).searchUserDiaries(any(), any());
+        }
+        @Test
+        @DisplayName("[정상]일기 조건 조회 완료")
+        void findDiaries() throws Exception{
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("testobjectidtestobject12")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.searchUserDiaries(any(),any()))
+                    .willReturn(new RestPage<>(page));
+
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
+                            .with(csrf()) //403 에러 방지
+                            .queryParam("emotion", "슬픔")
+                    )
+
+                    //then
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.content[0].userId", Matchers.is("testobjectidtestobject12")))
+                    .andExpect(jsonPath("$.content[0].diaryDate", Matchers.is(date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].modifyDate", Matchers.is(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))))
+                    .andExpect(jsonPath("$.content[0].emotion", Matchers.is("happy")))
+                    .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
+                    .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
+                    .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).searchUserDiaries(any(), any());
+            verify(diaryService, never()).findUserDiaries(any(), any());
+        }
+        @Test
+        @DisplayName("[정상]일기 조회 완료(페이징)")
+        void findUserDiariesPaging() throws Exception{
+            List<DiaryInfoResponse> diaryInfoResponses = List.of(DiaryInfoResponse.builder()
+                    .diaryId("diaryId")
+                    .userId("testobjectidtestobject12")
+                    .diaryDate(date)
+                    .modifyDate(LocalDate.now())
+                    .emotion("happy")
+                    .keywords(keywords)
+                    .thumbnail("thumbnail").build());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "date"));
+
+            Page<DiaryInfoResponse> page = PageableExecutionUtils.getPage(diaryInfoResponses, pageable, ()->1);
+            //given
+            given(diaryService.findUserDiaries(any(),any()))
+                    .willReturn(new RestPage<>(page));
+
+            //when
+            mockMvc.perform(get("/api/v1/diaries/testobjectidtestobject12")
+                            .with(csrf()) //403 에러 방지
                             .queryParam("page", String.valueOf(0))
                     )
 
@@ -420,8 +494,10 @@ public class DiaryApiControllerTest  {
                     .andExpect(jsonPath("$.content[0].keywords", Matchers.contains(keywords)))
                     .andExpect(jsonPath("$.content[0].thumbnail", Matchers.is("thumbnail")))
                     .andDo(MockMvcResultHandlers.print(System.out));
+
+            verify(diaryService, times(1)).findUserDiaries(any(), any());
+            verify(diaryService, never()).searchUserDiaries(any(), any());
         }
-        // TODO 사용자 일기 조건 조회 test 코드 추가
         @Test
         @DisplayName("[예외]사용자가 없는 경우")
         void failFindUserDiariesNotFoundUser() throws Exception{
@@ -471,6 +547,8 @@ public class DiaryApiControllerTest  {
                     .andExpect(content().contentType("text/plain;charset=UTF-8"))
                     .andExpect(content().string(SuccessResponseType.DIARY_UPDATE_SUCCESS.getMessage()))
                     .andDo(MockMvcResultHandlers.print(System.out));
+
+
         }
 
         @DisplayName("[예외]일기 ID가 유효한 값이 아닌 경우")

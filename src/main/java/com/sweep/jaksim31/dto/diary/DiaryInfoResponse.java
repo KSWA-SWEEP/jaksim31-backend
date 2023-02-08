@@ -1,6 +1,7 @@
 package com.sweep.jaksim31.dto.diary;
 
 import com.sweep.jaksim31.domain.diary.Diary;
+import com.sweep.jaksim31.domain.diary.DiarySearch;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,6 +40,9 @@ public class DiaryInfoResponse {
     private String thumbnail;
 
     public static DiaryInfoResponse of(Diary diary){
+        return new DiaryInfoResponse(diary.getId(), diary.getUserId(), diary.getDate().toLocalDate(), diary.getModifyDate().toLocalDate(), diary.getEmotion(), diary.getKeywords(), diary.getThumbnail());
+    }
+    public static DiaryInfoResponse of(DiarySearch diary){
         return new DiaryInfoResponse(diary.getId(), diary.getUserId(), diary.getDate().toLocalDate(), diary.getModifyDate().toLocalDate(), diary.getEmotion(), diary.getKeywords(), diary.getThumbnail());
     }
 }
