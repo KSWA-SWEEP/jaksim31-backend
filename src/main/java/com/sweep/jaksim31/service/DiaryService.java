@@ -6,6 +6,7 @@ import com.sweep.jaksim31.dto.diary.*;
 import org.json.simple.parser.ParseException;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +51,7 @@ public interface DiaryService {
     DiaryResponse findDiary(String userId, String diaryId);
 
     // 일기 검색
-    RestPage<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params);
+    RestPage<DiaryInfoResponse> searchUserDiaries(String userId, Map<String, Object> params) throws IOException;
 
     // 일기 분석
     DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException;

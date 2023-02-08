@@ -9,6 +9,7 @@ import com.sweep.jaksim31.controller.feign.*;
 import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
+import com.sweep.jaksim31.domain.diary.DiarySearchQueryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
@@ -48,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
@@ -108,6 +110,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final ExtractKeywordFeign extractKeywordFeign;
     private final TranslationFeign translationFeign;
     private final EmotionAnalysisFeign emotionAnalysisFeign;
+    private final DiarySearchQueryRepository diarySearchQueryRepository;
 
     private final MongoTemplate mongoTemplate;
     private final DiaryPagingCacheAdapter diaryCacheAdapter;
@@ -182,6 +185,57 @@ public class DiaryServiceImpl implements DiaryService {
         diaryCacheAdapter.put(userId + pageable, new RestPage<>(diaryPage));
 
         return new RestPage<>(diaryPage);
+    }
+
+    /**
+     * @param userId 유저 아이디
+     * @param params 정렬 조건
+     * @return List of DiaryInfoResponse
+     */
+
+    @Override
+    // 일기 검색, 조건 조회
+    public RestPage<DiaryInfoResponse> searchUserDiaries(String userId, Map<String, Object> params) throws IOException {
+
+        // 사용자를 찾을 수 없을 때
+        Members user = memberRepository
+                .findById(userId)
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+        Pageable pageable;
+        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
+        if(!params.containsKey("page"))
+            params.put("page", "0");
+        if(!params.containsKey("size")) {
+            if (user.getDiaryTotal() > 0)
+                params.put("size", user.getDiaryTotal() + "");
+            else
+                params.put("size", "1");
+        }
+
+        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
+        if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
+        else
+            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
+
+        Map<String, Object> sortedMap = new TreeMap<>(params);
+
+        // 캐싱된 값이 있는지 확인
+        RestPage<DiaryInfoResponse> cacheDiaryPage = diaryCacheAdapter.get(userId + pageable + sortedMap);
+
+        if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
+
+        List<DiaryInfoResponse> diaries = diarySearchQueryRepository.findByCondition(userId, params, pageable)
+                .stream()
+                .map(DiaryInfoResponse::of)
+                .collect(Collectors.toList());
+
+        RestPage<DiaryInfoResponse> searchedDiaries = new RestPage<>(diaries, pageable, diaries.size());
+
+        // 캐시에 저장
+        diaryCacheAdapter.put(userId + pageable + sortedMap, searchedDiaries);
+
+        return searchedDiaries;
     }
 
     /**
@@ -346,73 +400,7 @@ public class DiaryServiceImpl implements DiaryService {
         return DiaryResponse.of(diary);
     }
 
-    /**
-     * @param userId 유저 아이디
-     * @param params 정렬 조건
-     * @return List of DiaryInfoResponse
-     */
 
-    @Override
-    // 일기 검색, 조건 조회
-    public RestPage<DiaryInfoResponse> findDiaries(String userId, Map<String, Object> params){
-        // TODO
-        //  * ElasticSearch 연결 되면 elasticSerch 사용해서 검색하도록 수정
-
-        //mongoTemplate 사용해서 일단 구현
-        // 사용자를 찾을 수 없을 때
-        Members user = memberRepository
-                .findById(userId)
-                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
-        Pageable pageable;
-        // paging 설정 값이 비어있다면, 기본값(첫번째 페이지(0), size=사용자 total 일기 수) 세팅
-        if(!params.containsKey("page"))
-            params.put("page", "0");
-        if(!params.containsKey("size")) {
-            if (user.getDiaryTotal() > 0)
-                params.put("size", user.getDiaryTotal() + "");
-            else
-                params.put("size", "1");
-        }
-        // sort가 없으면 최신순(default), asc라고 오면 오래된 순
-        if(params.containsKey("sort") && params.get("sort").toString().equalsIgnoreCase("asc"))
-            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by("date"));
-        else
-            pageable = PageRequest.of(Integer.parseInt(params.get("page").toString()) , Integer.parseInt(params.get("size").toString()), Sort.by(Sort.Direction.DESC, "date"));
-        // page size와 찾고자 하는 page의 번호 외에 다른 section들은 skip하여 빠르게 찾아갈 수 있도록 Query 객체를 설정한다.
-        Query query = new Query()
-                .with(pageable)
-                .skip((long)pageable.getPageSize() * pageable.getPageNumber())
-                .limit(pageable.getPageSize());
-        // userId 조건 설정
-        query.addCriteria(Criteria.where(searchCondition[0]).is(userId));
-
-        // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
-        if(!params.containsKey(searchCondition[1]))
-            params.put(searchCondition[1],"1990-01-01");
-        if(!params.containsKey(searchCondition[2]))
-            params.put(searchCondition[2], LocalDate.now().toString());
-        query.addCriteria(Criteria.where("date").gte(LocalDate.parse((params.get(searchCondition[1]).toString())).atTime(9,0)).lte(LocalDate.parse((params.get(searchCondition[2]).toString())).atTime(9,0)));
-        // 검색어 조건 설정
-        if(params.containsKey("searchWord")) {
-            query.addCriteria(Criteria.where("content").regex(params.get("searchWord").toString()));
-        }
-        // 감정 조건 설정
-        if(params.containsKey(searchCondition[3])) {
-            query.addCriteria(Criteria.where(searchCondition[3]).is(params.get(searchCondition[3]).toString()));
-        }
-
-        List<DiaryInfoResponse> diaries = mongoTemplate.find(query, Diary.class, collectionName)
-                .stream()
-                .map(DiaryInfoResponse::of)
-                .collect(Collectors.toList());
-        // filtering 된 데이터, 페이징 정보, document 개수 정보로 Page 객체 생성
-        Page<DiaryInfoResponse> diaryPage = PageableExecutionUtils.getPage(
-                diaries,
-                pageable,
-                () -> mongoTemplate.count(query.skip(-1).limit(-1), Diary.class, collectionName)
-        );
-        return new RestPage<>(diaryPage);
-    }
 
     /**
      * @title saveThumbnail
