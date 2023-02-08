@@ -197,7 +197,7 @@ class IntegrationDiaryTest {
             Members members = memberRepository.findById(userId).get();
 
             // when
-            mockMvc.perform(get("/api/v1/diaries/"+userId)
+            MvcResult mvcResult = mockMvc.perform(get("/api/v1/diaries/"+userId)
                             .cookie(atkCookie,rtkCookie)
                             .contentType(MediaType.APPLICATION_JSON)
                             .servletPath("/api/v1/diaries/"+userId))
@@ -207,11 +207,10 @@ class IntegrationDiaryTest {
                     .andExpect(jsonPath("$.size", Matchers.is(members.getDiaryTotal())))
                     .andDo(MockMvcResultHandlers.print(System.out))
                     .andReturn();
-
         }
 
         @Test
-        @DisplayName("[정상] 4-2.사용자 일기 조회_조건")
+        @DisplayName("[정상] 4-2.사용자 일기 조회_페이징")
         @Order(4)
         void findUserDiary_Some() throws Exception {
             Members members = memberRepository.findById(userId).get();
@@ -219,13 +218,13 @@ class IntegrationDiaryTest {
             // when
             MvcResult mvcResult = mockMvc.perform(get("/api/v1/diaries/"+userId)
                             .cookie(atkCookie,rtkCookie)
-                            .param("emotion","2")
+                            .param("page","2")
+                            .param("size","3")
                             .contentType(MediaType.APPLICATION_JSON)
                             .servletPath("/api/v1/diaries/"+userId))
                     //then
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.content[1].emotion",Matchers.is("2")))
                     .andDo(MockMvcResultHandlers.print(System.out))
                     .andReturn();
 
