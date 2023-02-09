@@ -62,11 +62,11 @@ public class DiarySearchQueryRepository {
                 .lessThan(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(9,0)));
         // 검색어 조건 설정
         if(searchCondition.containsKey(params[3])) {
-            query.addCriteria(Criteria.where("content").contains(searchCondition.get(params[3]).toString()));
+            query.addCriteria(Criteria.where("content").is(searchCondition.get(params[3]).toString()));
         }
         // 감정 조건 설정
         if(searchCondition.containsKey(params[4])) {
-            query.addCriteria(Criteria.where(params[4]).contains(searchCondition.get(params[4]).toString()));
+            query.addCriteria(Criteria.where(params[4]).is(searchCondition.get(params[4]).toString()));
         }
 
         return query;
