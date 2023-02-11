@@ -58,8 +58,8 @@ public class DiarySearchQueryRepository {
         if(!searchCondition.containsKey(params[2]))
             searchCondition.put(params[2], LocalDate.now().toString());
         query.addCriteria(Criteria.where("date")
-                .greaterThan(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(9,0))
-                .lessThan(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(9,0)));
+                .greaterThanEqual(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(9,0))
+                .lessThanEqual(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(9,0)));
         // 검색어 조건 설정
         if(searchCondition.containsKey(params[3])) {
             query.addCriteria(Criteria.where("content").is(searchCondition.get(params[3]).toString()));
