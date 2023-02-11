@@ -3,6 +3,7 @@ package com.sweep.jaksim31.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.adapter.RestPage;
+import com.sweep.jaksim31.adapter.cache.DiaryEmotionStaticsCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
 import com.sweep.jaksim31.controller.feign.*;
@@ -102,6 +103,9 @@ public class DiaryServiceImpl implements DiaryService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
 
+    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
+    private static final String DIARY_EMOTION_STATICS_CACHE_PREFIX = "emotionCache::";
+
     @Value("${kakao.download-storage.url}")
     private String downloadUrl;
     private final DiaryRepository diaryRepository;
@@ -117,7 +121,8 @@ public class DiaryServiceImpl implements DiaryService {
     private final MongoTemplate mongoTemplate;
     private final DiaryPagingCacheAdapter diaryCacheAdapter;
     private final MemberCacheAdapter memberCacheAdapter;
-    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
+    private final DiaryEmotionStaticsCacheAdapter diaryEmotionStaticsCacheAdapter;
+
 
     String[] searchCondition = {"userId", "startDate", "endDate", "emotion"};
     String collectionName = "diary";
@@ -318,6 +323,8 @@ public class DiaryServiceImpl implements DiaryService {
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
+        // 감정 분석 캐시 데이터 삭제
+        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
@@ -382,6 +389,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + members.getId());
+        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         return SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage();
     }
@@ -544,6 +552,13 @@ public class DiaryServiceImpl implements DiaryService {
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
 
+
+        // 캐싱된 값이 있는지 확인
+        DiaryEmotionStaticsResponse cachedResponse = diaryEmotionStaticsCacheAdapter.get(MEMBER_CACHE_PREFIX+userId);
+
+        if(Objects.nonNull(cachedResponse))
+            return cachedResponse;
+
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
@@ -573,7 +588,13 @@ public class DiaryServiceImpl implements DiaryService {
                 DiaryEmotionStatics.class);
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
-        return DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
+
+        DiaryEmotionStaticsResponse response = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
+
+        // 캐시에 저장
+        diaryEmotionStaticsCacheAdapter.put(MEMBER_CACHE_PREFIX+userId, response);
+
+        return response;
     }
 
 }
