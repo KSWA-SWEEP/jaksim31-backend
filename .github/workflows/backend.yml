@@ -162,12 +162,12 @@ jobs:
         with:
           name: classes
 
-#      - name: Install JDK 11
-#        uses: actions/setup-java@v3
-#        with:
-#          java-version: '11'
-#          distribution: 'adopt'
-#          cache: 'maven'
+      #      - name: Install JDK 11
+      #        uses: actions/setup-java@v3
+      #        with:
+      #          java-version: '11'
+      #          distribution: 'adopt'
+      #          cache: 'maven'
 
       # Maven Package Caching
       - name: Cache Maven packages
@@ -273,14 +273,14 @@ jobs:
           username: ${{ secrets.REMOTE_USERNAME }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script_stop: true
-          script: | 
+          script: |
             chmod +x /home/centos/deploy/scripts/deploy.sh && sh /home/centos/deploy/scripts/deploy.sh
 
       - name: Check the deployed service URL
         uses: jtalk/url-health-check-action@v3
         with:
           # Check the following URLs one by one sequentially
-          url: https://jaksim31.xyz/management/health
+          url: https://jaksim31.xyz/api/v0/members/test
           # Follow redirects, or just report success on 3xx status codes
           follow-redirect: false # Optional, defaults to "false"
           # Fail this action after this many failed attempts

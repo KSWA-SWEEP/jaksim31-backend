@@ -13,6 +13,9 @@ import com.sweep.jaksim31.domain.diary.DiarySearchQueryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
+import com.sweep.jaksim31.dto.diary.extractkeyword.Argument;
+import com.sweep.jaksim31.dto.diary.extractkeyword.ExtractKeywordRequest;
+import com.sweep.jaksim31.dto.diary.extractkeyword.NameEntity;
 import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
 import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
@@ -249,7 +252,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
-                throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
+            throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
 
         Diary diary = diarySaveRequest.toEntity();
         diaryRepository.save(diary);
@@ -258,7 +261,7 @@ public class DiaryServiceImpl implements DiaryService {
         // 사용자 정보의 recentDiary 정보 업데이트
         DiaryInfoResponse recentDiary = user.getRecentDiary();
         if(Objects.isNull(recentDiary) || Objects.isNull(recentDiary.getDiaryId())
-         || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
+                || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
             recentDiary = DiaryInfoResponse.of(diary);
         }
 
@@ -303,8 +306,8 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
         Members members = memberRepository
-                    .findById(diarySaveRequest.getUserId())
-                    .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+                .findById(diarySaveRequest.getUserId())
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
 
@@ -447,16 +450,19 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
 
-        List<String> koreanKeywords;
-        List<String> englishKeywords = new ArrayList<>();
+        List<String> englishKeywords;
         String koreanEmotion;
         String englishEmotion;
+
+        // html tag 제거
+        String diaryContent = diaryAnalysisRequest.getSentences().get(0).replaceAll("<(/)?([a-zA-Z]*)(\\s[a-zA-Z]*=[^>]*)?(\\s)*(/)?>", "");
+        System.out.println(diaryContent);
 
         // 감정분석 (요청 보내고 -> 응답 받아와서 Json Parsing 후 -> korean emotion에 저장
         JSONParser jsonParser = new JSONParser();
         ObjectMapper mapper = new ObjectMapper();
 
-        EmotionAnalysisRequest emotionAnalysisRequest = new EmotionAnalysisRequest(diaryAnalysisRequest.getSentences().get(0));
+        EmotionAnalysisRequest emotionAnalysisRequest = new EmotionAnalysisRequest(diaryContent);
         ResponseEntity<JSONObject> emotionAnalysisResult = emotionAnalysisFeign.emotionAnalysis(emotionAnalysisRequest);
 
         // 감정 분석 api 호출 예외처리
@@ -464,75 +470,58 @@ public class DiaryServiceImpl implements DiaryService {
             throw new BizException(ThirdPartyExceptionType.NOT_ANALYZE_EMOTION);
         }
 
-        // JSON parsingß
+        // JSON parsing
         String jsonStr = mapper.writeValueAsString(Objects.requireNonNull(emotionAnalysisResult.getBody()).get("0"));
         JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonStr);
         JSONObject currentEmotion = (JSONObject) jsonObject.get(searchCondition[3]);
         koreanEmotion = currentEmotion.get("value").toString();
 
-        // 문장 번역
-        // TranslationRequest 하나의 객체 가지고 두번의 api 요청 호출 (일기 내용, 감정)
+        // 키워드 추출
+        List<String> koreanKeywords = Objects.requireNonNull(
+                        extractKeywordFeign.extractKeyword(
+                                        ExtractKeywordRequest
+                                                .builder()
+                                                .argument(Argument.builder()
+                                                        .text(diaryContent)
+                                                        .build())
+                                                .build())
+                                .getBody())
+                .extractKeyword()
+                .stream()
+                .limit(5)
+                .map(NameEntity::getText)
+                .collect(Collectors.toList());
+
+
+        // 번역 api 호출 전 스트링 하나로 합쳐준다.
+        StringBuilder sb = new StringBuilder(koreanEmotion+"//");
+        for (String keyword : Objects.requireNonNull(koreanKeywords)) {
+            sb.append(keyword).append("//");
+        }
+        // split을 위해..마지막 하나 추가
+        sb.append("end");
+
+        // 번역을 위한 TranslationRequest 객체 생성
         TranslationRequest translationRequest = new TranslationRequest();
-        translationRequest.setQ(diaryAnalysisRequest.getSentences().get(0));
+
+        // 키워드 번역 api 호출
+        translationRequest.setQ(sb.toString());
         ResponseEntity<TranslationResponse> translationResponse = translationFeign.translation(translationRequest);
 
-        // 번역 api 호출 예외처리
         if(!translationResponse.getStatusCode().equals(HttpStatus.OK)){
             throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
         }
 
-        translationRequest.setQ(koreanEmotion);
-        ResponseEntity<TranslationResponse> emotionTranslationResponse = translationFeign.translation(translationRequest);
-
-        // 번역 api 호출 예외 처리
-        if(!emotionTranslationResponse.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
-        }
-
-        englishEmotion = Objects.requireNonNull(emotionTranslationResponse.getBody()).getOutput().get(0).get(0);
-
-        // 키워드 추출
-        DiaryAnalysisRequest translatedSentence = new DiaryAnalysisRequest();
-
-        // 영어로 번역된 문장들을 자릅니다.
-        translatedSentence.setSentences(Objects.requireNonNull(translationResponse.getBody()).getOutput().get(0));
-
-        // 키워드 추출 예외처리
-        ResponseEntity<ExtractedKeywordResponse> extractKeywords = extractKeywordFeign.extractKeyword(translatedSentence);
-        if(!extractKeywords.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_EXTRACT_KEYWORD);
-        }
+        List<String> translatedResult = Arrays.asList(Objects.requireNonNull(translationResponse.getBody()).getOutput().get(0).get(0).split("//"));
 
 
-        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-            // weight가 0.5 이상인 키워드만 가져온다.
-            if (result.getWeight() >= 0.5)
-                englishKeywords.add(result.getKeyword());
-        }
-
-        // 영어로 추출된 키워드 한글로 번역
-        TranslationRequest tmpTranslationRequest = new TranslationRequest();
-        tmpTranslationRequest.setSourceLang("en");
-        tmpTranslationRequest.setTargetLang("ko");
-
-        // 번역 api 호출 전 스트링 하나로 합쳐준다.
-        StringBuilder sb = new StringBuilder();
-        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-            sb.append(result.getKeyword()).append(", ");
-        }
-
-        // 번역 api 호출
-        tmpTranslationRequest.setQ(sb.toString());
-        ResponseEntity<TranslationResponse> tmpTranslationResponse = translationFeign.translation(tmpTranslationRequest);
-        if(!tmpTranslationResponse.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
-        }
-
-        koreanKeywords = Arrays.asList(Objects.requireNonNull(tmpTranslationResponse.getBody()).getOutput().get(0).get(0).split(","));
+        englishKeywords = translatedResult.subList(1, translatedResult.size()-1);
+        englishEmotion = translatedResult.get(0);
 
         // 응답 생성
         return new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion);
     }
+
 
     // 오늘 일기 조회
     public String todayDiary(String userId){
@@ -551,7 +540,7 @@ public class DiaryServiceImpl implements DiaryService {
     // 감정 통계
     public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
-         memberRepository
+        memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
 
