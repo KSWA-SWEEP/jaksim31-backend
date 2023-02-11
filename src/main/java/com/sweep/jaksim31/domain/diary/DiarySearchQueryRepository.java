@@ -19,11 +19,12 @@ import java.util.stream.Collectors;
  * fileName : DiarySearchQueryRepository
  * author :  김주현
  * date : 2023-02-07
- * description :
+ * description : 일기 조건 검색을 위한 Repository(Elastic Search)
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-02-07              김주현             최초 생성
+ * 2023-02-11              김주현             날짜 오류 수정
  */
 @Repository
 @RequiredArgsConstructor
@@ -58,8 +59,8 @@ public class DiarySearchQueryRepository {
         if(!searchCondition.containsKey(params[2]))
             searchCondition.put(params[2], LocalDate.now().toString());
         query.addCriteria(Criteria.where("date")
-                .greaterThanEqual(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(9,0))
-                .lessThanEqual(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(9,0)));
+                .greaterThanEqual(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(0,0))
+                .lessThanEqual(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(0,0)));
         // 검색어 조건 설정
         if(searchCondition.containsKey(params[3])) {
             query.addCriteria(Criteria.where("content").is(searchCondition.get(params[3]).toString()));
