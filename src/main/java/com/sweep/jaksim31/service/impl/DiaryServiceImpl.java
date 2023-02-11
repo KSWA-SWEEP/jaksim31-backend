@@ -87,11 +87,10 @@ import java.util.stream.Collectors;
  * 2023-01-23           방근호             Method Return type에 ResponseEntity 제거
  *                      김주현             findDiaries 수정(날짜 검색 오류 수정 및 키워드 검색 추가)
  * 2023-02-01           김주현             마지막 남은 일기 삭제 시 recentDiary 설정 오류 수정
+ * 2023-02-08           김주현             findDiaries(조건조회) -> searchUserDiaries 및 조건 조회 ElasticSearch로 하도록 수정
+ * 2023-02-11           김주현             사용자 일기 조건 조회 페이징 오류 수정
  */
-/* TODO
-    * API 호출 시 에러 핸들링 하는 코드 추가 작성 해야 함
-    * 캐시 테스트 코드 작성
-*/
+
 @Slf4j
 @Service
 @Validated
@@ -225,12 +224,12 @@ public class DiaryServiceImpl implements DiaryService {
 
         if (Objects.nonNull(cacheDiaryPage)) return cacheDiaryPage;
 
-        List<DiaryInfoResponse> diaries = diarySearchQueryRepository.findByCondition(userId, params, pageable)
+        DiarySearchQueryRepository.DiarySearchResponse diarySearchResponse = diarySearchQueryRepository.findByCondition(userId, params, pageable);
+        List<DiaryInfoResponse> diaries = diarySearchResponse.getDiaries()
                 .stream()
                 .map(DiaryInfoResponse::of)
                 .collect(Collectors.toList());
-
-        RestPage<DiaryInfoResponse> searchedDiaries = new RestPage<>(diaries, pageable, diaries.size());
+        RestPage<DiaryInfoResponse> searchedDiaries = new RestPage<>(diaries, pageable, diarySearchResponse.getSize());
 
         // 캐시에 저장
         diaryCacheAdapter.put(userId + pageable + sortedMap, searchedDiaries);
@@ -308,7 +307,7 @@ public class DiaryServiceImpl implements DiaryService {
                     .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
-        // TODO Test 코드 짜기
+
         if(!diary.getUserId().equals(diarySaveRequest.getUserId()))
             throw new BizException(DiaryExceptionType.NO_PERMISSION);
 
