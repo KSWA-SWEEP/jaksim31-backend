@@ -62,14 +62,13 @@ public class Members {
 
 
     @Builder
-    public Members(String username, String loginId, String password, Boolean isSocial, char delYn, DiaryInfoResponse recentDiary,
-                   String profileImage, int diaryTotal,  Instant registerDate, Instant updateDate) {
+    public Members(String username, String loginId, String password, Boolean isSocial, int diaryTotal, DiaryInfoResponse recentDiary, String profileImage) {
         this.username = username;
         this.loginId = loginId;
         this.password = password;
-        this.delYn = delYn;
-        this.registerDate = registerDate;
-        this.updateDate = updateDate;
+        this.delYn = 'N';
+        this.registerDate = Instant.now().plus(9, ChronoUnit.HOURS);
+        this.updateDate = Instant.now().plus(9, ChronoUnit.HOURS);
         this.isSocial = isSocial;
         this.diaryTotal = diaryTotal;
         this.recentDiary = recentDiary;

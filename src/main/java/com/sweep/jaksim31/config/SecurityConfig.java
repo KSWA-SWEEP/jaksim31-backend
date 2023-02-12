@@ -63,7 +63,7 @@ public class SecurityConfig { // WebSecurityConfigurerAdapter 를 확장하면 �
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().antMatchers("/api-docs/**");
+        return web -> web.ignoring().antMatchers("/api-docs/**");
     }
 
     @Bean

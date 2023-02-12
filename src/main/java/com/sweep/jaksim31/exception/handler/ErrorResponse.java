@@ -5,13 +5,8 @@ import lombok.ToString;
 
 @Getter
 @ToString
-public class ErrorResponse {
-
-    private final String errorMessage;
-    private final String errorCode;
-
+public class ErrorResponse extends Response {
     public ErrorResponse(String errorCode, String errorMessage) {
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
+        super(errorCode, errorMessage);
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Bean;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 public class KakaoOAuthTokenFeignConfig {
         @Value("${kakao.auth.token.grant_type}")

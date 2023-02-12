@@ -22,9 +22,9 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
 
     private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 
-    private final Object principal;
+    private final Object principal; // NOSONAR
 
-    private Object credentials;
+    private  Object credentials; // NOSONAR
 
     /**
      * This constructor can be safely used by any code that wishes to create a
@@ -77,6 +77,16 @@ public class UsernamePasswordAuthenticationToken extends AbstractAuthenticationT
     public void eraseCredentials() {
         super.eraseCredentials();
         this.credentials = null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
 }

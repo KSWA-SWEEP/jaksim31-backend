@@ -27,6 +27,12 @@ import java.util.*;
 
 public class CookieUtil {
 
+    private static final String SET_COOKIE = "Set-Cookie";
+
+    private CookieUtil() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
 
@@ -48,7 +54,7 @@ public class CookieUtil {
                 .path("/")
                 .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader(SET_COOKIE, cookie.toString());
     }
 
     public static void addSecureCookie(HttpServletResponse response, String name, String value, long maxAge) {
@@ -61,7 +67,7 @@ public class CookieUtil {
                 .path("/")
                 .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader(SET_COOKIE, cookie.toString());
     }
 
     public static void addPublicCookie(HttpServletResponse response, String name, String value) {
@@ -71,7 +77,7 @@ public class CookieUtil {
                 .build();
 
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader(SET_COOKIE, cookie.toString());
     }
 
     public static void resetCookie(HttpServletResponse response, String name, String value) {
@@ -81,7 +87,7 @@ public class CookieUtil {
                 .maxAge(0)
                 .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader(SET_COOKIE, cookie.toString());
     }
     public static void resetDefaultCookies(HttpServletResponse response) {
         Map<String,String> cookies = new HashMap<>();
@@ -91,12 +97,12 @@ public class CookieUtil {
         cookies.put("todayDiaryId", "");
         cookies.put("userId", "");
         cookies.put("isSocial", "");
-        for(String i : cookies.keySet()){
+        for(String i : cookies.keySet()){ // NOSONAR
             ResponseCookie cookie = ResponseCookie.from(i, cookies.get(i))
                     .path("/")
                     .maxAge(0)
                     .build();
-            response.addHeader("Set-Cookie", cookie.toString());
+            response.addHeader(SET_COOKIE, cookie.toString());
         }
     }
 

@@ -1,8 +1,12 @@
 package com.sweep.jaksim31.domain.diary;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
@@ -19,11 +23,13 @@ import java.util.stream.Collectors;
  * fileName : DiarySearchQueryRepository
  * author :  김주현
  * date : 2023-02-07
- * description :
+ * description : 일기 조건 검색을 위한 Repository(Elastic Search)
  * ===========================================================
  * DATE                 AUTHOR                NOTE
  * -----------------------------------------------------------
  * 2023-02-07              김주현             최초 생성
+ * 2023-02-11              김주현             날짜 오류 수정
+ *                                           페이징 오류 수정
  */
 @Repository
 @RequiredArgsConstructor
@@ -32,15 +38,27 @@ public class DiarySearchQueryRepository {
     String[] params = {"userId", "startDate", "endDate", "searchWord", "emotion"};
     private final ElasticsearchOperations operations;
 
-    public List<DiarySearch> findByCondition(String userId, Map<String,Object> searchCondition, Pageable pageable) {
+    @Getter
+    @Setter
+    public class DiarySearchResponse{
+        private List<DiarySearch> diaries;
+        private int size;
+    }
+
+    public DiarySearchResponse findByCondition(String userId, Map<String,Object> searchCondition, Pageable pageable) {
 
         CriteriaQuery query = createConditionCriteriaQuery(userId, searchCondition).setPageable(pageable);
         IndexCoordinates index = IndexCoordinates.of(DIARY_INDEX);
-        org.springframework.data.elasticsearch.core.SearchHits<DiarySearch> search = operations.search(query, DiarySearch.class, index);
+        SearchHits<DiarySearch> search = operations.search(query, DiarySearch.class, index);
 
-        return search.stream()
-                .map(org.springframework.data.elasticsearch.core.SearchHit::getContent)
+        DiarySearchResponse result = new DiarySearchResponse();
+        List<DiarySearch> searchedDiaries = search.stream()
+                .map(SearchHit::getContent)
                 .collect(Collectors.toList());
+        result.setDiaries(searchedDiaries);
+        result.setSize((int)search.getTotalHits());
+
+        return result;
     }
 
     private CriteriaQuery createConditionCriteriaQuery(String userId, Map<String,Object> searchCondition) {
@@ -58,15 +76,15 @@ public class DiarySearchQueryRepository {
         if(!searchCondition.containsKey(params[2]))
             searchCondition.put(params[2], LocalDate.now().toString());
         query.addCriteria(Criteria.where("date")
-                .greaterThan(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(9,0))
-                .lessThan(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(9,0)));
+                .greaterThanEqual(LocalDate.parse((searchCondition.get(params[1]).toString())).atTime(0,0))
+                .lessThanEqual(LocalDate.parse((searchCondition.get(params[2]).toString())).atTime(0,0)));
         // 검색어 조건 설정
         if(searchCondition.containsKey(params[3])) {
-            query.addCriteria(Criteria.where("content").contains(searchCondition.get(params[3]).toString()));
+            query.addCriteria(Criteria.where("content").is(searchCondition.get(params[3]).toString()));
         }
         // 감정 조건 설정
         if(searchCondition.containsKey(params[4])) {
-            query.addCriteria(Criteria.where(params[4]).contains(searchCondition.get(params[4]).toString()));
+            query.addCriteria(Criteria.where(params[4]).is(searchCondition.get(params[4]).toString()));
         }
 
         return query;

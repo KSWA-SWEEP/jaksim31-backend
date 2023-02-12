@@ -119,7 +119,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[정상] 유저 정보 조회 시 캐싱 ")
         @Order(1)
-        public void getMyInfoSearch() {
+         void getMyInfoSearch() {
 
             // when
             MemberInfoResponse result = memberService.getMyInfo(userId, request);
@@ -134,7 +134,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[예외] 유저 정보 조회 시 예외 발생하면 캐싱 X")
         @Order(2)
-        public void failGetMyInfoSearch() {
+         void failGetMyInfoSearch() {
             // when
             try {
                 MemberInfoResponse result = memberService.getMyInfo(INVALID_USER_ID, request);
@@ -148,7 +148,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[정상] 유저 정보 변경 시 캐시 데이터 삭제")
         @Order(3)
-        public void updateUserInfo() {
+         void updateUserInfo() {
             // when
             memberService.updateMemberInfo(userId, memberUpdateRequest, request);
             MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
@@ -160,7 +160,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[예외] 유저 정보 변경 시 예외 발생하면 캐시 데이터 삭제 X")
         @Order(4)
-        public void failUpdateUserInfo() {
+         void failUpdateUserInfo() {
             // given
             memberCacheAdapter.put(MEMBER_CACHE + userId, memberInfoResponse);
             // when
@@ -176,7 +176,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[정상] 회원탈퇴 시 캐시 데이터 삭제")
         @Order(5)
-        public void deleteUserInfo() throws URISyntaxException {
+         void deleteUserInfo() throws URISyntaxException {
             // when
             memberService.remove(userId, memberRemoveRequest, response, request);
             MemberInfoResponse cacheResult = memberCacheAdapter.get(MEMBER_CACHE + userId);
@@ -188,7 +188,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[예외] 회원탈퇴 시 예외 발생하면 캐시 데이터 삭제 X")
         @Order(6)
-        public void failDeleteUserInfo() {
+         void failDeleteUserInfo() {
             // given
             memberCacheAdapter.put(MEMBER_CACHE + userId, memberInfoResponse);
             // when
@@ -212,7 +212,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[정상] 로그인 시 캐싱 ")
         @Order(1)
-        public void successLogin() {
+         void successLogin() {
             // given
             memberRepository.save(members);
             LoginRequest loginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(PASSWORD).build();
@@ -228,7 +228,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[예외] 로그인 시 예외 발생하면 캐싱 X")
         @Order(2)
-        public void failLogin() {
+         void failLogin() {
             //given
             refreshTokenCacheAdapter.delete(LOGIN_ID);
             LoginRequest invalidLoginRequest = LoginRequest.builder().loginId(LOGIN_ID).password(INVALID_PASSWORD).build();
@@ -270,7 +270,7 @@ public class IntegrationMemberCacheTest {
         @Test
         @DisplayName("[정상] 로그아웃 시 캐시 데이터 삭제")
         @Order(4)
-        public void successLogout() {
+         void successLogout() {
             // when
             memberService.logout(request, response);
             String token = refreshTokenCacheAdapter.get(LOGIN_ID);

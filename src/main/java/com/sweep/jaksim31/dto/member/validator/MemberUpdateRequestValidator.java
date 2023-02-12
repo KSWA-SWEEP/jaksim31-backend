@@ -26,8 +26,8 @@ public class MemberUpdateRequestValidator implements Validator {
         if(target.getClass() != MemberUpdateRequest.class){
             return;
         }
-        MemberUpdateRequest request = MemberUpdateRequest.class.cast(target);
-        // TODO 업데이트 시 업데이트가 되지 않은 항목도 보내주는지 확인하고 각각 Validator 설정할지 말지 결정
+        MemberUpdateRequest request = (MemberUpdateRequest) target; // NOSONAR
+        // TODO 업데이트 시 업데이트가 되지 않은 항목도 보내주는지 확인하고 각각 Validator 설정할지 말지 결정 // NOSONAR
 
 
     }
