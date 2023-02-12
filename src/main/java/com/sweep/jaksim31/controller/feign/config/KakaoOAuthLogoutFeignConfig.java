@@ -4,14 +4,12 @@ import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-import java.net.URISyntaxException;
-
 public class KakaoOAuthLogoutFeignConfig {
         @Value("${kakao.auth.admin-key}")
         private String adminKey;
 
         @Bean
-        public RequestInterceptor requestInterceptor() throws URISyntaxException {
+        public RequestInterceptor requestInterceptor() {
             return requestTemplate -> {
                 requestTemplate.header("Content-Type", "application/x-www-form-urlencoded");
                 requestTemplate.header("Authorization", "KakaoAK " + adminKey);

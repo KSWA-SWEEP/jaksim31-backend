@@ -3,18 +3,22 @@ package com.sweep.jaksim31.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sweep.jaksim31.adapter.RestPage;
+import com.sweep.jaksim31.adapter.cache.DiaryEmotionStaticsCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheAdapter;
 import com.sweep.jaksim31.adapter.cache.MemberCacheAdapter;
-import com.sweep.jaksim31.controller.feign.*;
-import com.sweep.jaksim31.controller.feign.config.UploadImageFeignConfig;
+import com.sweep.jaksim31.controller.feign.EmotionAnalysisFeign;
+import com.sweep.jaksim31.controller.feign.ExtractKeywordFeign;
+import com.sweep.jaksim31.controller.feign.TranslationFeign;
 import com.sweep.jaksim31.domain.diary.Diary;
 import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.diary.DiarySearchQueryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.dto.diary.*;
+import com.sweep.jaksim31.dto.diary.extractkeyword.Argument;
+import com.sweep.jaksim31.dto.diary.extractkeyword.ExtractKeywordRequest;
+import com.sweep.jaksim31.dto.diary.extractkeyword.ExtractKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.EmotionAnalysisRequest;
-import com.sweep.jaksim31.dto.tokakao.ExtractedKeywordResponse;
 import com.sweep.jaksim31.dto.tokakao.TranslationRequest;
 import com.sweep.jaksim31.dto.tokakao.TranslationResponse;
 import com.sweep.jaksim31.enums.DiaryExceptionType;
@@ -29,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -41,7 +44,6 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -50,12 +52,9 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,6 +88,7 @@ import java.util.stream.Collectors;
  * 2023-02-01           김주현             마지막 남은 일기 삭제 시 recentDiary 설정 오류 수정
  * 2023-02-08           김주현             findDiaries(조건조회) -> searchUserDiaries 및 조건 조회 ElasticSearch로 하도록 수정
  * 2023-02-11           김주현             사용자 일기 조건 조회 페이징 오류 수정
+ * 2023-02-12           방근호             일기 분석 시 오류 수정, api 변경
  */
 
 @Slf4j
@@ -99,13 +99,12 @@ public class DiaryServiceImpl implements DiaryService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'");
 
-    @Value("${kakao.download-storage.url}")
-    private String downloadUrl;
+    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
+    private static final String DIARY_EMOTION_STATICS_CACHE_PREFIX = "emotionCache::";
+
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
-    private final UploadImageFeign uploadImageFeign;
-    private final DownloadImageFeign downloadImageFeign;
-    private final KakaoApiTokenRefreshFeign apiTokenRefreshFeign;
+
     private final ExtractKeywordFeign extractKeywordFeign;
     private final TranslationFeign translationFeign;
     private final EmotionAnalysisFeign emotionAnalysisFeign;
@@ -114,7 +113,8 @@ public class DiaryServiceImpl implements DiaryService {
     private final MongoTemplate mongoTemplate;
     private final DiaryPagingCacheAdapter diaryCacheAdapter;
     private final MemberCacheAdapter memberCacheAdapter;
-    private static final String MEMBER_CACHE_PREFIX = "memberCache::";
+    private final DiaryEmotionStaticsCacheAdapter diaryEmotionStaticsCacheAdapter;
+
 
     String[] searchCondition = {"userId", "startDate", "endDate", "emotion"};
     String collectionName = "diary";
@@ -135,7 +135,7 @@ public class DiaryServiceImpl implements DiaryService {
      */
 
     // 사용자 id 전체 일기 조회
-    public RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map params){
+    public RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository
                 .findById(userId)
@@ -249,7 +249,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(()-> new BizException(MemberExceptionType.NOT_FOUND_USER));
         // 해당 날짜에 이미 등록 된 일기가 있을 때
         if(diaryRepository.findDiaryByUserIdAndDate(diarySaveRequest.getUserId(), diarySaveRequest.getDate().atTime(9,0)).isPresent())
-                throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
+            throw new BizException(DiaryExceptionType.DUPLICATE_DIARY);
 
         Diary diary = diarySaveRequest.toEntity();
         diaryRepository.save(diary);
@@ -258,7 +258,7 @@ public class DiaryServiceImpl implements DiaryService {
         // 사용자 정보의 recentDiary 정보 업데이트
         DiaryInfoResponse recentDiary = user.getRecentDiary();
         if(Objects.isNull(recentDiary) || Objects.isNull(recentDiary.getDiaryId())
-         || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
+                || diary.getDate().isAfter(recentDiary.getDiaryDate().atTime(9,0))) {
             recentDiary = DiaryInfoResponse.of(diary);
         }
 
@@ -303,8 +303,8 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
         // 사용자를 찾을 수 없을 때
         Members members = memberRepository
-                    .findById(diarySaveRequest.getUserId())
-                    .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
+                .findById(diarySaveRequest.getUserId())
+                .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER));
 
         // 다른 사용자의 일기 수정 요청시, NO_PERMISSION Exception
 
@@ -315,6 +315,8 @@ public class DiaryServiceImpl implements DiaryService {
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
+        // 감정 분석 캐시 데이터 삭제
+        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
@@ -349,7 +351,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 정보의 recent Diary 가 지우고자 하는 diary 라면, 다시 setting
         if(Objects.nonNull(members.getRecentDiary().getDiaryId()) && members.getRecentDiary().getDiaryId().equals(diaryId)){
-            Map<String, String> params = new HashMap<>();
+            Map<String, Object> params = new HashMap<>();
             params.put("size", "1");
             params.put("page", "1");
             Page<DiaryInfoResponse> page = findUserDiaries(userId, params);
@@ -379,6 +381,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + members.getId());
+        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         return SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage();
     }
@@ -399,41 +402,6 @@ public class DiaryServiceImpl implements DiaryService {
         return DiaryResponse.of(diary);
     }
 
-
-
-    /**
-     * @title saveThumbnail
-     * @param diaryThumbnailRequest
-     * @return 200 OK
-     * @throws URISyntaxException
-     */
-
-    @Transactional
-    public String saveThumbnail(DiaryThumbnailRequest diaryThumbnailRequest) throws URISyntaxException {
-        String userId = diaryThumbnailRequest.getUserId();
-        String url = diaryThumbnailRequest.getThumbnail();
-        byte[] image = downloadImageFeign.getImage(new URI(url)).getBody();
-
-        try {
-            uploadImageFeign.uploadFile("/" + userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png", image);
-            return "객체 스토리지에 업로드 성공";
-
-        } catch (Exception e){
-            // 인증 API 토큰 발급 후 추출
-            ResponseEntity<String> tokenResponse = apiTokenRefreshFeign.refreshApiToken();
-            HttpHeaders responseHeaders = tokenResponse.getHeaders();
-            // 오브젝트 스토리지에 연결 요청 시 새로 받은 인증 API 토큰 적용R
-            UploadImageFeignConfig.authToken = Objects.requireNonNull(responseHeaders.get("x-subject-token")).get(0);
-            // 재업로드
-            ResponseEntity<Object> res = uploadImageFeign.uploadFile("/" + userId  + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + ".png", image);
-            if(!res.getStatusCode().equals(HttpStatus.CREATED))
-                throw new BizException(ThirdPartyExceptionType.NOT_UPLOAD_IMAGE);
-            return "객체 스토리지에 업로드 성공";
-        } finally {
-            log.info(downloadUrl +"/" +userId + "/" + DATE_FORMATTER.format(ZonedDateTime.now()) + "_r_640x0_100_0_0.png");
-        }
-    }
-
     /**
      * 일기 내용에 대한 키워드를 추출하고, 일기에 대한 감정분석 리턴
      * @param diaryAnalysisRequest 일기분석요청 DTO
@@ -441,22 +409,22 @@ public class DiaryServiceImpl implements DiaryService {
      * @throws JsonProcessingException Json processing 예외
      * @throws ParseException parsing 예외
      */
-    /** TODO
-     *   코드 리팩토링
-     */
     @Override
     public DiaryAnalysisResponse analyzeDiary(DiaryAnalysisRequest diaryAnalysisRequest) throws JsonProcessingException, ParseException {
 
-        List<String> koreanKeywords;
-        List<String> englishKeywords = new ArrayList<>();
+        List<String> koreanKeywords = new ArrayList<>();
+        List<String> englishKeywords;
         String koreanEmotion;
         String englishEmotion;
+
+        // html tag 제거
+        String diaryContent = diaryAnalysisRequest.getSentences().get(0).replaceAll("<(/)?([a-zA-Z]*)(\\s[a-zA-Z]*=[^>]*)?(\\s)*(/)?>", ""); // NOSONAR
 
         // 감정분석 (요청 보내고 -> 응답 받아와서 Json Parsing 후 -> korean emotion에 저장
         JSONParser jsonParser = new JSONParser();
         ObjectMapper mapper = new ObjectMapper();
 
-        EmotionAnalysisRequest emotionAnalysisRequest = new EmotionAnalysisRequest(diaryAnalysisRequest.getSentences().get(0));
+        EmotionAnalysisRequest emotionAnalysisRequest = new EmotionAnalysisRequest(diaryContent);
         ResponseEntity<JSONObject> emotionAnalysisResult = emotionAnalysisFeign.emotionAnalysis(emotionAnalysisRequest);
 
         // 감정 분석 api 호출 예외처리
@@ -464,84 +432,71 @@ public class DiaryServiceImpl implements DiaryService {
             throw new BizException(ThirdPartyExceptionType.NOT_ANALYZE_EMOTION);
         }
 
-        // JSON parsingß
+        // JSON parsing
         String jsonStr = mapper.writeValueAsString(Objects.requireNonNull(emotionAnalysisResult.getBody()).get("0"));
         JSONObject jsonObject = (JSONObject) jsonParser.parse(jsonStr);
         JSONObject currentEmotion = (JSONObject) jsonObject.get(searchCondition[3]);
         koreanEmotion = currentEmotion.get("value").toString();
 
-        // 문장 번역
-        // TranslationRequest 하나의 객체 가지고 두번의 api 요청 호출 (일기 내용, 감정)
+        // 키워드 추출
+        Map<String, Object> extractedKeywords = Objects.requireNonNull(
+                        extractKeywordFeign.extractKeyword(
+                                        ExtractKeywordRequest
+                                                .builder()
+                                                .argument(Argument.builder()
+                                                        .text(diaryContent)
+                                                        .build())
+                                                .build()).getBody()).extractKeyword();
+
+        List<ExtractKeywordResponse.Morpheme> morphemes = (List<ExtractKeywordResponse.Morpheme>) extractedKeywords.get("morphemes");
+        List<ExtractKeywordResponse.NameEntity> nameEntities = (List<ExtractKeywordResponse.NameEntity>) extractedKeywords.get("nameEntities");
+
+        if(Objects.nonNull(morphemes)) {
+            morphemes
+                    .stream()
+                    .filter(morpheme -> morpheme.getType().equals("NNG"))
+                    .limit(5)
+                    .map(ExtractKeywordResponse.Morpheme::getText)
+                    .forEach(koreanKeywords::add);
+        }
+
+        if(Objects.nonNull(nameEntities)) {
+            nameEntities
+                    .stream()
+                    .limit(5)
+                    .map(ExtractKeywordResponse.NameEntity::getText)
+                    .forEach(koreanKeywords::add);
+        }
+
+        // 번역 api 호출 전 스트링 하나로 합쳐준다.
+        StringBuilder sb = new StringBuilder();
+        for (String keyword : Objects.requireNonNull(koreanKeywords)) {
+            sb.append(keyword).append(",");
+        }
+        // split을 위해..마지막 하나 추가
+        sb.append(koreanEmotion).append(",end");
+
+        // 번역을 위한 TranslationRequest 객체 생성
         TranslationRequest translationRequest = new TranslationRequest();
-        translationRequest.setQ(diaryAnalysisRequest.getSentences().get(0));
+
+
+        // 키워드 번역 api 호출
+        translationRequest.setQ(sb.toString());
         ResponseEntity<TranslationResponse> translationResponse = translationFeign.translation(translationRequest);
 
-        // 번역 api 호출 예외처리
         if(!translationResponse.getStatusCode().equals(HttpStatus.OK)){
             throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
         }
 
-        translationRequest.setQ(koreanEmotion);
-        ResponseEntity<TranslationResponse> emotionTranslationResponse = translationFeign.translation(translationRequest);
+        List<String> translatedResult = Arrays.asList(Objects.requireNonNull(translationResponse.getBody()).getOutput().get(0).get(0).split(", "));
 
-        // 번역 api 호출 예외 처리
-        if(!emotionTranslationResponse.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
-        }
-
-        englishEmotion = Objects.requireNonNull(emotionTranslationResponse.getBody()).getOutput().get(0).get(0);
-
-        // 키워드 추출
-        DiaryAnalysisRequest translatedSentence = new DiaryAnalysisRequest();
-
-        // 영어로 번역된 문장들을 자릅니다.
-        translatedSentence.setSentences(Objects.requireNonNull(translationResponse.getBody()).getOutput().get(0));
-
-        // 키워드 추출 예외처리
-        ResponseEntity<ExtractedKeywordResponse> extractKeywords = extractKeywordFeign.extractKeyword(translatedSentence);
-        if(!extractKeywords.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_EXTRACT_KEYWORD);
-        }
-
-
-        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-            // weight가 0.5 이상인 키워드만 가져온다.
-            if (result.getWeight() >= 0.5)
-                englishKeywords.add(result.getKeyword());
-        }
-
-        // 영어로 추출된 키워드 한글로 번역
-        TranslationRequest tmpTranslationRequest = new TranslationRequest();
-        tmpTranslationRequest.setSourceLang("en");
-        tmpTranslationRequest.setTargetLang("ko");
-
-        // 번역 api 호출 전 스트링 하나로 합쳐준다.
-        StringBuilder sb = new StringBuilder();
-        for (ExtractedKeywordResponse.Result result : Objects.requireNonNull(extractKeywords.getBody()).getResult()) {
-            sb.append(result.getKeyword()).append(", ");
-        }
-
-        // 번역 api 호출
-        tmpTranslationRequest.setQ(sb.toString());
-        ResponseEntity<TranslationResponse> tmpTranslationResponse = translationFeign.translation(tmpTranslationRequest);
-        if(!tmpTranslationResponse.getStatusCode().equals(HttpStatus.OK)){
-            throw new BizException(ThirdPartyExceptionType.NOT_TRANSLATE_KEYWORD);
-        }
-
-        koreanKeywords = Arrays.asList(Objects.requireNonNull(tmpTranslationResponse.getBody()).getOutput().get(0).get(0).split(","));
+        englishKeywords = translatedResult.subList(0, translatedResult.size()-2);
+        englishEmotion = translatedResult.get(translatedResult.size()-2);
 
         // 응답 생성
         return new DiaryAnalysisResponse(koreanKeywords, englishKeywords, koreanEmotion, englishEmotion);
     }
 
-    // 오늘 일기 조회
-    public String todayDiary(String userId){
-        LocalDate today = LocalDate.now();
-        Diary todayDiary = diaryRepository
-                .findDiaryByUserIdAndDate(userId, today.atTime(9,0))
-                .orElseThrow(() -> new BizException(DiaryExceptionType.NOT_FOUND_DIARY));
-        return todayDiary.getId();
-    }
 
     /**
      * @param userId 유저 아이디
@@ -551,9 +506,16 @@ public class DiaryServiceImpl implements DiaryService {
     // 감정 통계
     public DiaryEmotionStaticsResponse emotionStatics(String userId, Map<String, Object> params){
         // 사용자를 찾을 수 없을 때
-         memberRepository
+        memberRepository
                 .findById(userId)
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
+
+
+        // 캐싱된 값이 있는지 확인
+        DiaryEmotionStaticsResponse cachedResponse = diaryEmotionStaticsCacheAdapter.get(MEMBER_CACHE_PREFIX+userId);
+
+        if(Objects.nonNull(cachedResponse))
+            return cachedResponse;
 
         LocalDateTime startDate;
         LocalDateTime endDate;
@@ -584,7 +546,13 @@ public class DiaryServiceImpl implements DiaryService {
                 DiaryEmotionStatics.class);
         // 쿼리 실행 결과 중 Output class에 매핑 된 결과
         List<DiaryEmotionStatics> emotionStatics = aggregation.getMappedResults();
-        return DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
+
+        DiaryEmotionStaticsResponse response = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
+
+        // 캐시에 저장
+        diaryEmotionStaticsCacheAdapter.put(MEMBER_CACHE_PREFIX+userId, response);
+
+        return response;
     }
 
 }

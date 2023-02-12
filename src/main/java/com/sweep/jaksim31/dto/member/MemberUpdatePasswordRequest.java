@@ -22,6 +22,4 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MemberUpdatePasswordRequest {
     private String newPassword;
-//    private List<String> authorities;
-
 }

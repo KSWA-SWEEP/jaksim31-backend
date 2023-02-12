@@ -152,7 +152,7 @@ public class IntegrationDiaryCacheTest {
         void successFindUserDiaries() {
 
             // when
-            diaryService.findUserDiaries(userId, new HashMap<String, String>());
+            diaryService.findUserDiaries(userId, new HashMap<>());
             RestPage<DiaryInfoResponse> cacheResult = diaryPagingCacheAdapter.get(userId + DIARY_PAGE_CACHE_SUFFIX);
 
             //then
@@ -165,7 +165,7 @@ public class IntegrationDiaryCacheTest {
 
             // when
             try {
-                diaryService.findUserDiaries(INVALID_USER_ID, new HashMap<String, String>());
+                diaryService.findUserDiaries(INVALID_USER_ID, new HashMap<>());
             } catch (BizException ex) {
                 RestPage<DiaryInfoResponse> cacheResult = diaryPagingCacheAdapter.get(INVALID_USER_ID + DIARY_PAGE_CACHE_SUFFIX);
                 //then

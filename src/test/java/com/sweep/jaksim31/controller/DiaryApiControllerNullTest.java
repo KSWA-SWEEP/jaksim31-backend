@@ -55,12 +55,6 @@ public class DiaryApiControllerNullTest  {
     @MockBean
     private MemberRepository memberRepository;
     @MockBean
-    private UploadImageFeign uploadImageFeign;
-    @MockBean
-    private DownloadImageFeign downloadImageFeign;
-    @MockBean
-    private KakaoApiTokenRefreshFeign apiTokenRefreshFeign;
-    @MockBean
     private ExtractKeywordFeign extractKeywordFeign;
     @MockBean
     private TranslationFeign translationFeign;

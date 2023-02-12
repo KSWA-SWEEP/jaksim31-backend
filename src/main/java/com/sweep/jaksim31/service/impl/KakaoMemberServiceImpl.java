@@ -16,6 +16,7 @@ import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.MemberSaveRequest;
+import com.sweep.jaksim31.enums.MemberExceptionType;
 import com.sweep.jaksim31.enums.SuccessResponseType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.JwtExceptionType;
@@ -98,7 +99,7 @@ public class KakaoMemberServiceImpl implements MemberService {
             memberRepository.save(members);
         }
 
-        log.info(loginRequest.getLoginId() +" " +  loginRequest.getPassword());
+        log.debug(loginRequest.getLoginId() +" " +  loginRequest.getPassword());
 
         CustomLoginIdPasswordAuthToken customLoginIdPasswordAuthToken =
                 new CustomLoginIdPasswordAuthToken(loginRequest.getLoginId(), loginRequest.getPassword());
@@ -148,8 +149,8 @@ public class KakaoMemberServiceImpl implements MemberService {
 
         // 카카오 인증 서버에 토큰 만료 요청
         ResponseEntity<String> res = kakaoOAuthLogoutFeign.requestLogout(loginId);
-        log.info(res.getBody());
-        log.info(String.valueOf(res.getStatusCode()));
+        log.debug(res.getBody());
+        log.debug(String.valueOf(res.getStatusCode()));
 
         // 쿠키에 있는 토큰 정보 삭제
         // 쿠키에서 토큰 삭제 작업
@@ -178,7 +179,7 @@ public class KakaoMemberServiceImpl implements MemberService {
         log.info(String.valueOf(res.getBody()));
 
         if (!res.getStatusCode().equals(HttpStatus.OK)) {
-            throw new RuntimeException("카카오 유저 정보 불러오기 실패");
+            throw new BizException(MemberExceptionType.FAILED_KAKAO_OAUTH);
         }
         return res.getBody();
     }
