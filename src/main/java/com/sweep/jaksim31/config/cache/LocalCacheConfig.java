@@ -1,5 +1,6 @@
 package com.sweep.jaksim31.config.cache;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,8 +9,10 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sweep.jaksim31.adapter.RestPage;
 import com.sweep.jaksim31.adapter.cache.DiaryCacheSerializer;
+import com.sweep.jaksim31.adapter.cache.DiaryEmotionStaticsCacheSerializer;
 import com.sweep.jaksim31.adapter.cache.DiaryPagingCacheSerializer;
 import com.sweep.jaksim31.adapter.cache.MemberCacheSerializer;
+import com.sweep.jaksim31.dto.diary.DiaryEmotionStaticsResponse;
 import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import com.sweep.jaksim31.dto.member.MemberInfoResponse;
@@ -106,6 +109,16 @@ public class LocalCacheConfig {
         return redisTemplate;
     }
 
+    @Bean
+    public RedisTemplate<String, DiaryEmotionStaticsResponse> diaryEmotionStaticsCacheRedisTemplate() {
+        RedisTemplate<String, DiaryEmotionStaticsResponse> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(basicCacheRedisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new DiaryEmotionStaticsCacheSerializer());
+
+        return redisTemplate;
+    }
+
 
     //     jackson LocalDateTime mapper
     @Bean
@@ -115,6 +128,7 @@ public class LocalCacheConfig {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // timestamp 형식 안따르도록 설정
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true); // NOSONAR
         mapper.registerModules(new JavaTimeModule(), new Jdk8Module()); // LocalDateTime 매핑을 위해 모듈 활성화
 
         return mapper;
@@ -147,8 +161,4 @@ public class LocalCacheConfig {
                 .build();
     }
 
-//    @Bean
-//    public DiaryKeyGenerator diaryKeyGenerator() {
-//        return new DiaryKeyGenerator();
-//    }
 }

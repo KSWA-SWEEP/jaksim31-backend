@@ -21,46 +21,49 @@ import lombok.Data;
 @Builder
 public class KakaoProfile {
 
-    public String id;
+    private String id;
     @JsonProperty("connected_at")
-    public String connectedAt;
-    public Properties properties;
+    private String connectedAt;
+    private Properties properties;
     @JsonProperty("kakao_account")
-    public KakaoAccount kakaoAccount;
+    private KakaoAccount kakaoAccount;
 
     @Data
     @AllArgsConstructor
     public static class Properties { //(1)
-        public String nickname;
+        private String nickname;
         @JsonProperty("profile_image")
-        public String profileImage; // 이미지 경로 필드1
+        private String profileImage; // 이미지 경로 필드1
         @JsonProperty("thumbnail_image")
-        public String thumbnailImage;
+        private String thumbnailImage;
     }
 
     @Data
     public static class KakaoAccount { //(2)
         @JsonProperty("profile_nickname_needs_agreement")
-        public Boolean profileNicknameNeedsAgreement;
+        private Boolean profileNicknameNeedsAgreement;
         @JsonProperty("profile_image_needs_agreement")
-        public Boolean profileImageNeedsAgreement;
-        public Profile profile;
+        private Boolean profileImageNeedsAgreement;
+        private Profile profile;
         @JsonProperty("has_email")
-        public Boolean hasEmail;
+        private Boolean hasEmail;
         @JsonProperty("email_needs_agreement")
-        public Boolean emailNeedsAgreement;
+        private Boolean emailNeedsAgreement;
         @JsonProperty("is_email_valid")
-        public Boolean isEmailValid;
+        private Boolean isEmailValid;
         @JsonProperty("is_email_verified")
-        public Boolean isEmailVerified;
-        public String email;
+        private Boolean isEmailVerified;
+        private String email;
 
         @Data
         public static class Profile {
-            public String nickname;
-            public String thumbnail_image_url;
-            public String profile_image_url; // 이미지 경로 필드2
-            public Boolean is_default_image;
+            private String nickname;
+            @JsonProperty("thumbnail_image_url")
+            private String thumbnailImageUrl;
+            @JsonProperty("profile_image_url")
+            private String profileImageUrl; // 이미지 경로 필드2
+            @JsonProperty("is_default_image")
+            private Boolean isDefaultImage;
         }
     }
 

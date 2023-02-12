@@ -45,7 +45,7 @@ import java.net.URISyntaxException;
  * 2023-02-01           김주현             PathValue(ObjectId_userId) validation 추가
  */
 
-/* TODO
+/* TODO // NOSONAR
     * 카카오 로그아웃 구현 및 테스트! (프론트 연결 시)
     * 유저 삭제 시 삭제 계속 된다 수정~
  */
@@ -88,14 +88,14 @@ public class MembersApiController {
     @PostMapping("/v0/members/login")
     public ResponseEntity<String> login(
             @Validated @RequestBody LoginRequest loginRequest,
-            HttpServletResponse response) throws URISyntaxException {
+            HttpServletResponse response) {
         return new ResponseEntity<>(memberServiceImpl.login(loginRequest, response), SuccessResponseType.LOGIN_SUCCESS.getHttpStatus());
     }
 
     @Operation(summary = "카카오 로그인", description = "카카오 OAUTH를 이용하여 로그인 합니다.")
     @GetMapping(value="/v0/members/kakao-login")
     public ResponseEntity<String> kakaoLogin(@RequestParam("code") String authorizationCode, HttpServletResponse response) throws Exception {
-        log.info(authorizationCode);
+        log.debug("### authorization code : " + authorizationCode);
         // 카카오 인증코드로 토큰 얻어서 유저 정보 얻기
         KakaoProfile userInfo = kaKaoMemberService.getKakaoUserInfo((kaKaoMemberService.getAccessToken(authorizationCode)));
 
@@ -157,7 +157,7 @@ public class MembersApiController {
 
     @Operation(summary = "로그아웃", description = "해당 유저의 토큰 정보가 db에서 삭제 됩니다.")
     @PostMapping("/v1/members/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) throws URISyntaxException {
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response){
 
         return new ResponseEntity<>(memberServiceImpl.logout(request, response), SuccessResponseType.LOGOUT_SUCCESS.getHttpStatus());
     }

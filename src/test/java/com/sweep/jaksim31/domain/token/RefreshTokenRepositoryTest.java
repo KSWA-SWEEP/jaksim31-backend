@@ -44,7 +44,7 @@ class RefreshTokenRepositoryTest {
         refreshTokenRepository.saveAll(refreshTokenList);
 
         //then
-        assertEquals(refreshTokenRepository.findAll().size(), 10);
+        assertEquals(10, refreshTokenRepository.findAll().size());
 
     }
 

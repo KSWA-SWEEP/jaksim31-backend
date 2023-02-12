@@ -6,14 +6,14 @@ import org.springframework.context.annotation.Bean;
 
 public class ExtractKeywordFeignConfig {
 
-    @Value("${kakao.extract-keyword.api-key}")
+    @Value("${extract-api.api-key}")
     private String apiKey;
 
         @Bean
         public RequestInterceptor requestInterceptor() {
             return requestTemplate -> {
-                requestTemplate.header("x-api-key", apiKey);
-                requestTemplate.header("Content-Type", "application/json");
+                requestTemplate.header("Authorization", apiKey);
+                requestTemplate.header("Content-Type", "application/json; charset=UTF-8");
             };
         }
     }

@@ -18,7 +18,8 @@ import lombok.Data;
 
 @Data
 public class KakaoOAuth {
-    private String token_type;
+    @JsonProperty("token_type")
+    private String tokenType;
     @JsonProperty("access_token")
     private String accessToken;
     @JsonProperty("refresh_token")

@@ -20,9 +20,9 @@ import java.util.Collection;
 
 public class CustomLoginIdPasswordAuthToken extends AbstractAuthenticationToken {
 
-    private final Object principal;
+    private final Object principal; // NOSONAR
 
-    private Object credentials;
+    private final Object credentials; // NOSONAR
 
     public CustomLoginIdPasswordAuthToken(Object principal, Object credentials) {
         super(null);
@@ -48,4 +48,15 @@ public class CustomLoginIdPasswordAuthToken extends AbstractAuthenticationToken 
     public Object getPrincipal() {
         return this.principal;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
 }

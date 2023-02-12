@@ -15,6 +15,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  */
 public class JsonUtil {
 
+    private JsonUtil() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
 }

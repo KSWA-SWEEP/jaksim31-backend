@@ -19,19 +19,20 @@ import lombok.Getter;
 
 @Getter
 public class BizException extends RuntimeException{
-    private final BaseExceptionType baseExceptionType;
-    private String redirectLocation;
+    private final BaseExceptionType baseExceptionType; // NOSONAR
+    private String redirectLocation; // NOSONAR
 
+    public BizException(BaseExceptionType baseExceptionType, String redirectLocation){
+        super(baseExceptionType.getMessage());
+        this.baseExceptionType = baseExceptionType;
+        this.redirectLocation = redirectLocation;
+    }
     public BizException(BaseExceptionType baseExceptionType){
         super(baseExceptionType.getMessage());
         this.baseExceptionType = baseExceptionType;
     }
 
     // Redirect Exception
-    public BizException(BaseExceptionType baseExceptionType, String redirectLocation){
-        super(baseExceptionType.getMessage());
-        this.baseExceptionType = baseExceptionType;
-        this.redirectLocation = redirectLocation;
-    }
+
 
 }

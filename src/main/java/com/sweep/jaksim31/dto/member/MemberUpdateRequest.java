@@ -26,6 +26,5 @@ import lombok.NoArgsConstructor;
 public class MemberUpdateRequest {
     private String username;
     private String profileImage;
-//    private List<String> authorities;
 
 }

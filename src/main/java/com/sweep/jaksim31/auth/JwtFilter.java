@@ -91,16 +91,6 @@ public class JwtFilter extends OncePerRequestFilter {
         }
     }
 
-    /**
-     *
-     * @param token
-     * 토큰이 유효한 경우 SecurityContext에 저장
-     */
-    private void setAuthentication(String token) {
-        Authentication authentication = tokenProvider.getAuthentication(token);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-
     // Request Header 에서 토큰 정보를 꺼내오기
     private String resolveToken(HttpServletRequest request) {
         // bearer : 123123123123123 -> return 123123123123123123

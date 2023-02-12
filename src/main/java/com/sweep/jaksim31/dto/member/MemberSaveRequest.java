@@ -8,9 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
 /**
  * packageName :  com.sweep.jaksim31.dto.member
  * fileName : MemberReqDTO -> MemberSaveRequest
@@ -43,9 +40,6 @@ public class MemberSaveRequest {
                 .loginId(loginId)
                 .username(username)
                 .password(passwordEncoder.encode(password))
-                .registerDate(Instant.now().plus(9, ChronoUnit.HOURS))
-                .updateDate(Instant.now().plus(9, ChronoUnit.HOURS))
-                .delYn('N')
                 .isSocial(isSocial)
                 .diaryTotal(0)
                 .recentDiary(new DiaryInfoResponse())

@@ -137,9 +137,7 @@ public class TokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        authorities.stream().forEach(o->{
-            log.debug("getAuthentication -> authorities = {}",o.getAuthority());
-        });
+        authorities.forEach(o-> log.debug("getAuthentication -> authorities = {}",o.getAuthority()));
 
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);
@@ -164,7 +162,6 @@ public class TokenProvider {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) { // 만료된 토큰이 더라도 일단 파싱을 함
-//            throw new BizException(JwtExceptionType.BAD_TOKEN);
             return e.getClaims();
         }
     }
