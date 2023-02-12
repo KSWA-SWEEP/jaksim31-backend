@@ -93,6 +93,7 @@ import java.util.stream.Collectors;
  * 2023-02-01           김주현             마지막 남은 일기 삭제 시 recentDiary 설정 오류 수정
  * 2023-02-08           김주현             findDiaries(조건조회) -> searchUserDiaries 및 조건 조회 ElasticSearch로 하도록 수정
  * 2023-02-11           김주현             사용자 일기 조건 조회 페이징 오류 수정
+ * 2023-02-12           방근호             일기 분석 시 오류 수정, api 변경
  */
 
 @Slf4j
