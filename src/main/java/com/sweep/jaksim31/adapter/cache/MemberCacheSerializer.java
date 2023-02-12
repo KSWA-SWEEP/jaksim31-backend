@@ -25,7 +25,7 @@ public class MemberCacheSerializer implements RedisSerializer<MemberInfoResponse
             .disable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .registerModules(new JavaTimeModule(), new Jdk8Module());
-    private final Charset UTF8 = StandardCharsets.UTF_8;
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     @Override
     public byte[] serialize(MemberInfoResponse memberInfoResponse) throws SerializationException {
