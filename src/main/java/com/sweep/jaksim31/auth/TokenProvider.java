@@ -137,7 +137,7 @@ public class TokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        authorities.stream().forEach(o->{
+        authorities.forEach(o->{
             log.debug("getAuthentication -> authorities = {}",o.getAuthority());
         });
 
@@ -164,7 +164,6 @@ public class TokenProvider {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) { // 만료된 토큰이 더라도 일단 파싱을 함
-//            throw new BizException(JwtExceptionType.BAD_TOKEN);
             return e.getClaims();
         }
     }

@@ -5,13 +5,8 @@ import lombok.ToString;
 
 @Getter
 @ToString
-public class RedirectionResponse {
-
-    private final String errorMessage;
-    private final String errorCode;
-
+public class RedirectionResponse  extends Response{
     public RedirectionResponse(String errorCode, String errorMessage) {
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
+        super(errorCode, errorMessage);
     }
 }

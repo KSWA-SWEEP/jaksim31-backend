@@ -19,9 +19,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class EmotionAnalysisResponse {
-
-//    private List<AnalysisResult> ;
-
     private String value;
     private double prob;
 

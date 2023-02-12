@@ -8,7 +8,7 @@ import lombok.Data;
 @Builder
 public class Argument {
     @JsonProperty("analysis_code")
-    private final String analysisCode = "ner";
+    private final String ANALYSIS_CODE = "ner"; // NOSONAR
     private String text;
 
 }

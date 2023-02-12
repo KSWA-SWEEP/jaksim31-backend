@@ -58,6 +58,7 @@ public class CustomLoginIdPasswordAuthProvider implements AuthenticationProvider
         try {
             user = retrieveUser(authentication.getName());
         }catch (BizException ex) {
+            log.debug("error in retrieveUser = {}", ex.getMessage());
             throw ex;
         }
 

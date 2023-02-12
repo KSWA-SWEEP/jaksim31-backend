@@ -1,7 +1,6 @@
 package com.sweep.jaksim31.adapter.cache;
 
 import com.sweep.jaksim31.dto.diary.DiaryEmotionStaticsResponse;
-import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;

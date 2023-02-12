@@ -27,7 +27,7 @@ public class DiaryPagingCacheSerializer implements RedisSerializer<RestPage<Diar
             .disable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .registerModules(new JavaTimeModule(), new Jdk8Module());
-    private final Charset UTF_8 = StandardCharsets.UTF_8;
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     @Override
     public byte[] serialize(RestPage<DiaryInfoResponse> diaryResponse) throws SerializationException {
@@ -36,7 +36,7 @@ public class DiaryPagingCacheSerializer implements RedisSerializer<RestPage<Diar
 
         try {
             String json = MAPPER.writeValueAsString(diaryResponse);
-            return json.getBytes(UTF_8);
+            return json.getBytes(UTF8);
         } catch (JsonProcessingException e) {
             throw new SerializationException("json serialize error", e);
         }
@@ -48,7 +48,7 @@ public class DiaryPagingCacheSerializer implements RedisSerializer<RestPage<Diar
             return null;
 
         try {
-            return MAPPER.readValue(new String(bytes, UTF_8), new TypeReference<>() {});
+            return MAPPER.readValue(new String(bytes, UTF8), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new SerializationException("json deserialize error", e);
         }

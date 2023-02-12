@@ -11,7 +11,7 @@ public class KakaoOAuthLogoutFeignConfig {
         private String adminKey;
 
         @Bean
-        public RequestInterceptor requestInterceptor() throws URISyntaxException {
+        public RequestInterceptor requestInterceptor() {
             return requestTemplate -> {
                 requestTemplate.header("Content-Type", "application/x-www-form-urlencoded");
                 requestTemplate.header("Authorization", "KakaoAK " + adminKey);

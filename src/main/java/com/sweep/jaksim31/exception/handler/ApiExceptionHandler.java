@@ -33,7 +33,7 @@ import java.net.URISyntaxException;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(BizException.class)
-    public ResponseEntity<?> handleBadRequestException(BizException ex) throws URISyntaxException {
+    public ResponseEntity<Response> handleBadRequestException(BizException ex) throws URISyntaxException {
         log.info("Error Message : " + ex.getMessage());
 
         // REDIRECTION 시
@@ -58,7 +58,7 @@ public class ApiExceptionHandler {
     //Validator Exception Handler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
-    protected ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
+    protected ResponseEntity<Response> constraintViolationException(ConstraintViolationException e) {
         ErrorResponse errorResponse = new ErrorResponse(MemberExceptionType.INVALID_ID.getErrorCode(), MemberExceptionType.INVALID_ID.getMessage());
         return new ResponseEntity<>(errorResponse, MemberExceptionType.INVALID_ID.getHttpStatus());
     }

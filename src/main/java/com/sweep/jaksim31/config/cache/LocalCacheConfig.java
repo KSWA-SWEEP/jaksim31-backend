@@ -128,7 +128,7 @@ public class LocalCacheConfig {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // timestamp 형식 안따르도록 설정
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+        mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true); // NOSONAR
         mapper.registerModules(new JavaTimeModule(), new Jdk8Module()); // LocalDateTime 매핑을 위해 모듈 활성화
 
         return mapper;
@@ -161,8 +161,4 @@ public class LocalCacheConfig {
                 .build();
     }
 
-//    @Bean
-//    public DiaryKeyGenerator diaryKeyGenerator() {
-//        return new DiaryKeyGenerator();
-//    }
 }

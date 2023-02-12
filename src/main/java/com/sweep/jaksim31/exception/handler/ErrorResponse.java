@@ -2,16 +2,12 @@ package com.sweep.jaksim31.exception.handler;
 
 import lombok.Getter;
 import lombok.ToString;
+import org.aspectj.apache.bcel.Repository;
 
 @Getter
 @ToString
-public class ErrorResponse {
-
-    private final String errorMessage;
-    private final String errorCode;
-
+public class ErrorResponse extends Response {
     public ErrorResponse(String errorCode, String errorMessage) {
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
+        super(errorCode, errorMessage);
     }
 }

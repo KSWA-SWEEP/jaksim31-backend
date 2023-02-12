@@ -40,15 +40,32 @@ public class ExtractKeywordResponse {
     private Map<String, Object> returnObject;
 
 
-    public List<NameEntity> extractKeyword() {
+    public Map<String, Object> extractKeyword() {
 
-        Map<String, Object> returnObject = this.returnObject;
-        List<Map> sentences = (List<Map>) returnObject.get("sentence");
+        Map<String, Object> result = this.returnObject;
+        List<Map<String, Object>> sentences = (List<Map<String, Object>>) result.get("sentence");
 
-        Map<String, NameEntity> nameEntitiesMap = new HashMap<String, NameEntity>();
+        Map<String, Morpheme> morphemesMap = new HashMap<>();
+        Map<String, NameEntity> nameEntitiesMap = new HashMap<>();
+        List<Morpheme> morphemes = null;
         List<NameEntity> nameEntities = null;
 
         for( Map<String, Object> sentence : sentences ) {
+
+            // 형태소 분석기 결과 수집 및 정렬
+            List<Map<String, Object>> morphologicalAnalysisResult = (List<Map<String, Object>>) sentence.get("morp");
+            for( Map<String, Object> morphemeInfo : morphologicalAnalysisResult ) {
+                String lemma = (String) morphemeInfo.get("lemma");
+                Morpheme morpheme = morphemesMap.get(lemma);
+                if ( morpheme == null ) {
+                    morpheme = new Morpheme(lemma, (String) morphemeInfo.get("type"), 1);
+                    morphemesMap.put(lemma, morpheme);
+                } else {
+                    morpheme.count = morpheme.count + 1;
+                }
+            }
+
+
             // 개체명 분석 결과 수집 및 정렬
             List<Map<String, Object>> nameEntityRecognitionResult = (List<Map<String, Object>>) sentence.get("NE");
             for( Map<String, Object> nameEntityInfo : nameEntityRecognitionResult ) {
@@ -63,16 +80,46 @@ public class ExtractKeywordResponse {
             }
         }
 
-
         if ( 0 < nameEntitiesMap.size() ) {
-            nameEntities = new ArrayList<NameEntity>(nameEntitiesMap.values());
-            nameEntities.sort( (nameEntity1, nameEntity2) -> {
-                return nameEntity2.getCount() - nameEntity1.getCount();
-            });
+            nameEntities = new ArrayList<>(nameEntitiesMap.values());
+            nameEntities.sort( (nameEntity1, nameEntity2) -> nameEntity2.getCount() - nameEntity1.getCount());
         }
 
+        if ( 0 < morphemesMap.size() ) {
+            morphemes = new ArrayList<>(morphemesMap.values());
+            morphemes.sort( (morpheme1, morpheme2) -> morpheme2.getCount() - morpheme1.getCount());
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("morphemes", morphemes);
+        response.put("nameEntities", nameEntities);
+
         // 인식된 개채명들 많이 노출된 순으로 출력 ( 최대 5개 )
-        return nameEntities;
+        return response;
+    }
+
+    @Data
+    public class NameEntity {
+        final String text;
+        final String type;
+        Integer count;
+        public NameEntity (String text, String type, Integer count) {
+            this.text = text;
+            this.type = type;
+            this.count = count;
+        }
+    }
+
+    @Data
+    public class Morpheme {
+        final String text;
+        final String type;
+        Integer count;
+        public Morpheme (String text, String type, Integer count) {
+            this.text = text;
+            this.type = type;
+            this.count = count;
+        }
     }
 
 }

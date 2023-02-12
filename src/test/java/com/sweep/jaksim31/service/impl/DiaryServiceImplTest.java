@@ -351,7 +351,7 @@ public class DiaryServiceImplTest {
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
 
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             param.put("page", "0");
             param.put("size","1");
             param.put("sort","asc");
@@ -390,7 +390,7 @@ public class DiaryServiceImplTest {
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
 
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             param.put("page", "0");
             param.put("size","1");
 
@@ -432,7 +432,7 @@ public class DiaryServiceImplTest {
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
 
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             param.put("page", "0");
             // Input으로 입력되는 값이 없을 경우, size default value = 9, sort default value = "date", DESC
             Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "date"));
@@ -475,7 +475,7 @@ public class DiaryServiceImplTest {
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
 
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             // page default value = 0, size default value = 9, sort default value = "date", DESC
             Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "date"));
             Page<Object> page = new PageImpl(diaryInfoResponses, pageable, 1);
@@ -516,7 +516,7 @@ public class DiaryServiceImplTest {
         @DisplayName("[예외]사용자가 존재하지 않을 때")
         void failFindUserDiaryNotFoundUser(){
             // given
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             given(memberRepository.findById(userId))
                     .willReturn(Optional.empty());
 
@@ -529,7 +529,7 @@ public class DiaryServiceImplTest {
         @DisplayName("[정상] 캐시가 존재할 때")
         void hasCache(){
             // given
-            Map<String, String> param = new HashMap<>();
+            Map<String, Object> param = new HashMap<>();
             DiaryInfoResponse diaryInfoResponse = new DiaryInfoResponse("diaryId", userId, diaryDate, LocalDate.now(), "emotion", keywords, "thumbnail");
             List<DiaryInfoResponse> diaryInfoResponses = List.of(diaryInfoResponse);
             Pageable pageable = PageRequest.of(0, 9, Sort.by(Sort.Direction.DESC, "date"));

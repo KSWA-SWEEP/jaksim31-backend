@@ -36,7 +36,7 @@ public interface DiaryService {
     List<DiaryResponse> allDiaries();
 
     // 사용자 일기 전체 조회
-    RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map params);
+    RestPage<DiaryInfoResponse> findUserDiaries(String userId, Map<String, Object> params);
 
     // 일기 생성
     String saveDiary(HttpServletResponse response, DiarySaveRequest diarySaveRequest);
