@@ -8,9 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
 /**
  * packageName :  com.sweep.jaksim31.dto.member
  * fileName : MemberReqDTO -> MemberSaveRequest

@@ -24,7 +24,7 @@ import lombok.Setter;
 public class ExtractKeywordRequest {
 
     @JsonProperty("request_id")
-    private static final String requestId = "reserved field";
+    private static final String REQUEST_ID = "reserved field";
 
     @JsonProperty("argument")
     private final Argument argument;

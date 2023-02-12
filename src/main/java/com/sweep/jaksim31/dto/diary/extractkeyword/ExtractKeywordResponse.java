@@ -1,11 +1,10 @@
 package com.sweep.jaksim31.dto.diary.extractkeyword;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sweep.jaksim31.enums.DiaryExceptionType;
+import com.sweep.jaksim31.exception.BizException;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * packageName :  com.sweep.jaksim31.dto.diary
@@ -42,8 +41,7 @@ public class ExtractKeywordResponse {
 
     public Map<String, Object> extractKeyword() {
 
-        Map<String, Object> result = this.returnObject;
-        List<Map<String, Object>> sentences = (List<Map<String, Object>>) result.get("sentence");
+        List<Map<String, Object>> sentences = (List<Map<String, Object>>)  this.returnObject.get("sentence");
 
         Map<String, Morpheme> morphemesMap = new HashMap<>();
         Map<String, NameEntity> nameEntitiesMap = new HashMap<>();
@@ -57,7 +55,7 @@ public class ExtractKeywordResponse {
             for( Map<String, Object> morphemeInfo : morphologicalAnalysisResult ) {
                 String lemma = (String) morphemeInfo.get("lemma");
                 Morpheme morpheme = morphemesMap.get(lemma);
-                if ( morpheme == null ) {
+                if (Objects.isNull(morpheme)) {
                     morpheme = new Morpheme(lemma, (String) morphemeInfo.get("type"), 1);
                     morphemesMap.put(lemma, morpheme);
                 } else {
@@ -71,7 +69,7 @@ public class ExtractKeywordResponse {
             for( Map<String, Object> nameEntityInfo : nameEntityRecognitionResult ) {
                 String name = (String) nameEntityInfo.get("text");
                 NameEntity nameEntity = nameEntitiesMap.get(name);
-                if ( nameEntity == null ) {
+                if ( Objects.isNull(nameEntity) ) {
                     nameEntity = new NameEntity(name, (String) nameEntityInfo.get("type"), 1);
                     nameEntitiesMap.put(name, nameEntity);
                 } else {

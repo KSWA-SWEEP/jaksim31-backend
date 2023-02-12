@@ -54,4 +54,9 @@ public class CustomLoginIdPasswordAuthToken extends AbstractAuthenticationToken 
         return super.equals(obj);
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
 }

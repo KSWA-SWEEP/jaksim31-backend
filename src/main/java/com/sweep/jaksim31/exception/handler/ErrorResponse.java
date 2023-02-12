@@ -2,7 +2,6 @@ package com.sweep.jaksim31.exception.handler;
 
 import lombok.Getter;
 import lombok.ToString;
-import org.aspectj.apache.bcel.Repository;
 
 @Getter
 @ToString

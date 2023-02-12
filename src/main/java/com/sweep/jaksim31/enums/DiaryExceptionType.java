@@ -35,6 +35,8 @@ public enum DiaryExceptionType implements BaseExceptionType {
     DIARY_DATE_IS_NULL("DIARY_DATE_IS_NULL", "날짜가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
     EMOTION_IS_NULL("EMOTION_IS_NULL", "감정 분석 결과가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
     KEYWORDS_IS_NULL("KEYWORDS_IS_NULL", "키워드가 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
+
+    FAILED_EXTRACT_NULL("FAILED_EXTRACT_NULL", "키워드가 추출되지 않았습니다.",HttpStatus.BAD_REQUEST),
     THUMBNAIL_IS_NULL("THUMBNAIL_IS_NULL", "썸네일이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST),
     INPUT_SENTENCES_IS_NULL("NO_INPUT_SENTENCES", "분석할 문장이 입력되지 않았습니다.",HttpStatus.BAD_REQUEST);
     private final String errorCode;

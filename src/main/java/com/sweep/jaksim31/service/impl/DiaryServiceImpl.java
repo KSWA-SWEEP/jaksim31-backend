@@ -451,19 +451,22 @@ public class DiaryServiceImpl implements DiaryService {
         List<ExtractKeywordResponse.Morpheme> morphemes = (List<ExtractKeywordResponse.Morpheme>) extractedKeywords.get("morphemes");
         List<ExtractKeywordResponse.NameEntity> nameEntities = (List<ExtractKeywordResponse.NameEntity>) extractedKeywords.get("nameEntities");
 
-        morphemes
-                .stream()
-                .filter(morpheme -> morpheme.getType().equals("NNG"))
-                .limit(5)
-                .map(ExtractKeywordResponse.Morpheme::getText)
-                .forEach(koreanKeywords::add);
+        if(Objects.nonNull(morphemes)) {
+            morphemes
+                    .stream()
+                    .filter(morpheme -> morpheme.getType().equals("NNG"))
+                    .limit(5)
+                    .map(ExtractKeywordResponse.Morpheme::getText)
+                    .forEach(koreanKeywords::add);
+        }
 
-        nameEntities
-                .stream()
-                .limit(5)
-                .map(ExtractKeywordResponse.NameEntity::getText)
-                .forEach(koreanKeywords::add);
-
+        if(Objects.nonNull(nameEntities)) {
+            nameEntities
+                    .stream()
+                    .limit(5)
+                    .map(ExtractKeywordResponse.NameEntity::getText)
+                    .forEach(koreanKeywords::add);
+        }
 
         // 번역 api 호출 전 스트링 하나로 합쳐준다.
         StringBuilder sb = new StringBuilder();

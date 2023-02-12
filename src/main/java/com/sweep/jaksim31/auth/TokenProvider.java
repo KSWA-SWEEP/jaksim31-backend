@@ -137,9 +137,7 @@ public class TokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        authorities.forEach(o->{
-            log.debug("getAuthentication -> authorities = {}",o.getAuthority());
-        });
+        authorities.forEach(o-> log.debug("getAuthentication -> authorities = {}",o.getAuthority()));
 
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);

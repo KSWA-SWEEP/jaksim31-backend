@@ -4,8 +4,6 @@ import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-import java.net.URISyntaxException;
-
 public class KakaoOAuthLogoutFeignConfig {
         @Value("${kakao.auth.admin-key}")
         private String adminKey;
