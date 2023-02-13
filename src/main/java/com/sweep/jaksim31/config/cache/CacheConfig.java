@@ -15,8 +15,11 @@ import com.sweep.jaksim31.dto.diary.DiaryEmotionStaticsResponse;
 import com.sweep.jaksim31.dto.diary.DiaryInfoResponse;
 import com.sweep.jaksim31.dto.diary.DiaryResponse;
 import com.sweep.jaksim31.dto.member.MemberInfoResponse;
+import io.lettuce.core.ClientOptions;
 import io.lettuce.core.ReadFrom;
+import io.lettuce.core.SocketOptions;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +28,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.RedisStaticMasterReplicaConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -38,14 +43,37 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-@Profile("prod")
+
 @Configuration
 @EnableCaching
 @RequiredArgsConstructor
-public class ProdCacheConfig {
+public class CacheConfig {
+
+    @Value("${spring.redis.host}")
+    private String host;
+
+    @Value("${spring.redis.port}")
+    private int port;
     private final RedisInfo info;
 
-    @Bean
+    @Profile("local")
+    @Bean("redisConnectionFactory")
+    public RedisConnectionFactory basicCacheRedisConnectionFactory() {
+        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration(host, port);
+
+        final SocketOptions socketOptions = SocketOptions.builder().connectTimeout(Duration.ofSeconds(10)).build();
+        final ClientOptions clientOptions = ClientOptions.builder().socketOptions(socketOptions).build();
+
+        LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
+                .clientOptions(clientOptions)
+                .commandTimeout(Duration.ofSeconds(5))
+                .shutdownTimeout(Duration.ZERO)
+                .build();
+
+        return new LettuceConnectionFactory(configuration, lettuceClientConfiguration);
+    }
+    @Profile("prod")
+    @Bean("redisConnectionFactory")
     public LettuceConnectionFactory redisConnectionFactory(){
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .readFrom(ReadFrom.REPLICA_PREFERRED)	// replica에서 우선적으로 읽지만 replica에서 읽어오지 못할 경우 Master에서 읽어옴

@@ -37,6 +37,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import javax.servlet.http.Cookie;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -321,7 +322,7 @@ class IntegrationDiaryTest {
         @Order(7)
         void analyzeDiary() throws Exception {
             DiaryAnalysisRequest request = new DiaryAnalysisRequest();
-            request.setSentences(Arrays.asList(SENTENCE));
+            request.setSentences(List.of(SENTENCE));
             String jsonRequest = JsonUtil.objectMapper.writeValueAsString(request);
 
             // when
