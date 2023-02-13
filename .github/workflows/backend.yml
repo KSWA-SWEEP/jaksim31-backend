@@ -72,16 +72,16 @@ jobs:
       # develop 브랜치일 경우 local 환경 빌드
       - name: (PR) Maven Build (Adding Unit Test & Integration Test)
         if: github.event_name == 'pull_request'
-        run: ./mvnw clean install -Dspring.profiles.active=local -P local
+        run: ./mvnw clean package -Dspring.profiles.active=local -P local
 
       - name: (Push & Develop) Maven Build (Adding Unit Test & Integration Test)
         if: contains(github.ref, 'develop') && github.event_name == 'push'
-        run: ./mvnw clean install -Dspring.profiles.active=local -P local
+        run: ./mvnw clean package -Dspring.profiles.active=local -P local
 
       # main 브랜치에 push 할 경우 prod 환경 빌드
       - name: (Push & Main) Maven Build (Skip Unit Test & Integration Test)
         if: contains(github.ref, 'main') && github.event_name == 'push'
-        run: ./mvnw clean install -DskipTests=True -Dspring.profiles.active=prod -P prod
+        run: ./mvnw clean package -DskipTests=True -Dspring.profiles.active=prod -P prod
 
       # main 브랜치에 push 할 경우 CD job에 jar file 업로드
       - name: (Push & Main) Archive production artifacts
