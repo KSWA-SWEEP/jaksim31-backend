@@ -138,6 +138,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Generated
+    @Transactional
     public HttpServletResponse reissue(HttpServletRequest request,
                                      HttpServletResponse response) {
         // method excluded form coverage report
