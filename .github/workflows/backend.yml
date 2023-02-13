@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: jacoco
-          path: site/jacoco/jacoco.xml
+          path: target/site/jacoco/jacoco.xml
 
   Report-Test-Result:
     if: github.event_name == 'pull_request'
