@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -108,7 +107,7 @@ public class DiaryApiController {
                                                                  @RequestParam(required = false) String page, @RequestParam(required = false) String size,
                                                                  @RequestParam(required = false) String sort, @RequestParam(required = false) Map<String, Object> params,
                                                                  @RequestParam(required = false) String emotion, @RequestParam(required = false) String startDate,
-                                                                 @RequestParam(required = false) String endDate, @RequestParam(required = false) String searchWord) throws IOException {
+                                                                 @RequestParam(required = false) String endDate, @RequestParam(required = false) String searchWord){
         if(params.containsKey("emotion") || params.containsKey("startDate") || params.containsKey("endDate") || params.containsKey("searchWord")){
             // 페이징 및 정렬 외에 다른 조건이 있다면 ElasticSearch로 검색
             return ResponseEntity.ok(diaryService.searchUserDiaries(userId, params));

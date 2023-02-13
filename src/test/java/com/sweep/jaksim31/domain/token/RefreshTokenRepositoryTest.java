@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @DataMongoTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -74,6 +75,6 @@ class RefreshTokenRepositoryTest {
 
         //then
         assertEquals(9, refreshTokenRepository.findAll().size());
-        assertThat(refreshTokenRepository.findByLoginId(loginId).orElse(null)).isNull();
+        assertNull(refreshTokenRepository.findByLoginId(loginId).orElse(null));
     }
 }

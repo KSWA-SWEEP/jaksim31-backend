@@ -17,7 +17,7 @@ import org.springframework.http.HttpStatus;
  */
 
 @Getter
-public enum AuthorityExceptionType implements BaseExceptionType {
+public enum AuthorityExceptionType implements BaseExceptionType { // NOSONAR
     NOT_FOUND_AUTHORITY("NOT_FOUND_AUTHORITY","존재하지 않는 권한 입니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;

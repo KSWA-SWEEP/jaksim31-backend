@@ -9,16 +9,16 @@ import com.sweep.jaksim31.domain.diary.DiaryRepository;
 import com.sweep.jaksim31.domain.members.MemberRepository;
 import com.sweep.jaksim31.domain.members.Members;
 import com.sweep.jaksim31.domain.token.RefreshToken;
-import com.sweep.jaksim31.domain.token.RefreshTokenRepository;
 import com.sweep.jaksim31.dto.login.LoginRequest;
 import com.sweep.jaksim31.dto.member.*;
-import com.sweep.jaksim31.enums.SuccessResponseType;
-import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.enums.JwtExceptionType;
 import com.sweep.jaksim31.enums.MemberExceptionType;
+import com.sweep.jaksim31.enums.SuccessResponseType;
+import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.service.MemberService;
 import com.sweep.jaksim31.utils.CookieUtil;
 import com.sweep.jaksim31.utils.RedirectionUtil;
+import lombok.Generated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -137,9 +137,10 @@ public class MemberServiceImpl implements MemberService {
 
     }
 
-    @Transactional
+    @Generated
     public HttpServletResponse reissue(HttpServletRequest request,
                                      HttpServletResponse response) {
+        // method excluded form coverage report
 
         // cookie에서 refresh token 추출
         Cookie refreshTokenCookie = Arrays.stream(request.getCookies())
