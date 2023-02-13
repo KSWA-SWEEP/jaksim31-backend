@@ -72,16 +72,16 @@ jobs:
       # develop 브랜치일 경우 local 환경 빌드
       - name: (PR) Maven Build (Adding Unit Test & Integration Test)
         if: github.event_name == 'pull_request'
-        run: ./mvnw clean install -Dspring.profiles.active=local -P local
+        run: ./mvnw clean package -Dspring.profiles.active=local -P local
 
       - name: (Push & Develop) Maven Build (Adding Unit Test & Integration Test)
         if: contains(github.ref, 'develop') && github.event_name == 'push'
-        run: ./mvnw clean install -Dspring.profiles.active=local -P local
+        run: ./mvnw clean package -Dspring.profiles.active=local -P local
 
       # main 브랜치에 push 할 경우 prod 환경 빌드
       - name: (Push & Main) Maven Build (Skip Unit Test & Integration Test)
         if: contains(github.ref, 'main') && github.event_name == 'push'
-        run: ./mvnw clean install -DskipTests=True -Dspring.profiles.active=prod -P prod
+        run: ./mvnw clean package -DskipTests=True -Dspring.profiles.active=prod -P prod
 
       # main 브랜치에 push 할 경우 CD job에 jar file 업로드
       - name: (Push & Main) Archive production artifacts
@@ -104,6 +104,13 @@ jobs:
         with:
           name: classes
           path: target/classes/
+
+      - name: (PR) Archive coverage result artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco
+          path: target/site/jacoco/jacoco.xml
 
   Report-Test-Result:
     if: github.event_name == 'pull_request'
@@ -142,6 +149,7 @@ jobs:
       SONARQUBE_ID: jaksim31
       SONARQUBE_URL: ${{ secrets.SONARQUBE_URL }}
       SONARQUBE_BINARIES: classes
+      SONARQUBE_JACOCO_DIR : jacoco/jacoco.xml
       PR_NUMBER: ${{ github.event.pull_request.number }}
       # macos 환경에서 CI 실행 (환경은 github이 제공)
     runs-on: ubuntu-latest
@@ -162,12 +170,11 @@ jobs:
         with:
           name: classes
 
-      #      - name: Install JDK 11
-      #        uses: actions/setup-java@v3
-      #        with:
-      #          java-version: '11'
-      #          distribution: 'adopt'
-      #          cache: 'maven'
+      - name: Download a jacoco.xml
+        uses: actions/download-artifact@v1
+        with:
+          name: jacoco
+
 
       # Maven Package Caching
       - name: Cache Maven packages
@@ -180,7 +187,7 @@ jobs:
       # 위에서 설정했던 정적코드 전송 태스크 실행
       - name: Sonarqube Analysis
         if: always() && github.event_name == 'pull_request'
-        run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }}
+        run: ./mvnw sonar:sonar -Dsonar.java.binaries=${{ env.SONARQUBE_BINARIES }} -Dsonar.host.url=${{ env.SONARQUBE_URL }} -Dsonar.projectKey=${{ env.SONARQUBE_ID }} -Dsonar.projectName=${{ env.SONARQUBE_ID }}-${{ env.PR_NUMBER }} -Dsonar.login=${{ secrets.SONARQUBE_ACCESS_TOKEN }} -Dsonar.coverage.jacoco.xmlReportPaths=${{env.SONARQUBE_JACOCO_DIR}}
 
       - name: Comment Sonarqube URL
         if: always() && github.event_name == 'pull_request'

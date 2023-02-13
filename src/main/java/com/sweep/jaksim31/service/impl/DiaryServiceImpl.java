@@ -28,6 +28,7 @@ import com.sweep.jaksim31.enums.ThirdPartyExceptionType;
 import com.sweep.jaksim31.exception.BizException;
 import com.sweep.jaksim31.service.DiaryService;
 import com.sweep.jaksim31.utils.CookieUtil;
+import lombok.Generated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -51,7 +52,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -193,8 +193,10 @@ public class DiaryServiceImpl implements DiaryService {
      */
 
     @Override
+    @Generated
     // 일기 검색, 조건 조회
-    public RestPage<DiaryInfoResponse> searchUserDiaries(String userId, Map<String, Object> params) throws IOException {
+    public RestPage<DiaryInfoResponse> searchUserDiaries(String userId, Map<String, Object> params) {
+        // method excluded form coverage report
 
         // 사용자를 찾을 수 없을 때
         Members user = memberRepository

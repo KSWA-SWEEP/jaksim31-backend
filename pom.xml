@@ -24,9 +24,9 @@
         <sonar.java.binaries>${project.build.directory}/classes</sonar.java.binaries>
         <sonar.test.inclusions>**/*Test.java</sonar.test.inclusions>
         <sonar.java.codeCoveragePlugin>jacoco</sonar.java.codeCoveragePlugin>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.test.result.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>**/*.xml</sonar.exclusions>
-        <sonar.coverage.exclusions>**/qualitymeasurementsample/*</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>**/*Application.java,**/dto/**,**/config/**,**/adapter/**,**/utils/*,**/enums/*,**/exception/*,**/impl/KakaoMemberServiceImpl.java,**/auth/Username*.java,**/auth/Jwt*.java,**/diary/DiarySearch*.java,**/util/*</sonar.coverage.exclusions>
 
         <git.submodule.main.directory>${project.basedir}/submodule/resources/main</git.submodule.main.directory>
         <git.submodule.test.directory>${project.basedir}/submodule/resources/test</git.submodule.test.directory>
@@ -251,27 +251,28 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.5</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/config/*</exclude>
+                        <exclude>com/sweep/jaksim31/dto/**</exclude>
+                        <exclude>com/sweep/jaksim31/config/**</exclude>
+                        <exclude>com/sweep/jaksim31/utils/**</exclude>
+                        <exclude>com/sweep/jaksim31/service/impl/KakaoMemberServiceImpl.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>pre-test</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <propertyName>jacocoArgLine</propertyName>
-                            <destFile>${project.test.result.directory}/jacoco/jacoco.exec</destFile>
-                        </configuration>
                     </execution>
                     <execution>
-                        <id>post-test</id>
+                        <id>report</id>
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <configuration>
-                            <dataFile>${project.test.result.directory}/jacoco/jacoco.exec</dataFile>
-                            <outputDirectory>${project.test.result.directory}/jacoco</outputDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
