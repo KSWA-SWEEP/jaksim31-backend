@@ -164,7 +164,7 @@ public class DiaryServiceImplTest {
             // 아무것도 안하게 하겠음
             doNothing().when(diaryCacheAdapter).findAndDelete(any());
             doNothing().when(memberCacheAdapter).delete(any());
-            doNothing().when(emotionStaticsCacheAdapter).delete(any());
+            doNothing().when(emotionStaticsCacheAdapter).findAndDelete(any());
 
             // when
             String expected = diaryService.updateDiary(diaryId, diarySaveRequest);
@@ -234,7 +234,7 @@ public class DiaryServiceImplTest {
             // 아무것도 안하게 하겠음
             doNothing().when(diaryCacheAdapter).findAndDelete(any());
             doNothing().when(memberCacheAdapter).delete(any());
-            doNothing().when(emotionStaticsCacheAdapter).delete(any());
+            doNothing().when(emotionStaticsCacheAdapter).findAndDelete(any());
 
             // when
             String result = diaryService.remove(any(), userId, diaryId);
@@ -247,7 +247,7 @@ public class DiaryServiceImplTest {
             verify(memberRepository, times(1)).save(user);
             verify(diaryRepository, times(1)).delete(diary);
             verify(diaryCacheAdapter, times(1)).findAndDelete(any());
-            verify(emotionStaticsCacheAdapter, times(1)).delete(any());
+            verify(emotionStaticsCacheAdapter, times(1)).findAndDelete(any());
         }
         @Test
         @DisplayName("[예외]사용자의 일기가 아닐 경우")
