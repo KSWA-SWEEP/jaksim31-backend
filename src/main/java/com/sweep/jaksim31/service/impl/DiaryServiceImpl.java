@@ -282,6 +282,8 @@ public class DiaryServiceImpl implements DiaryService {
         diaryCacheAdapter.findAndDelete(diarySaveRequest.getUserId()+"Page");
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
+        // 페이징 캐시 데이터 삭제
+        diaryEmotionStaticsCacheAdapter.findAndDelete(diarySaveRequest.getUserId());
 
         return SuccessResponseType.DIARY_SAVE_SUCCESS.getMessage();
     }
@@ -318,7 +320,7 @@ public class DiaryServiceImpl implements DiaryService {
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + diarySaveRequest.getUserId());
         // 감정 분석 캐시 데이터 삭제
-        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
+        diaryEmotionStaticsCacheAdapter.findAndDelete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         // recentDiary 업데이트
         Diary updatedDiary = new Diary(diaryId, diarySaveRequest);
@@ -383,7 +385,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         // 사용자 캐시 데이터 삭제
         memberCacheAdapter.delete(MEMBER_CACHE_PREFIX + members.getId());
-        diaryEmotionStaticsCacheAdapter.delete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
+        diaryEmotionStaticsCacheAdapter.findAndDelete(DIARY_EMOTION_STATICS_CACHE_PREFIX + members.getId());
 
         return SuccessResponseType.DIARY_REMOVE_SUCCESS.getMessage();
     }
@@ -513,12 +515,6 @@ public class DiaryServiceImpl implements DiaryService {
                 .orElseThrow(() -> new BizException(MemberExceptionType.NOT_FOUND_USER)); // NOSONAR
 
 
-        // 캐싱된 값이 있는지 확인
-        DiaryEmotionStaticsResponse cachedResponse = diaryEmotionStaticsCacheAdapter.get(MEMBER_CACHE_PREFIX+userId);
-
-        if(Objects.nonNull(cachedResponse))
-            return cachedResponse;
-
         LocalDateTime startDate;
         LocalDateTime endDate;
         // 시간 조건 설정(아무 조건 없이 들어오면 전체 기간으로 검색되도록 설정)
@@ -530,6 +526,12 @@ public class DiaryServiceImpl implements DiaryService {
             endDate = (LocalDate.parse(((String)params.get(searchCondition[2])))).atTime(9,0);}
         else{
             endDate = LocalDate.now().atTime(9,0);}
+
+        // 캐싱된 값이 있는지 확인
+        DiaryEmotionStaticsResponse cachedResponse = diaryEmotionStaticsCacheAdapter.get(DIARY_EMOTION_STATICS_CACHE_PREFIX + userId + params);
+
+        if(Objects.nonNull(cachedResponse))
+            return cachedResponse;
 
         // Aggregation 설정
         // filter
@@ -552,7 +554,7 @@ public class DiaryServiceImpl implements DiaryService {
         DiaryEmotionStaticsResponse response = DiaryEmotionStaticsResponse.of(emotionStatics,startDate.toLocalDate(),endDate.toLocalDate());
 
         // 캐시에 저장
-        diaryEmotionStaticsCacheAdapter.put(MEMBER_CACHE_PREFIX+userId, response);
+        diaryEmotionStaticsCacheAdapter.put(DIARY_EMOTION_STATICS_CACHE_PREFIX + userId + params, response);
 
         return response;
     }
