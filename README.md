@@ -267,10 +267,12 @@ java -jar -Dspring.profiles.active=prod -Duser.timezone=Asia/Seoul ./target/jaks
         
     
 ### 🌱 OpenApi를 이용한 api 호출 테스트 및 관리
+
+![image](https://user-images.githubusercontent.com/64013256/222894508-f0b57c58-dc67-4040-856e-bd3f77cf9134.png)
     
-[Swagger UI](https://jaksim31.xyz/swagger-ui/index.html)
-    
-    ![image](https://user-images.githubusercontent.com/64013256/222890385-0dba9b97-929f-4e75-a684-906d181751f7.png)
+
+▶️ [Swagger UI](https://jaksim31.xyz/swagger-ui/index.html)
+      
     
 ### 🌱 설정 파일 관리
     
