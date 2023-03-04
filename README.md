@@ -1,6 +1,9 @@
 **main :** ![main branch](https://github.com/kswa-sweep/jaksim31-backend/actions/workflows/backend.yml/badge.svg?branch=main) <br>
 **develop :** ![develop branch](https://github.com/kswa-sweep/jaksim31-backend/actions/workflows/backend.yml/badge.svg?branch=develop)
 
+### 📖 프로젝트 소개
+▶️ [Jaksim31 Project Documentation(Notion)](https://www.notion.so/Project-Documentation-2992e631827f4804a07f605dac2fa527)
+
 ### 🌱 개요
 
 작심삼일 다이어리 서비스 api 서버 개발
